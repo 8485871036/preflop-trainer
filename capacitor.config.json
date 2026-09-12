@@ -1,0 +1,12 @@
+{
+  "appId": "com.preflop.trainer",
+  "appName": "Preflop Trainer",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": false,
+    "backgroundColor": "#14514A"
+  },
+  "server": {
+    "androidScheme": "https"
+  }
+}

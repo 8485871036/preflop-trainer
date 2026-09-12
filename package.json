@@ -1,0 +1,20 @@
+{
+  "name": "preflop-trainer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Six-max preflop trainer built on the BluffTheSpot Preflop Bible.",
+  "scripts": {
+    "icons": "node tools/make-icons.js",
+    "build": "node tools/build.js",
+    "sync": "node tools/build.js && cap sync android",
+    "apk": "node tools/build.js && cap sync android && cd android && gradlew.bat assembleDebug",
+    "apk:release": "node tools/build.js && cap sync android && cd android && gradlew.bat assembleRelease"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.2.0",
+    "@capacitor/core": "^6.2.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.2.0"
+  }
+}

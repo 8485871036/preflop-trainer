@@ -733,6 +733,70 @@ const RG = {
 };
 
 /* ============================================================
+   2b. MIX FREQUENCIES
+   Per-hand raise/call/fold split for hands that sit on a chart boundary,
+   measured directly off the BluffTheSpot Preflop Bible chart images
+   (combo-weighted pixel share per cell, validated against the PDF's own
+   stated combo counts). Hands not listed here are pure (100% one action)
+   in the source chart. Keyed by the same spot key used to look up RG above.
+   ============================================================ */
+const MIX = {
+"open_UTG":{"QJo":{"raise":0.577,"fold":0.423},"KTo":{"raise":0.223,"fold":0.777},"98s":{"border":0.488,"fold":0.512},"87s":{"raise":0.139,"border":0.328,"fold":0.533},"76s":{"raise":0.151,"border":0.31,"fold":0.539},"65s":{"raise":0.132,"border":0.337,"fold":0.531},"54s":{"raise":0.136,"border":0.31,"fold":0.554},"44":{"raise":0.77,"border":0.23},"33":{"raise":0.178,"border":0.273,"fold":0.548}},
+"open_MP":{"Q8s":{"raise":0.472,"border":0.528},"KTo":{"raise":0.735,"border":0.265},"QTo":{"raise":0.716,"border":0.284},"T8s":{"border":0.507,"fold":0.493},"A9o":{"raise":0.213,"border":0.787},"98s":{"raise":0.46,"border":0.54},"97s":{"border":0.474,"fold":0.526},"86s":{"border":0.474,"fold":0.526},"76s":{"raise":0.131,"border":0.869},"65s":{"raise":0.114,"border":0.886},"54s":{"raise":0.129,"border":0.314,"fold":0.557},"33":{"raise":0.451,"border":0.549},"22":{"border":0.496,"fold":0.504}},
+"open_CO":{"K2s":{"border":0.491,"fold":0.509},"J7s":{"border":0.474,"fold":0.526},"T7s":{"border":0.49,"fold":0.51},"K9o":{"border":0.213,"fold":0.787},"96s":{"border":0.48,"fold":0.52},"A8o":{"raise":0.857,"border":0.143},"85s":{"border":0.183,"fold":0.817},"A7o":{"border":0.5,"fold":0.5},"75s":{"border":0.488,"fold":0.512},"64s":{"border":0.456,"fold":0.544},"A4o":{"border":0.496,"fold":0.504},"43s":{"border":0.459,"fold":0.541},"A3o":{"border":0.496,"fold":0.504},"A2o":{"border":0.496,"fold":0.504}},
+"open_BTN":{"J3s":{"border":0.467,"fold":0.533},"J2s":{"border":0.182,"fold":0.818},"J8o":{"raise":0.482,"border":0.518},"T8o":{"raise":0.484,"border":0.516},"98o":{"raise":0.466,"border":0.534},"87o":{"border":0.493,"fold":0.507},"K6o":{"border":0.518,"fold":0.482},"76o":{"border":0.194,"fold":0.806},"63s":{"border":0.45,"fold":0.55},"32s":{"border":0.491,"fold":0.509}},
+"open_SB":{"T4s":{"border":0.45,"fold":0.55},"94s":{"border":0.451,"fold":0.549},"83s":{"border":0.45,"fold":0.55},"Q6o":{"border":0.492,"fold":0.508},"96o":{"border":0.488,"fold":0.512},"86o":{"border":0.482,"fold":0.518},"76o":{"border":0.487,"fold":0.513},"65o":{"border":0.484,"fold":0.516},"54o":{"border":0.486,"fold":0.514},"K3o":{"border":0.514,"fold":0.486},"K2o":{"border":0.515,"fold":0.485}},
+"tb_MP_UTG":{"A9s":{"raise":0.204,"border":0.262,"fold":0.534},"A8s":{"raise":0.092,"border":0.22,"fold":0.689},"A4s":{"raise":0.764,"border":0.236},"A3s":{"border":0.129,"fold":0.871},"KTs":{"border":0.205,"fold":0.795},"KQo":{"raise":0.49,"border":0.51},"QJs":{"raise":0.781,"border":0.219},"QTs":{"border":0.219,"fold":0.781},"JTs":{"raise":0.09,"border":0.273,"fold":0.637},"T9s":{"border":0.227,"fold":0.773},"99":{"raise":0.259,"border":0.289,"fold":0.452},"98s":{"border":0.201,"fold":0.799},"88":{"raise":0.131,"border":0.257,"fold":0.613},"87s":{"raise":0.191,"fold":0.809},"76s":{"raise":0.2,"fold":0.8},"65s":{"raise":0.183,"fold":0.817},"54s":{"raise":0.184,"fold":0.816}},
+"tb_CO_UTG":{"A9s":{"raise":0.204,"border":0.263,"fold":0.534},"A8s":{"raise":0.092,"border":0.22,"fold":0.688},"A4s":{"raise":0.764,"border":0.236},"A3s":{"border":0.129,"fold":0.871},"KTs":{"border":0.205,"fold":0.795},"KQo":{"raise":0.725,"border":0.275},"QTs":{"border":0.219,"fold":0.781},"JTs":{"raise":0.089,"border":0.273,"fold":0.638},"T9s":{"border":0.228,"fold":0.772},"99":{"raise":0.462,"border":0.538},"98s":{"border":0.202,"fold":0.798},"88":{"raise":0.131,"border":0.257,"fold":0.612},"87s":{"raise":0.087,"fold":0.913},"77":{"raise":0.151,"border":0.161,"fold":0.688},"76s":{"raise":0.084,"fold":0.916},"66":{"raise":0.136,"fold":0.864},"65s":{"raise":0.183,"fold":0.817},"54s":{"raise":0.184,"fold":0.816}},
+"tb_CO_MP":{"A9s":{"border":0.216,"fold":0.784},"A8s":{"raise":0.145,"border":0.214,"fold":0.641},"A3s":{"raise":0.122,"border":0.217,"fold":0.661},"KTs":{"border":0.201,"fold":0.799},"QTs":{"raise":0.159,"border":0.278,"fold":0.562},"AJo":{"raise":0.791,"border":0.209},"JTs":{"raise":0.154,"border":0.598,"fold":0.248},"T9s":{"raise":0.151,"border":0.592,"fold":0.257},"99":{"raise":0.467,"border":0.533},"98s":{"border":0.488,"fold":0.512},"88":{"raise":0.133,"border":0.592,"fold":0.275},"87s":{"raise":0.073,"border":0.27,"fold":0.657},"77":{"raise":0.26,"border":0.227,"fold":0.513},"76s":{"raise":0.085,"border":0.269,"fold":0.646},"66":{"raise":0.139,"fold":0.861},"65s":{"raise":0.185,"fold":0.815},"54s":{"raise":0.174,"fold":0.826}},
+"tb_BTN_UTG":{"A9s":{"raise":0.47,"border":0.53},"A8s":{"raise":0.511,"border":0.309,"fold":0.18},"A7s":{"border":0.192,"fold":0.808},"A4s":{"raise":0.764,"border":0.236},"A3s":{"border":0.192,"fold":0.808},"KTs":{"raise":0.489,"border":0.511},"KQo":{"raise":0.783,"border":0.217},"QTs":{"raise":0.541,"border":0.301,"fold":0.157},"AJo":{"raise":0.49,"border":0.51},"T9s":{"raise":0.511,"border":0.302,"fold":0.187},"99":{"raise":0.465,"border":0.535},"98s":{"raise":0.494,"border":0.313,"fold":0.193},"88":{"raise":0.139,"border":0.384,"fold":0.477},"87s":{"raise":0.495,"border":0.313,"fold":0.192},"77":{"raise":0.145,"border":0.275,"fold":0.58},"76s":{"raise":0.49,"border":0.299,"fold":0.211},"66":{"raise":0.136,"fold":0.864},"65s":{"raise":0.19,"border":0.278,"fold":0.533},"54s":{"raise":0.184,"fold":0.816}},
+"tb_BTN_MP":{"A9s":{"raise":0.47,"border":0.53},"A8s":{"raise":0.764,"border":0.236},"A7s":{"border":0.191,"fold":0.809},"A3s":{"raise":0.182,"border":0.27,"fold":0.548},"KTs":{"raise":0.485,"border":0.515},"K9s":{"border":0.212,"fold":0.788},"QTs":{"raise":0.774,"border":0.226},"AJo":{"raise":0.796,"border":0.204},"T9s":{"raise":0.507,"border":0.3,"fold":0.192},"99":{"raise":0.466,"border":0.534},"98s":{"raise":0.207,"border":0.264,"fold":0.529},"88":{"raise":0.288,"border":0.4,"fold":0.312},"87s":{"raise":0.183,"border":0.273,"fold":0.544},"77":{"raise":0.326,"border":0.427,"fold":0.247},"76s":{"raise":0.205,"border":0.258,"fold":0.537},"66":{"raise":0.289,"fold":0.711},"65s":{"raise":0.181,"border":0.275,"fold":0.544},"54s":{"raise":0.174,"border":0.249,"fold":0.577}},
+"tb_BTN_CO":{"A7s":{"raise":0.469,"border":0.531},"A6s":{"border":0.483,"fold":0.517},"A2s":{"border":0.49,"fold":0.51},"KJo":{"raise":0.486,"border":0.514},"QJo":{"border":0.554,"fold":0.446},"J9s":{"raise":0.462,"border":0.538},"ATo":{"raise":0.794,"border":0.206},"T8s":{"border":0.508,"fold":0.492},"98s":{"raise":0.453,"border":0.547},"87s":{"raise":0.458,"border":0.542},"76s":{"raise":0.452,"border":0.548},"65s":{"raise":0.442,"border":0.558},"55":{"border":0.485,"fold":0.515},"54s":{"raise":0.44,"border":0.56}},
+"tb_SB_EP":{"A9s":{"border":0.214,"fold":0.786},"A4s":{"raise":0.452,"border":0.548},"A3s":{"border":0.187,"fold":0.813},"KTs":{"raise":0.485,"border":0.515},"QTs":{"raise":0.483,"border":0.517},"T9s":{"raise":0.211,"border":0.27,"fold":0.519},"98s":{"raise":0.498,"border":0.318,"fold":0.184},"88":{"raise":0.284,"border":0.3,"fold":0.416},"87s":{"raise":0.181,"border":0.275,"fold":0.545},"77":{"raise":0.306,"border":0.297,"fold":0.397},"76s":{"raise":0.205,"border":0.259,"fold":0.536},"65s":{"raise":0.181,"border":0.277,"fold":0.542},"54s":{"raise":0.172,"border":0.256,"fold":0.571}},
+"tb_SB_CO":{"A4s":{"raise":0.456,"border":0.544},"A3s":{"border":0.464,"fold":0.536},"KQo":{"raise":0.489,"border":0.511},"AJo":{"raise":0.488,"border":0.512},"J9s":{"raise":0.482,"fold":0.518},"T9s":{"raise":0.781,"border":0.219},"98s":{"raise":0.203,"border":0.266,"fold":0.531},"87s":{"raise":0.186,"border":0.262,"fold":0.552},"77":{"raise":0.473,"border":0.527},"76s":{"raise":0.2,"border":0.258,"fold":0.542},"66":{"border":0.483,"fold":0.517},"65s":{"raise":0.188,"border":0.276,"fold":0.535},"54s":{"raise":0.175,"border":0.248,"fold":0.577}},
+"tb_SB_BTN":{"A7s":{"raise":0.471,"border":0.529},"A3s":{"raise":0.451,"border":0.549},"K8s":{"border":0.502,"fold":0.498},"KJo":{"raise":0.486,"border":0.514},"ATo":{"raise":0.496,"border":0.504},"T8s":{"raise":0.464,"border":0.536},"98s":{"raise":0.457,"border":0.543},"87s":{"raise":0.457,"border":0.543},"76s":{"raise":0.456,"border":0.544},"65s":{"raise":0.444,"border":0.556},"55":{"raise":0.45,"border":0.55},"54s":{"raise":0.441,"border":0.559}},
+"bf_UTG":{"AQs":{"raise":0.881,"call":0.119},"AJs":{"raise":0.25,"call":0.75},"ATs":{"raise":0.271,"call":0.729},"A9s":{"raise":0.5,"call":0.5},"A8s":{"raise":0.659,"call":0.341},"A7s":{"raise":0.351,"call":0.117,"fold":0.533},"A6s":{"raise":0.061,"call":0.071,"fold":0.868},"A5s":{"raise":0.597,"call":0.403},"A4s":{"raise":0.622,"call":0.378},"A3s":{"raise":0.685,"call":0.315},"A2s":{"call":0.179,"fold":0.821},"AKo":{"raise":0.787,"call":0.213},"KQs":{"raise":0.328,"call":0.672},"KJs":{"raise":0.25,"call":0.75},"KTs":{"raise":0.434,"call":0.566},"K9s":{"raise":0.392,"call":0.266,"fold":0.342},"AQo":{"raise":0.395,"call":0.605},"KQo":{"raise":0.618,"call":0.382},"QJs":{"raise":0.635,"call":0.365},"QTs":{"raise":0.649,"call":0.351},"Q9s":{"raise":0.235,"fold":0.765},"Q8s":{"raise":0.125,"fold":0.875},"AJo":{"raise":0.276,"call":0.22,"fold":0.504},"KJo":{"raise":0.124,"fold":0.876},"JJ":{"raise":0.422,"call":0.578},"JTs":{"raise":0.501,"call":0.499},"J9s":{"call":0.126,"fold":0.874},"TT":{"raise":0.323,"call":0.677},"T9s":{"raise":0.452,"fold":0.548},"T8s":{"call":0.129,"fold":0.871},"99":{"raise":0.327,"call":0.673},"98s":{"call":0.239,"fold":0.761},"97s":{"call":0.131,"fold":0.869},"88":{"raise":0.378,"call":0.622},"87s":{"raise":0.165,"call":0.299,"fold":0.537},"86s":{"call":0.185,"fold":0.815},"77":{"raise":0.279,"call":0.721},"76s":{"raise":0.235,"call":0.348,"fold":0.417},"75s":{"call":0.073,"fold":0.927},"66":{"raise":0.225,"call":0.595,"fold":0.179},"65s":{"raise":0.348,"call":0.274,"fold":0.378},"64s":{"call":0.132,"fold":0.868},"55":{"raise":0.128,"call":0.467,"fold":0.406},"54s":{"raise":0.347,"call":0.47,"fold":0.183},"53s":{"call":0.135,"fold":0.865},"44":{"call":0.368,"fold":0.632},"33":{"call":0.289,"fold":0.711},"22":{"call":0.282,"fold":0.718}},
+"bf_MP":{"AJs":{"raise":0.25,"call":0.75},"ATs":{"raise":0.212,"call":0.788},"A9s":{"raise":0.598,"call":0.402},"A8s":{"raise":0.918,"call":0.082},"A7s":{"raise":0.589,"call":0.156,"fold":0.255},"A6s":{"raise":0.185,"call":0.116,"fold":0.7},"A5s":{"raise":0.597,"call":0.403},"A4s":{"raise":0.622,"call":0.378},"A3s":{"raise":0.685,"call":0.315},"A2s":{"raise":0.12,"call":0.164,"fold":0.715},"KQs":{"raise":0.48,"call":0.52},"KJs":{"raise":0.486,"call":0.514},"KTs":{"raise":0.39,"call":0.61},"K9s":{"raise":0.718,"call":0.282},"K8s":{"raise":0.176,"fold":0.824},"K6s":{"call":0.062,"fold":0.938},"AQo":{"raise":0.605,"call":0.395},"KQo":{"raise":0.808,"call":0.192},"QJs":{"raise":0.478,"call":0.522},"QTs":{"raise":0.706,"call":0.294},"Q9s":{"raise":0.783,"fold":0.217},"AJo":{"raise":0.667,"call":0.261,"fold":0.071},"KJo":{"raise":0.231,"call":0.124,"fold":0.645},"QJo":{"raise":0.142,"fold":0.858},"JJ":{"raise":0.546,"call":0.454},"JTs":{"raise":0.647,"call":0.353},"J9s":{"call":0.185,"fold":0.815},"ATo":{"raise":0.109,"fold":0.891},"TT":{"raise":0.548,"call":0.452},"T9s":{"raise":0.279,"call":0.381,"fold":0.34},"99":{"raise":0.327,"call":0.673},"98s":{"call":0.299,"fold":0.701},"88":{"raise":0.324,"call":0.676},"87s":{"raise":0.118,"call":0.173,"fold":0.709},"86s":{"call":0.063,"fold":0.937},"77":{"raise":0.279,"call":0.721},"76s":{"raise":0.184,"call":0.238,"fold":0.578},"66":{"raise":0.298,"call":0.702},"65s":{"raise":0.227,"call":0.181,"fold":0.593},"55":{"raise":0.128,"call":0.467,"fold":0.406},"54s":{"raise":0.278,"call":0.34,"fold":0.383},"44":{"call":0.488,"fold":0.512},"33":{"call":0.352,"fold":0.648},"22":{"call":0.333,"fold":0.667}},
+"bf_CO":{"AJs":{"raise":0.543,"call":0.457},"ATs":{"raise":0.389,"call":0.611},"A9s":{"raise":0.652,"call":0.348},"A8s":{"raise":0.795,"call":0.205},"A7s":{"raise":0.8,"call":0.2},"A6s":{"raise":0.132,"call":0.118,"fold":0.749},"A5s":{"raise":0.689,"call":0.311},"A4s":{"raise":0.809,"call":0.191},"A2s":{"raise":0.127,"fold":0.873},"KQs":{"raise":0.81,"call":0.19},"KJs":{"raise":0.895,"call":0.105},"KTs":{"raise":0.65,"call":0.35},"K9s":{"raise":0.652,"call":0.348},"AQo":{"raise":0.544,"call":0.456},"KQo":{"raise":0.807,"call":0.193},"QJs":{"raise":0.634,"call":0.366},"QTs":{"raise":0.322,"call":0.678},"Q9s":{"raise":0.913,"call":0.087},"AJo":{"raise":0.859,"call":0.141},"KJo":{"raise":0.519,"call":0.223,"fold":0.259},"QJo":{"raise":0.367,"fold":0.633},"JTs":{"raise":0.721,"call":0.279},"J9s":{"raise":0.18,"call":0.222,"fold":0.597},"ATo":{"raise":0.728,"fold":0.272},"KTo":{"raise":0.118,"fold":0.882},"TT":{"raise":0.658,"call":0.342},"T9s":{"raise":0.399,"call":0.323,"fold":0.278},"T8s":{"call":0.066,"fold":0.934},"99":{"raise":0.556,"call":0.444},"98s":{"call":0.249,"fold":0.751},"88":{"raise":0.491,"call":0.509},"87s":{"raise":0.119,"call":0.231,"fold":0.65},"77":{"raise":0.45,"call":0.55},"76s":{"raise":0.189,"call":0.174,"fold":0.637},"66":{"raise":0.577,"call":0.423},"65s":{"raise":0.288,"call":0.121,"fold":0.591},"55":{"raise":0.229,"call":0.35,"fold":0.421},"54s":{"raise":0.346,"call":0.18,"fold":0.474},"44":{"raise":0.12,"call":0.281,"fold":0.599},"33":{"call":0.24,"fold":0.76},"22":{"call":0.223,"fold":0.777}},
+"bb_EP":{"AJs":{"raise":0.655,"call":0.345},"ATs":{"raise":0.483,"call":0.517},"A9s":{"raise":0.2,"border_raise":0.258,"call":0.541},"A8s":{"raise":0.19,"border_raise":0.262,"call":0.548},"A5s":{"raise":0.459,"call":0.541},"A4s":{"raise":0.46,"call":0.54},"A3s":{"raise":0.451,"call":0.549},"AKo":{"raise":0.783,"call":0.217},"KQs":{"raise":0.775,"call":0.225},"KJs":{"raise":0.655,"call":0.345},"KTs":{"raise":0.484,"call":0.516},"K6s":{"raise":0.183,"call":0.817},"K5s":{"raise":0.184,"call":0.816},"K4s":{"border_raise":0.181,"border_call":0.819},"AQo":{"raise":0.214,"call":0.786},"KQo":{"border_raise":0.211,"call":0.789},"QJs":{"raise":0.648,"call":0.352},"QTs":{"raise":0.48,"call":0.52},"Q9s":{"raise":0.205,"border_raise":0.252,"call":0.543},"Q4s":{"border_call":0.477,"fold":0.523},"JJ":{"raise":0.48,"call":0.52},"JTs":{"raise":0.479,"call":0.521},"J9s":{"raise":0.207,"border_raise":0.246,"call":0.547},"J8s":{"raise":0.196,"call":0.804},"J6s":{"border_call":0.497,"fold":0.503},"KTo":{"call":0.5,"border_call":0.5},"QTo":{"call":0.498,"border_call":0.502},"JTo":{"call":0.483,"border_call":0.517},"TT":{"raise":0.195,"call":0.805},"T9s":{"raise":0.316,"border_raise":0.14,"call":0.544},"T8s":{"raise":0.195,"border_raise":0.247,"call":0.559},"A9o":{"border_call":0.497,"fold":0.503},"98s":{"raise":0.292,"border_raise":0.145,"call":0.563},"97s":{"raise":0.183,"border_raise":0.257,"call":0.56},"87s":{"raise":0.294,"border_raise":0.149,"call":0.557},"86s":{"raise":0.174,"border_raise":0.253,"call":0.574},"76s":{"raise":0.303,"border_raise":0.141,"call":0.556},"75s":{"raise":0.181,"border_raise":0.255,"call":0.564},"65s":{"raise":0.278,"border_raise":0.146,"call":0.576},"64s":{"raise":0.165,"call":0.835},"54s":{"raise":0.284,"border_raise":0.152,"call":0.564},"53s":{"raise":0.167,"call":0.833},"52s":{"border_call":0.471,"fold":0.529},"42s":{"border_call":0.48,"fold":0.52}},
+"bb_CO":{"ATs":{"raise":0.483,"call":0.517},"A9s":{"raise":0.469,"call":0.531},"A8s":{"raise":0.191,"call":0.809},"A5s":{"raise":0.468,"border_raise":0.286,"call":0.246},"A4s":{"raise":0.465,"border_raise":0.289,"call":0.246},"A3s":{"raise":0.46,"border_raise":0.292,"call":0.247},"A2s":{"border_raise":0.449,"call":0.551},"KJs":{"raise":0.655,"call":0.345},"KTs":{"raise":0.484,"call":0.516},"K9s":{"raise":0.201,"border_raise":0.257,"call":0.542},"AQo":{"raise":0.214,"call":0.786},"KQo":{"raise":0.208,"call":0.792},"Q9s":{"raise":0.469,"call":0.531},"Q8s":{"raise":0.195,"border_raise":0.244,"call":0.562},"Q3s":{"call":0.464,"border_call":0.536},"Q2s":{"call":0.46,"border_call":0.54},"AJo":{"raise":0.206,"call":0.794},"KJo":{"raise":0.199,"call":0.801},"QJo":{"raise":0.203,"call":0.797},"J9s":{"raise":0.463,"call":0.537},"J8s":{"raise":0.195,"border_raise":0.24,"call":0.565},"TT":{"raise":0.659,"call":0.341},"T9s":{"raise":0.466,"call":0.534},"T8s":{"raise":0.461,"call":0.539},"T7s":{"border_raise":0.187,"call":0.813},"T5s":{"border_call":0.481,"fold":0.519},"K9o":{"border_call":0.522,"fold":0.478},"Q9o":{"border_call":0.514,"fold":0.486},"J9o":{"border_call":0.48,"fold":0.52},"T9o":{"border_call":0.5,"fold":0.5},"99":{"raise":0.139,"call":0.861},"98s":{"raise":0.459,"call":0.541},"97s":{"raise":0.456,"call":0.544},"95s":{"border_call":0.473,"fold":0.527},"A8o":{"call":0.485,"border_call":0.515},"98o":{"border_call":0.479,"fold":0.521},"87s":{"raise":0.453,"call":0.547},"86s":{"raise":0.175,"border_raise":0.245,"call":0.58},"84s":{"border_call":0.467,"fold":0.533},"87o":{"border_call":0.491,"fold":0.509},"76s":{"raise":0.449,"call":0.551},"75s":{"raise":0.181,"border_raise":0.254,"call":0.565},"65s":{"raise":0.446,"call":0.554},"64s":{"raise":0.175,"border_raise":0.245,"call":0.581},"62s":{"border_call":0.475,"fold":0.525},"A5o":{"call":0.486,"border_call":0.514},"54s":{"raise":0.449,"call":0.551},"53s":{"raise":0.167,"call":0.833},"52s":{"call":0.452,"border_call":0.548},"A4o":{"border_call":0.5,"fold":0.5},"42s":{"call":0.453,"border_call":0.547},"A3o":{"border_call":0.5,"fold":0.5},"32s":{"call":0.453,"border_call":0.547},"A2o":{"border_call":0.5,"fold":0.5}},
+"bb_BTN":{"A9s":{"raise":0.469,"call":0.531},"A8s":{"raise":0.467,"call":0.533},"A3s":{"raise":0.453,"call":0.547},"A2s":{"border_raise":0.45,"call":0.55},"K9s":{"raise":0.483,"border_raise":0.282,"call":0.235},"KQo":{"raise":0.49,"call":0.51},"Q8s":{"raise":0.308,"border_raise":0.385,"call":0.307},"AJo":{"raise":0.485,"call":0.515},"KJo":{"raise":0.482,"call":0.518},"QJo":{"raise":0.314,"call":0.686},"J8s":{"raise":0.468,"border_raise":0.299,"call":0.233},"J7s":{"raise":0.301,"border_raise":0.397,"call":0.302},"J2s":{"border_call":0.47,"fold":0.53},"KTo":{"border_raise":0.318,"call":0.682},"QTo":{"border_raise":0.316,"call":0.684},"JTo":{"raise":0.31,"call":0.69},"T8s":{"raise":0.709,"border_raise":0.291},"T7s":{"raise":0.308,"border_raise":0.389,"call":0.303},"98s":{"raise":0.775,"border_raise":0.225},"97s":{"raise":0.297,"border_raise":0.399,"call":0.304},"K8o":{"call":0.239,"border_call":0.761},"T8o":{"call":0.485,"border_call":0.515},"98o":{"call":0.469,"border_call":0.531},"88":{"raise":0.452,"call":0.548},"87s":{"raise":0.765,"border_raise":0.235},"86s":{"raise":0.293,"border_raise":0.399,"call":0.308},"84s":{"border_call":0.468,"fold":0.532},"K7o":{"border_call":0.518,"fold":0.482},"97o":{"border_call":0.507,"fold":0.493},"87o":{"call":0.263,"border_call":0.737},"77":{"raise":0.469,"call":0.531},"76s":{"raise":0.767,"border_raise":0.233},"75s":{"raise":0.294,"border_raise":0.401,"call":0.306},"A6o":{"call":0.485,"border_call":0.515},"65s":{"raise":0.754,"border_raise":0.246},"64s":{"raise":0.278,"call":0.722},"62s":{"border_call":0.475,"fold":0.525},"65o":{"border_call":0.476,"fold":0.524},"54s":{"raise":0.439,"border_raise":0.561},"54o":{"border_call":0.494,"fold":0.506}},
+"bb_SB":{"A9s":{"raise":0.703,"call":0.297},"A3s":{"raise":0.453,"call":0.547},"A2s":{"raise":0.119,"call":0.881},"KTs":{"raise":0.777,"call":0.223},"K9s":{"raise":0.705,"call":0.295},"K7s":{"raise":0.467,"call":0.533},"K6s":{"raise":0.454,"call":0.546},"KQo":{"raise":0.49,"call":0.51},"QTs":{"raise":0.481,"call":0.519},"Q9s":{"raise":0.206,"call":0.794},"AJo":{"raise":0.485,"call":0.515},"KJo":{"raise":0.199,"call":0.801},"J9s":{"raise":0.78,"call":0.22},"J6s":{"raise":0.127,"call":0.873},"J5s":{"raise":0.184,"call":0.816},"J4s":{"raise":0.176,"call":0.824},"J3s":{"raise":0.177,"call":0.823},"J2s":{"raise":0.179,"call":0.821},"T9s":{"raise":0.773,"call":0.227},"T8s":{"raise":0.461,"call":0.539},"T6s":{"raise":0.241,"call":0.759},"T5s":{"raise":0.345,"call":0.655},"T4s":{"raise":0.344,"call":0.656},"T3s":{"raise":0.342,"call":0.658},"T2s":{"raise":0.342,"call":0.658},"K9o":{"raise":0.093,"call":0.907},"Q9o":{"raise":0.208,"call":0.792},"J9o":{"raise":0.202,"call":0.798},"T9o":{"raise":0.209,"call":0.791},"99":{"raise":0.779,"call":0.221},"97s":{"raise":0.456,"call":0.544},"95s":{"raise":0.12,"call":0.88},"94s":{"raise":0.126,"call":0.874},"93s":{"raise":0.117,"call":0.883},"92s":{"border_call":0.475,"fold":0.525},"K8o":{"raise":0.266,"call":0.734},"Q8o":{"raise":0.315,"call":0.685},"J8o":{"raise":0.302,"call":0.698},"T8o":{"raise":0.265,"call":0.735},"88":{"raise":0.452,"call":0.548},"86s":{"raise":0.175,"call":0.825},"83s":{"border_call":0.464,"fold":0.536},"A7o":{"raise":0.105,"call":0.895},"K7o":{"raise":0.264,"call":0.736},"Q7o":{"raise":0.205,"border_raise":0.567,"border_call":0.228},"J7o":{"raise":0.203,"border_raise":0.257,"border_call":0.54},"T7o":{"raise":0.206,"border_raise":0.26,"border_call":0.533},"97o":{"raise":0.196,"call":0.804},"87o":{"raise":0.173,"call":0.827},"77":{"raise":0.47,"call":0.53},"75s":{"raise":0.185,"call":0.815},"A6o":{"raise":0.148,"call":0.852},"K6o":{"raise":0.207,"call":0.793},"Q6o":{"border_raise":0.219,"fold":0.781},"96o":{"border_call":0.505,"fold":0.495},"86o":{"raise":0.184,"border_raise":0.249,"call":0.567},"66":{"raise":0.28,"call":0.72},"64s":{"raise":0.164,"call":0.836},"62s":{"call":0.467,"fold":0.533},"A5o":{"raise":0.21,"call":0.79},"K5o":{"raise":0.204,"border_call":0.796},"85o":{"border_call":0.491,"fold":0.509},"65o":{"border_raise":0.448,"call":0.552},"54s":{"raise":0.752,"call":0.248},"A4o":{"raise":0.209,"call":0.791},"K4o":{"border_raise":0.485,"border_call":0.515},"64o":{"border_call":0.488,"fold":0.512},"54o":{"border_raise":0.169,"call":0.577,"border_call":0.253},"A3o":{"raise":0.209,"call":0.791},"K3o":{"border_raise":0.216,"fold":0.784},"43o":{"border_call":0.474,"fold":0.526},"A2o":{"raise":0.209,"call":0.791}},
+"fb_UTG_ip":{"AJs":{"raise":0.471,"call":0.529},"ATs":{"raise":0.2,"call":0.8},"A5s":{"raise":0.46,"fold":0.54},"AKo":{"raise":0.478,"call":0.522},"KQs":{"raise":0.476,"call":0.524},"KJs":{"raise":0.47,"call":0.53},"KTs":{"raise":0.201,"fold":0.799},"AQo":{"raise":0.478,"fold":0.522},"QTs":{"call":0.209,"fold":0.791},"JJ":{"raise":0.479,"call":0.521},"TT":{"raise":0.2,"call":0.8},"99":{"call":0.472,"fold":0.528},"88":{"call":0.462,"fold":0.538},"77":{"call":0.471,"fold":0.529},"66":{"call":0.455,"fold":0.545},"55":{"call":0.466,"fold":0.534},"44":{"call":0.483,"fold":0.517}},
+"fb_MP_ip":{"AJs":{"raise":0.469,"call":0.531},"ATs":{"raise":0.475,"call":0.525},"A5s":{"raise":0.463,"fold":0.537},"AKo":{"raise":0.767,"call":0.233},"KQs":{"raise":0.472,"call":0.528},"KJs":{"raise":0.469,"call":0.531},"KTs":{"raise":0.474,"call":0.309,"fold":0.217},"AQo":{"raise":0.642,"call":0.358},"QJs":{"raise":0.199,"call":0.801},"QTs":{"call":0.213,"fold":0.787},"JJ":{"raise":0.776,"call":0.224},"TT":{"raise":0.473,"call":0.527},"99":{"raise":0.19,"call":0.81},"88":{"call":0.463,"fold":0.537},"77":{"call":0.473,"fold":0.527},"66":{"call":0.456,"fold":0.544},"55":{"call":0.467,"fold":0.533},"44":{"call":0.475,"fold":0.525}},
+"fb_MP_bl":{"AKs":{"raise":0.641,"call":0.359},"AJs":{"raise":0.199,"call":0.801},"ATs":{"raise":0.2,"call":0.8},"A5s":{"call":0.461,"fold":0.539},"AKo":{"raise":0.307,"call":0.693},"KJs":{"raise":0.199,"call":0.801},"KTs":{"call":0.782,"fold":0.218},"AQo":{"raise":0.212,"call":0.788},"QQ":{"raise":0.21,"call":0.79},"QTs":{"call":0.21,"fold":0.79},"JJ":{"raise":0.195,"call":0.805},"88":{"call":0.463,"fold":0.537},"77":{"call":0.473,"fold":0.527},"66":{"call":0.454,"fold":0.546},"55":{"call":0.461,"fold":0.539},"44":{"call":0.473,"fold":0.527}},
+"fb_CO_ip":{"AJs":{"raise":0.198,"call":0.802},"ATs":{"raise":0.476,"call":0.524},"A9s":{"call":0.473,"fold":0.527},"A4s":{"raise":0.46,"fold":0.54},"AKo":{"raise":0.767,"call":0.233},"KQs":{"raise":0.321,"call":0.679},"KJs":{"raise":0.469,"call":0.531},"KTs":{"raise":0.762,"call":0.238},"K9s":{"call":0.207,"fold":0.793},"AQo":{"raise":0.766,"call":0.234},"KQo":{"raise":0.487,"fold":0.513},"QJs":{"raise":0.306,"call":0.694},"QTs":{"raise":0.202,"call":0.798},"AJo":{"raise":0.318,"call":0.285,"fold":0.397},"JTs":{"raise":0.308,"call":0.692},"J9s":{"raise":0.205,"call":0.271,"fold":0.524},"TT":{"raise":0.475,"call":0.525},"T8s":{"raise":0.195,"call":0.281,"fold":0.524},"99":{"raise":0.459,"call":0.541},"97s":{"call":0.189,"fold":0.811},"86s":{"call":0.194,"fold":0.806},"55":{"call":0.462,"fold":0.538},"44":{"call":0.475,"fold":0.525}},
+"fb_CO_bl":{"ATs":{"raise":0.199,"call":0.801},"A9s":{"raise":0.101,"call":0.37,"fold":0.529},"A5s":{"raise":0.188,"call":0.812},"A4s":{"raise":0.186,"call":0.291,"fold":0.523},"AKo":{"raise":0.474,"call":0.526},"KK":{"raise":0.769,"call":0.231},"KTs":{"raise":0.201,"call":0.799},"K9s":{"raise":0.201,"fold":0.799},"AQo":{"raise":0.474,"call":0.526},"KQo":{"raise":0.214,"call":0.28,"fold":0.506},"QQ":{"raise":0.47,"call":0.53},"AJo":{"raise":0.209,"call":0.392,"fold":0.399},"JJ":{"raise":0.299,"call":0.701},"J9s":{"raise":0.206,"call":0.269,"fold":0.526},"TT":{"raise":0.202,"call":0.798},"T8s":{"call":0.475,"fold":0.525},"97s":{"call":0.188,"fold":0.812},"86s":{"call":0.192,"fold":0.808},"55":{"call":0.457,"fold":0.543},"44":{"call":0.474,"fold":0.526}},
+"fb_SB_bb":{"A5s":{"raise":0.189,"call":0.811},"A4s":{"raise":0.187,"call":0.813},"A3s":{"raise":0.179,"call":0.821},"A2s":{"raise":0.44,"call":0.56},"K6s":{"raise":0.189,"call":0.811},"K5s":{"raise":0.189,"call":0.276,"fold":0.535},"AQo":{"raise":0.645,"call":0.355},"KQo":{"raise":0.482,"call":0.518},"Q9s":{"raise":0.203,"call":0.797},"Q8s":{"raise":0.199,"call":0.801},"AJo":{"raise":0.645,"call":0.355},"KJo":{"raise":0.47,"call":0.53},"QJo":{"raise":0.207,"call":0.392,"fold":0.401},"J8s":{"raise":0.201,"call":0.799},"ATo":{"raise":0.481,"call":0.519},"KTo":{"raise":0.21,"call":0.4,"fold":0.389},"QTo":{"call":0.216,"fold":0.784},"JTo":{"call":0.212,"fold":0.788},"TT":{"raise":0.771,"call":0.229},"T8s":{"raise":0.196,"call":0.804},"T7s":{"call":0.202,"fold":0.798},"99":{"raise":0.19,"call":0.81},"97s":{"raise":0.189,"call":0.811},"96s":{"call":0.191,"fold":0.809},"87s":{"raise":0.183,"call":0.817},"86s":{"call":0.454,"fold":0.546},"85s":{"call":0.188,"fold":0.812},"76s":{"raise":0.185,"call":0.815},"75s":{"call":0.462,"fold":0.538},"64s":{"call":0.176,"fold":0.824},"33":{"call":0.763,"fold":0.237},"22":{"call":0.755,"fold":0.245}},
+"v5_MP_UTG":{"AA":{"raise":0.476,"call":0.524},"AKs":{"raise":0.776,"call":0.224},"AJs":{"call":0.466,"fold":0.534},"AKo":{"raise":0.775,"call":0.225},"KQs":{"call":0.749,"fold":0.251},"QQ":{"raise":0.212,"call":0.788},"JTs":{"call":0.088,"fold":0.912},"TT":{"call":0.769,"fold":0.231},"99":{"call":0.253,"fold":0.747},"88":{"call":0.128,"fold":0.872},"87s":{"call":0.183,"fold":0.817},"76s":{"call":0.196,"fold":0.804},"65s":{"call":0.177,"fold":0.823},"54s":{"call":0.179,"fold":0.821}},
+"v5_CO_UTG":{"AA":{"raise":0.479,"call":0.521},"AKs":{"raise":0.776,"call":0.224},"AJs":{"call":0.466,"fold":0.534},"AKo":{"raise":0.775,"call":0.225},"KQs":{"call":0.472,"fold":0.528},"QQ":{"raise":0.212,"call":0.788},"JTs":{"call":0.088,"fold":0.912},"TT":{"call":0.769,"fold":0.231},"99":{"call":0.45,"fold":0.55},"88":{"call":0.128,"fold":0.872},"87s":{"call":0.085,"fold":0.915},"77":{"call":0.15,"fold":0.85},"76s":{"call":0.082,"fold":0.918},"66":{"call":0.127,"fold":0.873},"65s":{"call":0.177,"fold":0.823},"54s":{"call":0.179,"fold":0.821}},
+"v5_CO_MP":{"AA":{"raise":0.48,"call":0.52},"ATs":{"call":0.205,"fold":0.795},"A8s":{"call":0.142,"fold":0.858},"A5s":{"call":0.439,"fold":0.561},"A3s":{"call":0.111,"fold":0.889},"AKo":{"raise":0.596,"call":0.404},"KJs":{"call":0.754,"fold":0.246},"QQ":{"raise":0.477,"call":0.523},"QJs":{"call":0.197,"fold":0.803},"QTs":{"call":0.161,"fold":0.839},"JTs":{"call":0.156,"fold":0.844},"T9s":{"call":0.141,"fold":0.859},"99":{"call":0.45,"fold":0.55},"88":{"call":0.129,"fold":0.871},"87s":{"call":0.07,"fold":0.93},"77":{"call":0.255,"fold":0.745},"76s":{"call":0.084,"fold":0.916},"66":{"call":0.134,"fold":0.866},"65s":{"call":0.172,"fold":0.828},"54s":{"call":0.17,"fold":0.83}},
+"v5_BTN_UTG":{"AA":{"raise":0.48,"call":0.52},"AJs":{"call":0.466,"fold":0.534},"AKo":{"raise":0.775,"call":0.225},"KQs":{"call":0.472,"fold":0.528},"QQ":{"raise":0.212,"call":0.788},"JTs":{"call":0.467,"fold":0.533},"T9s":{"call":0.493,"fold":0.507},"99":{"call":0.453,"fold":0.547},"98s":{"call":0.478,"fold":0.522},"88":{"call":0.136,"fold":0.864},"87s":{"call":0.477,"fold":0.523},"77":{"call":0.145,"fold":0.855},"76s":{"call":0.476,"fold":0.524},"66":{"call":0.128,"fold":0.872},"65s":{"call":0.182,"fold":0.818},"54s":{"call":0.18,"fold":0.82}},
+"v5_BTN_MP":{"AA":{"raise":0.479,"call":0.521},"ATs":{"call":0.2,"fold":0.8},"A8s":{"call":0.203,"fold":0.797},"A5s":{"call":0.449,"fold":0.551},"A4s":{"call":0.185,"fold":0.815},"A3s":{"call":0.178,"fold":0.822},"AKo":{"raise":0.775,"call":0.225},"KJs":{"call":0.755,"fold":0.245},"QQ":{"raise":0.212,"call":0.788},"QJs":{"call":0.462,"fold":0.538},"QTs":{"call":0.204,"fold":0.796},"JTs":{"call":0.465,"fold":0.535},"T9s":{"call":0.489,"fold":0.511},"99":{"call":0.449,"fold":0.551},"98s":{"call":0.196,"fold":0.804},"88":{"call":0.275,"fold":0.725},"87s":{"call":0.185,"fold":0.815},"77":{"call":0.328,"fold":0.672},"76s":{"call":0.198,"fold":0.802},"66":{"call":0.281,"fold":0.719},"65s":{"call":0.181,"fold":0.819},"54s":{"call":0.17,"fold":0.83}},
+"v5_SB_BTN":{"AA":{"raise":0.318,"call":0.682},"A9s":{"call":0.458,"fold":0.542},"A4s":{"raise":0.462,"call":0.538},"K9s":{"call":0.459,"fold":0.541},"JJ":{"raise":0.486,"call":0.514},"TT":{"raise":0.203,"call":0.797},"98s":{"call":0.438,"fold":0.562},"87s":{"call":0.441,"fold":0.559},"76s":{"call":0.438,"fold":0.562},"65s":{"call":0.426,"fold":0.574},"55":{"call":0.434,"fold":0.566},"54s":{"call":0.42,"fold":0.58}}
+};
+
+/* Merge a mix-fraction entry's labels into the spot's clickable action keys
+   (open/3bet border collapses into "raise", BB-defense border_raise/border_call
+   collapse into "raise"/"call"); returns null when the spot/code has no mix data. */
+function mixActions(sp, code){
+  const m = sp.mix && sp.mix[code];
+  if(!m) return null;
+  const out = {};
+  Object.keys(m).forEach(lab => {
+    const act = lab === "border" ? (sp.borderAction || "raise")
+              : lab === "border_raise" ? "raise"
+              : lab === "border_call" ? "call"
+              : lab;
+    out[act] = (out[act] || 0) + m[lab];
+  });
+  // only genuinely "mixed" if 2+ distinct clickable actions survive the merge
+  // (e.g. open/3bet border collapses into the same Raise button as the standard
+  // share, so a raise+border-only split isn't a choice the trainee has to make)
+  return Object.keys(out).length >= 2 ? out : null;
+}
+
+/* ============================================================
    3. SPOTS
    ============================================================ */
 const POS_ORDER = ["UTG","MP","CO","BTN","SB","BB"];
@@ -765,6 +829,7 @@ const add = s => { SPOTS.push(s); return s; };
     ranges:{ raise: RG["open_"+p] },
     borderline: RG["open_"+p+"_b"],
     borderAction:"raise",
+    mix: MIX["open_"+p],
     note:"BluffTheSpot uses small opens out of position: you lose less when you fold to a 3bet and you keep the pot controlled."
   });
 });
@@ -795,6 +860,7 @@ tbSpots.forEach(([hero, opener, key]) => {
     ranges:{ raise: RG[key] },
     borderline: RG[key+"_b"],
     borderAction:"raise",
+    mix: MIX[key],
     threeBetOrFold:true, tsz
   });
 });
@@ -822,7 +888,8 @@ tbSpots.forEach(([hero, opener, key]) => {
     ],
     ranges:{ raise: RG["bb_"+key+"_3b"], call: RG["bb_"+key+"_call"] },
     borderline: RG["bb_"+key+"_3b_b"] + ", " + RG["bb_"+key+"_call_b"],
-    borderAction:"call", tsz
+    borderAction:"call",
+    mix: MIX["bb_"+key], tsz
   });
 });
 
@@ -857,6 +924,7 @@ fbSpots.forEach(([hero, tbPos, key])=>{
       {key:"raise",cls:"k-4bet", big:"4-Bet", sub:fsz+"bb"}
     ],
     ranges:{ raise: RG[key], call: RG[key+"_c"] },
+    mix: MIX[key],
     fsz, tsz
   });
 });
@@ -891,6 +959,7 @@ v5Spots.forEach(([hero, opener, key])=>{
     ],
     ranges:{ raise: RG[key], call: RG[key+"_c"] },
     universe: RG["tb_"+(hero==="BB"?"":"")+""] || null,
+    mix: MIX[key],
     tbRangeKey:key, fsz, tsz
   });
 });
@@ -970,6 +1039,7 @@ add({
       {key:"raise",cls:"k-3bet", big:"3-Bet", sub:tsz+"bb"}
     ],
     ranges:{ raise: RG[key+"_3b"], call: RG[key+"_call"] },
+    mix: MIX[key],
     tsz,
     note:"Only build a flatting range when a weak player is behind you. When you flat, size your 3-bets up 0.5–1bb so the range you do 3-bet stays strong."
   });
@@ -1079,7 +1149,7 @@ function handNote(t){
 
 const PLAYERS_BEHIND = {UTG:5, MP:4, CO:3, BTN:2, SB:1, BB:0};
 
-function explain(sp, t, correct, chosen){
+function explain(sp, t, correct, chosen, mid){
   const B = [];
   const okName = a => a==="raise" ? sp.acts.find(x=>x.key==="raise").big
                     : a==="call" ? "Call" : "Fold";
@@ -1131,7 +1201,9 @@ function explain(sp, t, correct, chosen){
   B.push(handLine);
 
   /* 3. what goes wrong with the chosen line */
-  if(chosen !== correct){
+  if(chosen !== correct && mid){
+    B.push("This hand is genuinely mixed in the solved chart — both lines see real combos, so this is a reasonable pick, not a mistake.");
+  } else if(chosen !== correct){
     B.push(mistakeLine(sp, t, correct, chosen));
   } else if(border){
     B.push("This one is <b>borderline</b> — it belongs in the range against loose or weak opponents, and comes out against tight regs who play back. Do not auto-pilot it.");
@@ -1619,10 +1691,22 @@ function answer(chosen){
   if(answered) return;
   answered = true;
   const sp = cur.sp, code = cur.code;
-  const correct = correctFor(sp, code);
-  const border = sp._border.has(code);
-  const borderOk = border && sp.borderAction && chosen===sp.borderAction;
-  const ok = chosen===correct || borderOk;
+  const mix = mixActions(sp, code);
+  let correct, ok, mid, mixLine = "";
+  if(mix){
+    const entries = Object.entries(mix).sort((a,b) => b[1]-a[1]);
+    correct = entries[0][0];
+    ok = chosen===correct || (mix[chosen]||0) >= 0.2;
+    mid = ok && chosen!==correct;
+    const cnameShort = a => { const f = sp.acts.find(x=>x.key===a); return f ? f.big : a; };
+    mixLine = entries.map(([a,f]) => cnameShort(a)+" "+Math.round(f*100)+"%").join(" / ");
+  } else {
+    correct = correctFor(sp, code);
+    const border = sp._border.has(code);
+    const borderOk = border && sp.borderAction && chosen===sp.borderAction;
+    ok = chosen===correct || borderOk;
+    mid = borderOk && chosen!==correct;
+  }
 
   [...el("actions").children].forEach(b => {
     b.disabled = true;
@@ -1658,7 +1742,7 @@ function answer(chosen){
   save();
   renderScore(); renderBars(); renderLeaks(); buildModes();
 
-  const bullets = explain(sp, cur.t, correct, chosen);
+  const bullets = explain(sp, cur.t, correct, chosen, mid);
   const cname = a => { const f = sp.acts.find(x=>x.key===a); return f ? f.big + (f.sub? " "+f.sub : "") : "Fold"; };
 
   /* "you keep doing this" callout */
@@ -1680,12 +1764,13 @@ function answer(chosen){
   }
 
   const v = document.createElement("div");
-  v.className = "verdict " + (ok ? (borderOk && chosen!==correct ? "mid" : "ok") : "no");
+  v.className = "verdict " + (ok ? (mid ? "mid" : "ok") : "no");
   v.innerHTML = banner +
     '<div class="vhead">'
-    + '<span class="tag">' + (ok ? (borderOk && chosen!==correct ? "Acceptable" : "Correct") : "Wrong") + '</span>'
+    + '<span class="tag">' + (ok ? (mid ? "Acceptable" : "Correct") : "Wrong") + '</span>'
     + '<span class="line">' + pretty(code) + ' &rarr; <b>' + cname(correct) + '</b>'
-    + (borderOk && chosen!==correct ? ' <span style="font-weight:400">(borderline — your line is fine vs the right opponent)</span>' : '')
+    + (mixLine ? ' <span style="font-weight:400">(mixed — ' + mixLine + ', from the solved chart)</span>'
+      : mid ? ' <span style="font-weight:400">(borderline — your line is fine vs the right opponent)</span>' : '')
     + '</span></div>'
     + '<ul class="why">' + bullets.map(b => "<li>"+b+"</li>").join("") + '</ul>'
     + '<div class="nextrow">'
@@ -1716,26 +1801,41 @@ function drawChart(){
   const g = el("grid"); g.innerHTML = "";
   const raiseKey = sp.acts.find(a=>a.key==="raise");
   const raiseCls = sp.mode==="open" ? "r" : (sp.mode==="5bet" ? "a" : (sp.mode==="4bet"||sp.mode==="cold4") ? "b" : "t");
+  const colorOf = {r:"var(--c-raise)", t:"var(--c-3bet)", b:"var(--c-borderline)", a:"var(--c-allin)"};
+  const actionColor = {raise: colorOf[raiseCls], call: "var(--c-call)", fold: "var(--c-fold)"};
 
   ALL169.forEach(code => {
     const d = document.createElement("div");
     let cls = "cell f";
-    if(sp._sets.raise && sp._sets.raise.has(code)) cls = "cell " + raiseCls;
-    else if(sp._sets.call && sp._sets.call.has(code)) cls = "cell c";
-    else if(sp._border.has(code)) cls = "cell b";
+    const merged = mixActions(sp, code);
+    if(merged){
+      const entries = Object.entries(merged).sort((a,b) => b[1]-a[1]);
+      let acc = 0;
+      const stops = entries.map(([act,frac]) => {
+        const c0 = acc; acc += frac*100;
+        return (actionColor[act]||"var(--c-fold)")+" "+c0.toFixed(1)+"% "+acc.toFixed(1)+"%";
+      });
+      d.style.background = "linear-gradient(90deg,"+stops.join(",")+")";
+      cls = "cell mix";
+      d.title = code + " — " + entries.map(([a,f]) => a+" "+Math.round(f*100)+"%").join(", ");
+    } else {
+      if(sp._sets.raise && sp._sets.raise.has(code)) cls = "cell " + raiseCls;
+      else if(sp._sets.call && sp._sets.call.has(code)) cls = "cell c";
+      else if(sp._border.has(code)) cls = "cell b";
+      d.title = code;
+    }
     if(code===cur.code) cls += " me";
     d.className = cls;
     d.textContent = code;
-    d.title = code;
     g.appendChild(d);
   });
 
   const L = [];
-  const colorOf = {r:"var(--c-raise)", t:"var(--c-3bet)", b:"var(--c-borderline)", a:"var(--c-allin)"};
   L.push(['<i style="background:'+colorOf[raiseCls]+'"></i>', raiseKey.big + (raiseKey.sub? " "+raiseKey.sub:"") + " — " + sp._info.raise.p + "% / " + sp._info.raise.c + " combos"]);
   if(sp._sets.call) L.push(['<i style="background:var(--c-call)"></i>', "Call — " + sp._info.call.p + "% / " + sp._info.call.c + " combos"]);
   if(sp._border.size) L.push(['<i style="background:var(--c-borderline)"></i>', "Borderline (" + combos(sp._border) + " combos) — opponent-dependent"]);
   L.push(['<i style="background:var(--c-fold)"></i>', "Fold"]);
+  if(sp.mix) L.push(['<i style="background:linear-gradient(90deg,'+actionColor.raise+' 0%,'+actionColor.raise+' 50%,'+actionColor.fold+' 50%,'+actionColor.fold+' 100%)"></i>', "Split cell — mixed frequency, hover for the exact split"]);
   el("legend").innerHTML = L.map(x => "<span>"+x[0]+x[1]+"</span>").join("");
 }
 

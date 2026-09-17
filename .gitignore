@@ -8,3 +8,7 @@ android/app/build/
 android/capacitor-cordova-android-plugins/build/
 *.apk
 *.aab
+tools/postflop/solver/
+tools/postflop/work/
+tools/postflop/generate_run.log
+__pycache__/

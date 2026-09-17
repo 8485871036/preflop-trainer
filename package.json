@@ -2,7 +2,7 @@
   "name": "preflop-trainer",
   "version": "1.0.0",
   "private": true,
-  "description": "Six-max preflop trainer built on the BluffTheSpot Preflop Bible.",
+  "description": "Six-max preflop trainer with postflop c-bet drills.",
   "scripts": {
     "icons": "node tools/make-icons.js",
     "build": "node tools/build.js",

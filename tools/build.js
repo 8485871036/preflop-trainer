@@ -14,8 +14,8 @@ if (end < 0) throw new Error("app.html: no </style> found — cannot split head 
 const head = src.slice(0, end + "</style>".length);
 const body = src.slice(end + "</style>".length);
 
-const DESC = "Six-max preflop trainer built on the BluffTheSpot Preflop Bible: open raise, " +
-             "3-bet, 4-bet, 5-bet, squeeze and blind defense, with leak tracking and range memorisation drills.";
+const DESC = "Six-max preflop trainer: open raise, " +
+             "3-bet, 4-bet, 5-bet, squeeze and blind defense, with leak tracking, range memorisation drills, and a postflop c-bet trainer.";
 
 /** @param {boolean} sw  register the service worker (web build only — Capacitor serves from a local origin) */
 function page(sw) {

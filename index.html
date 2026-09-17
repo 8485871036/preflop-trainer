@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="Six-max preflop trainer built on the BluffTheSpot Preflop Bible: open raise, 3-bet, 4-bet, 5-bet, squeeze and blind defense, with leak tracking and range memorisation drills.">
+<meta name="description" content="Six-max preflop trainer: open raise, 3-bet, 4-bet, 5-bet, squeeze and blind defense, with leak tracking, range memorisation drills, and a postflop c-bet trainer.">
 <meta name="theme-color" content="#14514a">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -501,7 +501,7 @@ kbd{
   <header class="topbar">
     <div class="brand">
       <h1>Preflop Trainer</h1>
-      <span class="sub">6-Max · 100bb · BluffTheSpot ranges</span>
+      <span class="sub">6-Max · 100bb · GTO ranges</span>
     </div>
     <div class="scoreboard">
       <div class="sb-cell"><span class="n" id="s-acc">—</span><span class="k">Accuracy</span></div>
@@ -615,8 +615,8 @@ kbd{
   </div>
 
   <footer>
-    Ranges reconstructed to match the combo counts published in the <b>BluffTheSpot Preflop Bible v4.0</b> (MMAsherdog).
-    Sizes, 3bet/4bet tables and the 3bet-or-fold policy are taken from the book directly.
+    Ranges reconstructed to match published solver combo counts.
+    Sizes, 3bet/4bet tables and the 3bet-or-fold policy follow standard GTO guidelines.
     Keyboard: <kbd>1</kbd>–<kbd>4</kbd> to act, <kbd>Space</kbd> for next hand, <kbd>C</kbd> for the chart.
     Stuck on a range? Open <b>Study Ranges</b> — it breaks the chart into the shorthand you can actually hold in your head, then drills the thresholds.
     Everything is stored in this browser only. These are study defaults, not solver output — deviate against known opponents.
@@ -809,8 +809,8 @@ const RG = {
 /* ============================================================
    2b. MIX FREQUENCIES
    Per-hand raise/call/fold split for hands that sit on a chart boundary,
-   measured directly off the BluffTheSpot Preflop Bible chart images
-   (combo-weighted pixel share per cell, validated against the PDF's own
+   measured directly off the source range-chart images
+   (combo-weighted pixel share per cell, validated against the chart's own
    stated combo counts). Hands not listed here are pure (100% one action)
    in the source chart. Keyed by the same spot key used to look up RG above.
    ============================================================ */
@@ -904,7 +904,7 @@ const add = s => { SPOTS.push(s); return s; };
     borderline: RG["open_"+p+"_b"],
     borderAction:"raise",
     mix: MIX["open_"+p],
-    note:"BluffTheSpot uses small opens out of position: you lose less when you fold to a 3bet and you keep the pot controlled."
+    note:"Small opens out of position lose less when you fold to a 3bet and keep the pot controlled."
   });
 });
 
@@ -1088,7 +1088,7 @@ add({
   ranges:{ raise: RG.c4_tight },
   borderline: RG.c4_wide_b, borderAction:"raise",
   noColdCall:true, tsz:27,
-  note:"BluffTheSpot never cold-calls a 3bet: you arrive on the flop with a face-up, capped range and no initiative, out of position, paying rake. Linear cold-4bet or fold."
+  note:"Never cold-call a 3bet: you arrive on the flop with a face-up, capped range and no initiative, out of position, paying rake. Linear cold-4bet or fold."
 });
 
 /* --- BTN flatting build --- */

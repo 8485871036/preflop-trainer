@@ -12,3 +12,7 @@ tools/postflop/solver/
 tools/postflop/work/
 tools/postflop/generate_run.log
 __pycache__/
+desktop/build/
+desktop/dist/
+desktop/*.spec
+desktop_build.log

@@ -39,6 +39,7 @@ img{max-width:100%}
   --text:#161d1b; --text-2:#3e4a47; --muted:#6c7a76;
 
   --good:#1c7f53; --good-bg:#dcefe4;
+  --rv-net:#0f8f85; --rv-ev:#6266d8;
   --bad:#b93f2c; --bad-bg:#f6e0da;
   --warn:#9c7413; --warn-bg:#f6ecd2;
 
@@ -59,6 +60,7 @@ img{max-width:100%}
     --line:#2f3b38; --line-soft:#26302e;
     --text:#e9e7df; --text-2:#bcc5c2; --muted:#8b9793;
     --good:#3fb37c; --good-bg:#132e23;
+    --rv-net:#1fa398; --rv-ev:#7a7ee6;
     --bad:#e2705a; --bad-bg:#331914;
     --warn:#d8ae44; --warn-bg:#2c2413;
     --card-face:#f2efe6; --card-line:#a9a390;
@@ -72,6 +74,7 @@ img{max-width:100%}
   --line:#2f3b38; --line-soft:#26302e;
   --text:#e9e7df; --text-2:#bcc5c2; --muted:#8b9793;
   --good:#3fb37c; --good-bg:#132e23;
+    --rv-net:#1fa398; --rv-ev:#7a7ee6;
   --bad:#e2705a; --bad-bg:#331914;
   --warn:#d8ae44; --warn-bg:#2c2413;
   --card-face:#f2efe6; --card-line:#a9a390;
@@ -637,6 +640,11 @@ kbd{
 .mirror-actions{display:flex;gap:8px;margin:12px 0}
 .mirror-actions .act{flex:1}
 #mirror-detect-status, #mirror-action-status{font-size:12px;opacity:.7}
+.mirror-btns{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:2px}
+.mirror-villainrow{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin:8px 0 4px}
+.mirror-villainrow select{max-width:240px}
+.mirror-villainrow .sub{color:var(--muted)}
+.mirror-controls label.mirror-pin{flex-direction:row;align-items:center;gap:6px;font-size:13px}
 /* Hand review */
 .rv-controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:8px}
 .rv-upload{cursor:pointer}
@@ -684,13 +692,28 @@ kbd{
 .rv-dive{border-collapse:collapse;font-size:12px;width:100%;min-width:560px}
 .rv-dive th,.rv-dive td{border-bottom:1px solid var(--line-soft);padding:4px 6px;text-align:left;vertical-align:top}
 .rv-dive th{font-weight:600;color:var(--text-2)}
+
+.rv-conf{font-size:10px;padding:0 5px;border-radius:8px;margin-left:4px;white-space:nowrap}
+.rv-conf-good{background:var(--good-bg);color:var(--good)} .rv-conf-mixed{background:var(--warn-bg);color:var(--warn)} .rv-conf-bad{background:var(--bad-bg);color:var(--bad)}
+.rv-chartwrap{position:relative;overflow-x:auto}
+.rv-chart{display:block}
+.rv-chart .rv-grid{stroke:var(--line-soft);stroke-width:1}
+.rv-chart .rv-zero{stroke:var(--muted);stroke-width:1}
+.rv-chart .rv-axis,.rv-chart .rv-lbl{fill:var(--text-2);font:11px system-ui,sans-serif}
+.rv-chart .rv-line-net{fill:none;stroke:var(--rv-net);stroke-width:2;stroke-linejoin:round}
+.rv-chart .rv-line-ev{fill:none;stroke:var(--rv-ev);stroke-width:2;stroke-dasharray:5 4;stroke-linejoin:round}
+.rv-chart .rv-cross{stroke:var(--muted);stroke-width:1}
+.rv-chart .rv-dot-net{fill:var(--rv-net);stroke:var(--surface);stroke-width:2}
+.rv-chart .rv-dot-ev{fill:var(--rv-ev);stroke:var(--surface);stroke-width:2}
+.rv-chart .rv-hit{fill:transparent;cursor:crosshair}
+.rv-tip{position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:6px 8px;font-size:12px;box-shadow:var(--shadow);min-width:150px}
+.rv-legend{display:flex;gap:14px;font-size:12px;color:var(--text-2);margin:6px 0}
+.rv-key-net,.rv-key-ev{display:inline-block;width:18px;height:0;border-top:2px solid var(--rv-net);vertical-align:middle;margin-right:5px}
+.rv-key-ev{border-top:2px dashed var(--rv-ev)}
+.rv-check{display:flex;align-items:center;gap:6px;font-size:13px}
+.rv-plu{margin-top:4px;padding:4px 8px;border-radius:4px;background:var(--surface);font-size:12px}
 .rv-mine{width:100%;box-sizing:border-box;font:13px system-ui,sans-serif;background:var(--sunken);color:var(--text);border:1px solid var(--line);border-radius:var(--r-md);padding:6px 8px}
 
-.mirror-btns{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:2px}
-.mirror-villainrow{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin:8px 0 4px}
-.mirror-villainrow select{max-width:240px}
-.mirror-villainrow .sub{color:var(--muted)}
-.mirror-controls label.mirror-pin{flex-direction:row;align-items:center;gap:6px;font-size:13px}
 </style>
 </head>
 <body>
@@ -962,8 +985,9 @@ kbd{
       <div class="rv-controls">
         <label class="ghost rv-upload">&#128196; Files chuno<input type="file" id="rv-file" accept=".txt,.xml,text/plain,text/xml" multiple hidden></label>
         <label class="ghost rv-upload">&#128193; Folder chuno<input type="file" id="rv-folder" webkitdirectory multiple hidden></label>
-        <label class="mirror-pin"><input type="checkbox" id="rv-mistakes"> Sirf galtiyan</label>
+        <label class="rv-check"><input type="checkbox" id="rv-mistakes"> Sirf galtiyan</label>
         <button class="ghost" id="rv-refresh">&#8635; Dobara load</button>
+        <button class="ghost" id="rv-batch">&#129504; Saare postflop solve karo</button>
         <button class="ghost" id="rv-clear">Saaf karo</button>
         <span id="rv-status" class="rv-muted"></span>
       </div>
@@ -976,10 +1000,18 @@ kbd{
       <div class="rv-tabs">
         <button class="mode" id="rv-tab-hands" aria-pressed="true">Hands</button>
         <button class="mode" id="rv-tab-players" aria-pressed="false">Players</button>
+        <button class="mode" id="rv-tab-me" aria-pressed="false">Mera game</button>
+        <button class="mode" id="rv-tab-leaks" aria-pressed="false">Leaks</button>
+        <button class="mode" id="rv-tab-graph" aria-pressed="false">Graph</button>
+        <button class="mode" id="rv-tab-plu" aria-pressed="false">Pluribus</button>
       </div>
     </section>
     <section id="rv-list" class="rv-list" aria-label="Reviewed hands"></section>
     <section id="rv-players" class="rv-list" aria-label="Opponent profiles" hidden></section>
+    <section id="rv-me" class="rv-list" aria-label="My game" hidden></section>
+    <section id="rv-leaks" class="rv-list" aria-label="Leak report" hidden></section>
+    <section id="rv-graph" class="rv-list" aria-label="Winrate graph" hidden></section>
+    <section id="rv-plu" class="rv-list" aria-label="Pluribus reference" hidden></section>
   </div>
 
   <footer>
@@ -3575,6 +3607,7 @@ let mirrorRandomize = true;     // GTO mix me se ek action random pick karo
 let mirrorRnd = {};             // key -> picked action (per hand stable)
 let mirrorVillain = "";         // selected opponent (Hand Review players se) — GTO + exploit club
 let mirrorPlayers = [];         // cached rvPlayerStats(rvHands), hands desc
+let mirrorPostflopLast = null;  // pichla postflop result {strategy, labels, key} — villain change pe re-render
 let mirrorPlayersLoaded = false;
 
 async function mirrorFetch(path, body){
@@ -3848,26 +3881,37 @@ async function mirrorPostflop(board, hand, heroPos){
       el("mirror-postflop-big").textContent = (r && r.error) || "Solve fail";
       return;
     }
-    let pick = r.best, rnd = false;
-    if(mirrorRandomize && Object.keys(r.strategy).length > 1){
-      if(!(key in mirrorRnd)) mirrorRnd[key] = pickWeighted(r.strategy);
-      pick = mirrorRnd[key];
-      rnd = true;
-    }
-    el("mirror-postflop-big").textContent = (rnd ? "&#127922; " : "Best: ") + (r.labels[pick] || pick);
-    el("mirror-postflop-villain").innerHTML = mirrorVillainTipHTML("postflop");
-    el("mirror-postflop-mix").innerHTML = Object.entries(r.strategy)
-      .sort((a, b) => b[1] - a[1])
-      .map(([a, p]) => {
-        const lbl = r.labels[a] || a;
-        const pct = Math.round(p * 100);
-        return '<div class="row"><span>' + lbl + '</span><span class="track">'
-             + '<span class="fill" style="width:' + pct + '%;background:' + (a === pick ? "var(--good)" : "var(--accent)") + '"></span></span>'
-             + '<span class="pc">' + pct + '%</span></div>';
-      }).join("");
+    mirrorPostflopLast = {strategy: r.strategy, labels: r.labels, key};
+    mirrorPostflopRender(mirrorPostflopLast);
   }catch(e){
     el("mirror-postflop-big").textContent = "GTO server offline — run: python tools/postflop/gto_server.py";
   }
+}
+
+// Postflop result ko render karo (GTO mix + exploit decision) — solve ke baad ya villain change pe
+function mirrorPostflopRender(last){
+  if(!last) return;
+  const nameOf = a => last.labels[a] || a;
+  const gtoBest = Object.entries(last.strategy).sort((a, b) => b[1] - a[1])[0][0];
+  const exploit = mirrorExploitDecision("postflop", last.strategy);
+  let pick, rnd = false;
+  if(exploit && exploit.pick){ pick = exploit.pick; }
+  else if(mirrorRandomize && Object.keys(last.strategy).length > 1){
+    if(!(last.key in mirrorRnd)) mirrorRnd[last.key] = pickWeighted(last.strategy);
+    pick = mirrorRnd[last.key];
+    rnd = true;
+  } else pick = gtoBest;
+  el("mirror-postflop-big").textContent = ((exploit && exploit.pick) ? "&#127919; " : rnd ? "&#127922; " : "Best: ") + nameOf(pick);
+  el("mirror-postflop-villain").innerHTML = mirrorVillainTipHTML("postflop", last.strategy, nameOf, exploit);
+  el("mirror-postflop-mix").innerHTML = Object.entries(last.strategy)
+    .sort((a, b) => b[1] - a[1])
+    .map(([a, p]) => {
+      const lbl = last.labels[a] || a;
+      const pct = Math.round(p * 100);
+      return '<div class="row"><span>' + lbl + '</span><span class="track">'
+           + '<span class="fill" style="width:' + pct + '%;background:' + (a === pick ? "var(--good)" : "var(--accent)") + '"></span></span>'
+           + '<span class="pc">' + pct + '%</span></div>';
+    }).join("");
 }
 
 async function mirrorWindowsTick(){
@@ -3902,11 +3946,11 @@ function mirrorStart(){
       mirrorVillain = vs.value;
       mirrorVillainTip();
       mirrorRecommend();
-      const pv = el("mirror-postflop-villain");
-      if(pv) pv.innerHTML = mirrorVillainTipHTML("postflop");
+      if(mirrorPostflopLast) mirrorPostflopRender(mirrorPostflopLast);
     });
   }
   mirrorPlayersRefresh();
+  rvLoadPluribus();               // Pluribus reference (pre-solved) — mirror me bhi
   const tsel = el("mirror-table");
   if(tsel && !tsel._bound){
     tsel._bound = true;
@@ -3966,18 +4010,62 @@ function mirrorVillainProfile(){
   return mirrorPlayers.find(x => x.name === mirrorVillain);
 }
 
-function mirrorVillainTipHTML(mode){
+// Exploit decision engine: villain ke STATS se, GTO mix ke actions me se ek final action chuno.
+// (Hand Review ke player-data features — VPIP/3B/CB/AF + exploit plan — decision me club ho rahe hain.)
+function mirrorExploitDecision(mode, freqs){
+  const p = mirrorVillainProfile();
+  if(!p) return null;
+  const pr = rvProfile(p);
+  const V = pr.vpip, TB = pr.tb, F3 = pr.f3, CB = pr.cb, AF = pr.af;
+  const acts = freqs ? Object.keys(freqs).filter(a => freqs[a] > 0.02) : [];
+  const norm = a => /fold/i.test(a) ? "fold" : /call/i.test(a) ? "call" : /check/i.test(a) ? "check"
+                  : /raise/i.test(a) ? "raise" : /bet/i.test(a) ? "bet" : "";
+  const has = n => acts.find(a => norm(a) === n) || null;
+  let pick = null, reason = "";
+
+  if(mode === "open"){
+    if(V >= 40){ reason = "fish (VPIP " + V + "%) — iske saath pot me raho: suited aces/small pairs se bhi open, postflop thin value"; pick = has("raise"); }
+    else if(V <= 16){ reason = "nit (VPIP " + V + "%) — iske blinds ko steal wide karo, koi bhi 2 raise karo"; pick = has("raise"); }
+  } else if(mode === "3bet" || mode === "bbdef" || mode === "squeeze"){
+    if(F3 !== null && pr.tbOpp >= 5 && F3 >= 60){ reason = "uska open 3-bet pe " + F3 + "% fold — light 3-bet (A5s/K9s/76s)"; pick = has("raise"); }
+    else if(F3 !== null && pr.tbOpp >= 5 && F3 <= 40){ reason = "3-bet pe sirf " + (100 - F3) + "% continue — marginal hands IP call, sirf value se 3-bet"; pick = has("call") || has("raise"); }
+    else if(V >= 40){ reason = "loose opener (VPIP " + V + "%) — 3-bet value wide"; pick = has("raise"); }
+    else if(V <= 16){ reason = "tight opener (VPIP " + V + "%) — uska open strong, sirf premium se continue"; pick = has("call") || has("fold"); }
+  } else if(mode === "4bet" || mode === "5bet" || mode === "cold4"){
+    if(TB !== null && pr.tbOpp >= 8 && TB <= 4){ reason = "uska 3-bet " + TB + "% (QQ+/AK) — non-premium fold karo"; pick = has("fold"); }
+    else if(TB !== null && pr.tbOpp >= 8 && TB >= 11){ reason = "uska 3-bet wide (" + TB + "%) — call wider, A5s/A4s se 4-bet bluff"; pick = has("call") || has("raise"); }
+  } else if(mode === "postflop"){
+    if(CB !== null && pr.cbOpp >= 5 && CB >= 70){ reason = "uski c-bet " + CB + "% — float / check-raise karo"; pick = has("call") || has("raise"); }
+    else if(CB !== null && pr.cbOpp >= 5 && CB <= 40){ reason = "c-bet sirf " + CB + "% — check kare to bet karke pot le lo"; pick = has("bet"); }
+    else if(AF !== null && pr.calls >= 6 && AF <= 1){ reason = "passive / calling station (AF " + AF + ") — value thick, bluff band"; pick = has("bet"); }
+    else if(AF !== null && AF >= 3.5){ reason = "aggressive (AF " + AF + ") — check-call, usko bluff karne do"; pick = has("check") || has("call"); }
+  }
+
+  if(!reason){                                     // fallback: exploit plan ka pehla match (sirf note)
+    const want = mode === "open" ? ["Blinds me wo"]
+               : (mode === "4bet" || mode === "5bet" || mode === "cold4") ? ["Uska 3-bet"]
+               : mode === "postflop" ? ["Uska flop c-bet", "Wo flop check kare", "Postflop"]
+               : ["Uska open"];
+    const hit = pr.ex.find(e => want.includes(e[0]));
+    if(hit) reason = hit[1];
+  }
+  return {pick, reason, cat: pr.cat};
+}
+
+function mirrorVillainTipHTML(mode, freqs, nameOf, dec){
   const p = mirrorVillainProfile();
   if(!p) return "";
   const pr = rvProfile(p);
-  const want = mode === "open" ? ["Blinds me wo"]
-             : (mode === "4bet" || mode === "5bet" || mode === "cold4") ? ["Uska 3-bet"]
-             : mode === "postflop" ? ["Uska flop c-bet", "Wo flop check kare", "Postflop"]
-             : ["Uska open"];
-  const hits = pr.ex.filter(e => want.includes(e[0]));
-  const note = hits.map(e => e[1]).join(" · ") || (pr.notes[0] || "");
+  const d = dec || mirrorExploitDecision(mode, freqs) || {};
   const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
-  return '<div class="rv-ex"><b>&#127919; vs ' + esc(mirrorVillain) + ' (' + esc(pr.cat) + '):</b> ' + esc(note || "Exploit data kam hai") + '</div>';
+  let html = '<div class="rv-ex"><b>&#127919; vs ' + esc(mirrorVillain) + ' (' + esc(d.cat || pr.cat) + ')</b>';
+  if(d.pick && nameOf) html += ' &rarr; <b style="color:var(--good)">' + esc(nameOf(d.pick)) + '</b>';
+  if(d.reason) html += '<br>' + esc(d.reason);
+  if(d.pick && freqs && nameOf){
+    const best = Object.entries(freqs).sort((a, b) => b[1] - a[1])[0];
+    html += '<br><span class="rv-muted">GTO: ' + esc(nameOf(best[0])) + ' ' + Math.round(best[1] * 100) + '% · ye ' + Math.round((freqs[d.pick] || 0) * 100) + '%</span>';
+  }
+  return html + '</div>';
 }
 
 function mirrorVillainTip(){
@@ -4077,7 +4165,10 @@ function mirrorRecommend(){
   } else {
     freqs = {[correctFor(sp, code)]: 1};
   }
-  if(mirrorRandomize && Object.keys(freqs).length > 1){
+  const exploit = mirrorExploitDecision(sp.mode, freqs);   // villain pinned ho to data-driven call
+  if(exploit && exploit.pick){
+    rec = exploit.pick;
+  } else if(mirrorRandomize && Object.keys(freqs).length > 1){
     const rkey = sp.id + "|" + code;
     if(!(rkey in mirrorRnd)) mirrorRnd[rkey] = pickWeighted(freqs);
     rec = mirrorRnd[rkey];
@@ -4110,10 +4201,20 @@ function mirrorRecommend(){
     : "";
 
   box.innerHTML = '<div class="big" style="color:var(--good)">&rarr; ' + nameOf(rec)
-    + (randomized ? ' <span style="opacity:.55;font-size:12px">&#127922; random</span>' : '') + '</div>'
+    + ((exploit && exploit.pick) ? ' <span style="opacity:.7;font-size:12px">&#127919; exploit</span>'
+       : randomized ? ' <span style="opacity:.55;font-size:12px">&#127922; random</span>' : '') + '</div>'
     + '<div class="sub">' + code + ' &middot; ' + sp.title + '</div>'
     + borderNote + mixHTML
-    + mirrorVillainTipHTML(sp.mode);
+    + mirrorVillainTipHTML(sp.mode, freqs, nameOf, exploit)
+    + rvPluLine({id: sp.id}, code);
+}
+
+/* Do cards -> hand code ("AKs", "QQ", "72o") */
+function cardsToCode(a, b){
+  const hi = ri(a.r) <= ri(b.r) ? a : b;
+  const lo = hi === a ? b : a;
+  if(hi.r === lo.r) return hi.r + hi.r;
+  return hi.r + lo.r + (hi.s === lo.s ? "s" : "o");
 }
 
 /* ============================================================
@@ -4205,7 +4306,7 @@ function rvParseHand(txt){
   }
   const net = (won[hero] || 0) - (invested[hero] || 0);
   return {id, date, bb, hero, heroCards, heroPos: pos[hero] || "?", pos, seats, acts,
-          board: board.slice(), shown, net, decisions: []};
+          board: board.slice(), shown, net, decisions: [], potTotal: potNow(), heroInv: invested[hero] || 0};
 }
 
 const rvSpotExists = id => SPOTS.some(s => s.id === id);
@@ -4260,7 +4361,7 @@ function rvJudge(sp, code, act){
 }
 
 function rvReviewPreflop(hand){
-  const code = mirrorCardsToCode(pfParseCard(hand.heroCards[0]), pfParseCard(hand.heroCards[1]));
+  const code = cardsToCode(pfParseCard(hand.heroCards[0]), pfParseCard(hand.heroCards[1]));
   hand.code = code;
   const raises = [], callers = [], limpers = [];
   for(const a of hand.acts){
@@ -4397,7 +4498,7 @@ function rvLoadText(text, quiet){
 const RV_ACT_NAME = {fold: "Fold", call: "Call", raise: "Raise"};
 const RV_VERDICT = {good: "Sahi", mixed: "Mixed — chalega", bad: "Galti"};
 
-function rvDecisionHTML(d){
+function rvDecisionHTML(d, code){
   let h = '<div class="rv-dec rv-' + (d.verdict || "none") + '">';
   h += '<div class="rv-dec-head"><b>' + (d.text || "") + '</b></div>';
   h += '<div>Aapne: <b>' + RV_ACT_NAME[d.act] + (d.act === "raise" && d.amt ? " " + d.amt.toFixed(1) + "bb" : "") + (d.allin ? " (all-in)" : "") + '</b></div>';
@@ -4409,6 +4510,7 @@ function rvDecisionHTML(d){
     h += '<div>Karna chahiye tha: <b>' + RV_ACT_NAME[d.best] + '</b> <span class="rv-muted">(' + fr + ')</span></div>';
     h += '<div class="rv-verdict">' + RV_VERDICT[d.verdict] + '</div>';
     h += '<div class="rv-muted">Spot: ' + d.title + (d.approx ? " — exact matchup ka data nahi, sabse kareebi spot" : "") + '</div>';
+    h += rvPluLine(d, code);
   }
   return h + '</div>';
 }
@@ -4462,7 +4564,7 @@ function rvRender(){
       const det = document.createElement("div");
       det.className = "rv-detail";
       det.innerHTML = '<div class="rv-muted">' + hand.date + ' · #' + hand.id + '</div>' +
-        (hand.decisions.map(rvDecisionHTML).join("") || '<div class="rv-muted">Preflop me aapka koi decision nahi (BB walk).</div>') +
+        (hand.decisions.map(d => rvDecisionHTML(d, hand.code)).join("") || '<div class="rv-muted">Preflop me aapka koi decision nahi (BB walk).</div>') +
         '<h4>Poora hand</h4>' + rvStreetsHTML(hand);
       if(hand.acts.some(a => a.street === "flop" && a.name === hand.hero)){
         const post = document.createElement("div");
@@ -4653,7 +4755,7 @@ function rvPlayerStats(hands){
       if(n === hand.hero || cards.length !== 2) return;
       const p = get(n);
       p.sd++;
-      if(lvl[n]) p.preShows.push({level: Math.min(lvl[n], 4), code: mirrorCardsToCode(pfParseCard(cards[0]), pfParseCard(cards[1]))});
+      if(lvl[n]) p.preShows.push({level: Math.min(lvl[n], 4), code: cardsToCode(pfParseCard(cards[0]), pfParseCard(cards[1]))});
       const mine = hand.acts.filter(a => a.name === n && a.street !== "pre");
       const lastAgg = [...mine].reverse().find(a => a.verb === "bets" || a.verb === "raises");
       const line = lastAgg ? lastAgg.street + " " + (lastAgg.verb === "bets" ? "bet" : "raise") : "sirf call/check";
@@ -4771,21 +4873,169 @@ function rvStrength(hole, board){
   return "bluff";
 }
 
-function rvStreetDive(name){
+/* --- Preflop raise ranges: open / 3-bet / 4-bet me showdown pe kya dikhaya (premium vs garbage) --- */
+const RV_PREMIUM = new Set(["AA","KK","QQ","AKs","AKo"]);
+const RV_STRONG  = new Set(["JJ","TT","AQs","AQo","AJs","KQs"]);
+function rvPreBucket(code){
+  if(RV_PREMIUM.has(code)) return "premium";
+  if(RV_STRONG.has(code)) return "strong";
+  const pair = code.length === 2, suited = code[2] === "s";
+  const hi = RV_RANKS.indexOf(code[0]), lo = RV_RANKS.indexOf(code[1]);
+  if(pair) return "spec";                                             // 22-99
+  if(suited && (code[0] === "A" || hi - lo <= 2 || lo >= 8)) return "spec";  // suited aces, connectors, broadways
+  if(!suited && lo >= 9) return "spec";                              // KJo, QJo jaise broadways
+  return "garbage";
+}
+const RV_BUCKET = {premium: "Premium (AA/KK/QQ/AK)", strong: "Strong (JJ/TT/AQ/AJs/KQs)", spec: "Speculative (A5s, 76s, 22-99)", garbage: "Garbage (offsuit kachra)"};
+
+// Chhoti list: sab hands; badi list: sabse zyada wale 30 "AKo×12" jaise
+function rvCodeList(codes){
+  if(codes.length <= 40) return codes.join(", ");
+  const c = {}; codes.forEach(x => c[x] = (c[x] || 0) + 1);
+  const top = Object.entries(c).sort((a, b) => b[1] - a[1]);
+  return top.slice(0, 30).map(([k, n]) => k + "×" + n).join(", ") + (top.length > 30 ? " … (+" + (top.length - 30) + " aur)" : "");
+}
+
+function rvPreflopDiveHTML(p){
+  const names = {1: "Open raise", 2: "3-bet", 3: "4-bet", 4: "5-bet / jam"};
+  const tb = p.tbOpp ? Math.round(p.tb / p.tbOpp * 100) : null, fb = p.f3Opp ? Math.round(p.fb / p.f3Opp * 100) : null;
+  let h = '<div class="rv-muted">3-bet ' + (tb === null ? "–" : tb + "% (" + p.tb + "/" + p.tbOpp + ")") +
+          ' · 3-bet face karke 4-bet ' + (fb === null ? "–" : fb + "% (" + p.fb + "/" + p.f3Opp + ")") + '</div>';
+  const plans = [];
+  [1, 2, 3, 4].forEach(lv => {
+    const shows = p.preShows.filter(s => s.level === lv);
+    if(!shows.length) return;
+    const c = {premium: 0, strong: 0, spec: 0, garbage: 0};
+    shows.forEach(s => c[rvPreBucket(s.code)]++);
+    const n = shows.length, pc = k => Math.round(c[k] / n * 100);
+    h += '<div class="rv-ex"><b>' + names[lv] + ' (showdown n=' + n + '):</b> ' +
+         Object.keys(c).filter(k => c[k]).map(k => RV_BUCKET[k] + " " + pc(k) + "%").join(" · ") +
+         '<br><span class="rv-muted">' + rvCodeList(shows.map(s => s.code)) + '</span></div>';
+    if(lv >= 2){
+      const value = (c.premium + c.strong) / n, bluff = (c.spec + c.garbage) / n;
+      let line;
+      if(n < 4) line = "n=" + n + " — data kam, default ranges khelo";
+      else if(value >= 0.8) line = "Value heavy (" + Math.round(value * 100) + "%) → uske " + names[lv] + " ke khilaf sirf " + (lv === 2 ? "QQ+/AK continue, JJ/AQ fold ya call IP" : "KK+ continue, QQ/AK bhi mushkil");
+      else if(bluff >= 0.4) line = "Bluff/light " + Math.round(bluff * 100) + "% → " + (lv === 2 ? "4-bet value lighter (JJ+, AQ) aur A5s se 4-bet bluff; IP me call wider" : "5-bet jam QQ+/AK, JJ/AQs bhi consider");
+      else line = "Mixed (value " + Math.round(value * 100) + "% / light " + Math.round(bluff * 100) + "%) → standard GTO defence";
+      plans.push('<div class="rv-ex"><b>Mera action vs uska ' + names[lv] + ':</b> ' + line + '</div>');
+    }
+  });
+  if(!p.preShows.length) h += '<div class="rv-muted">Preflop raise ke saath koi showdown nahi — range ka data nahi</div>';
+  return h + plans.join("");
+}
+
+
+/* --- Confidence badge: sample size ke hisaab se (5 hands wala number 200 wale jaisa na lage) --- */
+function rvConf(n){
+  const [cls, txt] = n >= 20 ? ["good", "pakka"] : n >= 5 ? ["mixed", "theek"] : ["bad", "kamzor"];
+  return ' <span class="rv-conf rv-conf-' + cls + '" title="n=' + n + '">' + txt + ' · n=' + n + '</span>';
+}
+
+/* --- 7-card evaluator + equity (all-in EV ke liye) --- */
+function rvScore(cards){
+  const r = cards.map(c => RV_RANKS.indexOf(c[0]));
+  const enc = (cat, ks) => { let v = cat; for(let i = 0; i < 5; i++) v = v * 16 + (ks[i] === undefined ? 0 : ks[i] + 2); return v; };
+  const sHigh = rs => {
+    const u = [...new Set(rs)].sort((a, b) => b - a);
+    if(u[0] === 12) u.push(-1);
+    let run = 1;
+    for(let i = 1; i < u.length; i++){ if(u[i] === u[i - 1] - 1){ if(++run >= 5) return u[i] + 4; } else run = 1; }
+    return null;
+  };
+  const bySuit = {};
+  cards.forEach((c, i) => (bySuit[c[1]] = bySuit[c[1]] || []).push(r[i]));
+  const fl = Object.values(bySuit).find(v => v.length >= 5);
+  if(fl){ const sf = sHigh(fl); if(sf !== null) return enc(8, [sf]); }
+  const cnt = {}; r.forEach(x => cnt[x] = (cnt[x] || 0) + 1);
+  const g = Object.entries(cnt).map(([k, n]) => [+k, n]).sort((a, b) => b[1] - a[1] || b[0] - a[0]);
+  const rest = ex => r.filter(x => !ex.includes(x)).sort((a, b) => b - a);
+  if(g[0][1] === 4) return enc(7, [g[0][0], rest([g[0][0]])[0]]);
+  if(g[0][1] === 3 && g[1] && g[1][1] >= 2) return enc(6, [g[0][0], g[1][0]]);
+  if(fl) return enc(5, fl.sort((a, b) => b - a).slice(0, 5));
+  const st = sHigh(r); if(st !== null) return enc(4, [st]);
+  if(g[0][1] === 3) return enc(3, [g[0][0]].concat(rest([g[0][0]]).slice(0, 2)));
+  if(g[0][1] === 2 && g[1] && g[1][1] === 2) return enc(2, [g[0][0], g[1][0], rest([g[0][0], g[1][0]])[0]]);
+  if(g[0][1] === 2) return enc(1, [g[0][0]].concat(rest([g[0][0]]).slice(0, 3)));
+  return enc(0, r.slice().sort((a, b) => b - a).slice(0, 5));
+}
+
+function rvEquity(hero, vil, board){
+  const used = new Set(hero.concat(vil, board));
+  const deck = [];
+  for(const rk of RV_RANKS) for(const s of "shdc"){ const c = rk + s; if(!used.has(c)) deck.push(c); }
+  const need = 5 - board.length;
+  let win = 0, tot = 0;
+  const run = extra => {
+    const b = board.concat(extra), h = rvScore(hero.concat(b)), v = rvScore(vil.concat(b));
+    win += h > v ? 1 : h === v ? 0.5 : 0; tot++;
+  };
+  if(need === 0) run([]);
+  else if(need === 1) deck.forEach(c => run([c]));
+  else if(need === 2){ for(let i = 0; i < deck.length; i++) for(let j = i + 1; j < deck.length; j++) run([deck[i], deck[j]]); }
+  else {
+    for(let k = 0; k < 2500; k++){                                   // preflop/flop all-in: Monte Carlo
+      const pick = [], idx = new Set();
+      while(pick.length < need){ const i = Math.floor(Math.random() * deck.length); if(!idx.has(i)){ idx.add(i); pick.push(deck[i]); } }
+      run(pick);
+    }
+  }
+  return win / tot;
+}
+
+// All-in (river se pehle, heads-up, villain ke cards dikhe) -> EV net; warna asli net
+function rvAllInEV(hand){
+  if(hand._ev !== undefined) return hand._ev;
+  hand._ev = hand.net;
+  const allin = [...hand.acts].reverse().find(a => a.allin);
+  if(!allin || allin.street === "river") return hand.net;
+  const vil = Object.keys(hand.shown).find(n => n !== hand.hero);
+  const live = new Set(hand.acts.map(a => a.name));
+  hand.acts.forEach(a => { if(a.verb === "folds") live.delete(a.name); });
+  if(!vil || live.size !== 2 || !live.has(hand.hero) || hand.shown[vil].length !== 2) return hand.net;
+  const N = {pre: 0, flop: 3, turn: 4};
+  const eq = rvEquity(hand.heroCards, hand.shown[vil], hand.board.slice(0, N[allin.street]));
+  hand._ev = eq * hand.potTotal - hand.heroInv;
+  hand._eq = eq;
+  return hand._ev;
+}
+
+/* --- Population prior: kam showdowns wale player ka estimate population ki taraf kheencho --- */
+const RV_PRIOR_K = 6;
+let rvPopCache = null;
+function rvPopulation(){
+  if(rvPopCache && rvPopCache.n === rvHands.length) return rvPopCache.sd;
+  const sd = {flop: {value: 0, medium: 0, draw: 0, bluff: 0}, turn: {value: 0, medium: 0, draw: 0, bluff: 0}, river: {value: 0, medium: 0, draw: 0, bluff: 0}};
+  const names = new Set();
+  rvHands.forEach(h => Object.keys(h.shown).forEach(n => { if(n !== h.hero) names.add(n); }));
+  names.forEach(n => { const S = rvStreetDive(n); ["flop", "turn", "river"].forEach(st => Object.keys(sd[st]).forEach(k => sd[st][k] += S[st].sd[k])); });
+  rvPopCache = {n: rvHands.length, sd};
+  return sd;
+}
+function rvAdjusted(sd, n, st){
+  const pop = rvPopulation()[st], pn = Object.values(pop).reduce((a, b) => a + b, 0) || 1;
+  const out = {};
+  Object.keys(sd).forEach(k => out[k] = (sd[k] + RV_PRIOR_K * pop[k] / pn) / (n + RV_PRIOR_K));
+  return out;
+}
+
+/* --- Street deep dive (opponent ya hero). Hero ke liye har hand ke cards pata hain — showdown ki zaroorat nahi --- */
+function rvStreetDive(name, hands = rvHands){
   const N = {flop: 3, turn: 4, river: 5};
   const S = {};
   ["flop", "turn", "river"].forEach(st => S[st] = {acts: 0, agg: 0, sizes: [], faced: 0, fold: 0, call: 0, raise: 0,
                                                   sd: {value: 0, medium: 0, draw: 0, bluff: 0}, sdN: 0, examples: []});
-  rvHands.forEach(hand => {
-    const shown = hand.shown[name];
+  hands.forEach(hand => {
+    const nm = name === "__hero__" ? hand.hero : name;
+    const shown = name === "__hero__" ? hand.heroCards : hand.shown[nm];
     ["flop", "turn", "river"].forEach(st => {
       const s = S[st];
-      const mine = hand.acts.filter(a => a.street === st && a.name === name);
+      const mine = hand.acts.filter(a => a.street === st && a.name === nm);
       if(!mine.length) return;
       let aggHere = false;
       mine.forEach(a => {
         s.acts++;
-        if(a.toCall > 0){                                   // us pe bet tha
+        if(a.toCall > 0){
           s.faced++;
           if(a.verb === "folds") s.fold++; else if(a.verb === "calls") s.call++; else if(a.verb === "raises") s.raise++;
         }
@@ -4804,101 +5054,331 @@ function rvStreetDive(name){
   return S;
 }
 
-function rvDiveHTML(name){
-  const S = rvStreetDive(name);
+function rvDiveHTML(name, hands = rvHands, opts = {}){
+  const hero = name === "__hero__";
+  const S = rvStreetDive(name, hands);
   const p100 = (a, b) => b ? Math.round(a / b * 100) : null;
-  let h = '<table class="rv-dive"><thead><tr><th>Street</th><th>Bet/raise</th><th>Avg size</th><th>Bet karke dikhaya (showdown)</th><th>Us pe bet: fold / call / raise</th></tr></thead><tbody>';
+  const K = ["value", "medium", "draw", "bluff"];
+  let h = '<table class="rv-dive"><thead><tr><th>Street</th><th>Bet/raise</th><th>Avg size</th><th>' +
+          (hero ? "Aapke bets me kya tha (sab hands)" : "Bet karke dikhaya (showdown) · adjusted") +
+          '</th><th>' + (hero ? "Aap pe bet: fold / call / raise" : "Us pe bet: fold / call / raise") + '</th></tr></thead><tbody>';
   const plans = [];
   ["flop", "turn", "river"].forEach(st => {
     const s = S[st];
     const agg = p100(s.agg, s.acts);
     const size = s.sizes.length ? s.sizes.reduce((a, b) => a + b, 0) / s.sizes.length : null;
-    const sd = s.sdN ? ["value", "medium", "draw", "bluff"].filter(k => s.sd[k]).map(k => RV_KIND[k] + " " + p100(s.sd[k], s.sdN) + "%").join(" · ") + " <span class='rv-muted'>(n=" + s.sdN + ")</span>" : "<span class='rv-muted'>koi showdown nahi</span>";
+    const adj = s.sdN ? (hero ? Object.fromEntries(K.map(k => [k, s.sd[k] / s.sdN])) : rvAdjusted(s.sd, s.sdN, st)) : null;
+    const seen = s.sdN ? K.filter(k => s.sd[k]).map(k => RV_KIND[k] + " " + p100(s.sd[k], s.sdN) + "%").join(" · ") : "–";
+    const adjTxt = adj && !hero ? '<br><span class="rv-muted">adjusted: ' + K.map(k => RV_KIND[k] + " " + Math.round(adj[k] * 100) + "%").join(" · ") + '</span>' : "";
     const fold = p100(s.fold, s.faced);
-    h += '<tr><td><b>' + st[0].toUpperCase() + st.slice(1) + '</b></td><td>' + (agg === null ? "–" : agg + "% <span class='rv-muted'>(" + s.agg + "/" + s.acts + ")</span>") +
-         '</td><td>' + (size === null ? "–" : Math.round(size * 100) + "% pot") + '</td><td>' + sd + '</td><td>' +
-         (s.faced ? fold + "% / " + p100(s.call, s.faced) + "% / " + p100(s.raise, s.faced) + "% <span class='rv-muted'>(n=" + s.faced + ")</span>" : "–") + '</td></tr>';
+    h += '<tr><td><b>' + st[0].toUpperCase() + st.slice(1) + '</b></td><td>' + (agg === null ? "–" : agg + "%" + rvConf(s.acts)) +
+         '</td><td>' + (size === null ? "–" : Math.round(size * 100) + "% pot") + '</td><td>' + seen + (s.sdN ? rvConf(s.sdN) : "") + adjTxt + '</td><td>' +
+         (s.faced ? fold + "% / " + p100(s.call, s.faced) + "% / " + p100(s.raise, s.faced) + "%" + rvConf(s.faced) : "–") + '</td></tr>';
 
-    // --- Mera action (maths) ---
-    const lines = [];
     const sz = size || 0.66;
-    const need = sz / (1 + 2 * sz);                                  // call ke liye equity
+    const need = sz / (1 + 2 * sz);                                   // call ke liye equity
+    const lines = [];
+    if(hero && opts.plain) return;                                      // Pluribus: sirf numbers
+    if(hero){
+      // Regs aapko kaise exploit kar sakte hain
+      if(s.sdN >= 5){
+        const bl = (st === "river" ? adj.draw + adj.bluff : adj.bluff);
+        if(st === "river") lines.push("Aapke river bets me bluff " + Math.round(bl * 100) + "% (" + Math.round(sz * 100) + "% bet pe GTO-ish ~" + Math.round(need * 100) + "%) → " +
+          (bl < need - 0.08 ? "<b>kam bluff</b> — regs aapke river bet pe fold karke exploit karenge; missed draws se bluff badhao"
+           : bl > need + 0.1 ? "<b>zyada bluff</b> — regs call karke exploit karenge; bluff kam karo" : "balanced"));
+        else lines.push("Aapke bets: value " + Math.round(adj.value * 100) + "% · medium " + Math.round(adj.medium * 100) + "% · draw " + Math.round(adj.draw * 100) + "% · air " + Math.round(adj.bluff * 100) + "%" +
+          (adj.medium >= 0.4 ? " → <b>medium hands se bahut bet</b> — check kar ke pot control socho" : ""));
+      }
+      if(s.faced >= 5){
+        const f = s.fold / s.faced;
+        lines.push("Bet face karke aap " + Math.round(f * 100) + "% fold karte ho → " +
+          (f > 0.55 ? "<b>zyada fold</b> — regs aap pe har size se bluff karenge (50% bet ka MDF 67%)"
+           : f < 0.25 ? "<b>bahut kam fold</b> — regs aap ke khilaf bluff band karke thin value lenge" : "theek range me"));
+      }
+      if(!lines.length) lines.push('<span class="rv-muted">Data kam</span>');
+      plans.push('<div class="rv-ex"><b>' + st[0].toUpperCase() + st.slice(1) + ' — regs aapko kaise exploit karenge:</b><br>' + lines.join("<br>") + '</div>');
+      return;
+    }
     if(s.sdN >= 4){
-      const nonValue = (st === "river" ? s.sd.draw + s.sd.bluff : s.sd.bluff) / s.sdN;
-      const drawSh = s.sd.draw / s.sdN, valueSh = s.sd.value / s.sdN;
+      const nonValue = st === "river" ? adj.draw + adj.bluff : adj.bluff;
       if(st === "river"){
         const diff = nonValue - need;
-        lines.push("Uske ~" + Math.round(sz * 100) + "% bet pe call ke liye " + Math.round(need * 100) + "% chahiye; uske bets me bluff " + Math.round(nonValue * 100) + "%" +
+        lines.push("Uske ~" + Math.round(sz * 100) + "% bet pe call ke liye " + Math.round(need * 100) + "% chahiye; adjusted bluff " + Math.round(nonValue * 100) + "%" +
           (diff > 0.05 ? " → <b>bluff-catch karo</b> (top pair / achha medium hand se call)"
            : diff < -0.05 ? " → <b>bluff-catchers fold karo</b>, sirf value-range se call"
            : " → close; blockers dekh ke mix"));
       } else {
-        lines.push("Uske bet me value " + Math.round(valueSh * 100) + "% · draw " + Math.round(drawSh * 100) + "% · bluff " + Math.round(nonValue * 100) + "%" +
-          (valueSh >= 0.7 ? " → <b>tight continue</b>: medium hands fold, sirf strong/strong draws"
-           : valueSh <= 0.3 ? " → uske bet me strong kam → <b>call wider</b> (second pair / achhe draws), top pair+ se <b>raise for value</b>"
-           : nonValue + drawSh >= 0.45 ? " → <b>call wider / raise</b> strong hands se (draws ko charge karo)"
+        lines.push("Uske bet me (adjusted) value " + Math.round(adj.value * 100) + "% · draw " + Math.round(adj.draw * 100) + "% · bluff " + Math.round(nonValue * 100) + "%" +
+          (adj.value >= 0.7 ? " → <b>tight continue</b>: medium hands fold, sirf strong/strong draws"
+           : adj.value <= 0.3 ? " → uske bet me strong kam → <b>call wider</b> (second pair / achhe draws), top pair+ se <b>raise for value</b>"
+           : nonValue + adj.draw >= 0.45 ? " → <b>call wider / raise</b> strong hands se (draws ko charge karo)"
            : " → standard defence"));
       }
-      if(s.sdN < 10) lines.push("<span class='rv-muted'>n=" + s.sdN + " — trend hai, pakka nahi</span>");
     } else lines.push("<span class='rv-muted'>Showdown data kam (n=" + s.sdN + ") — uske bet pe default GTO khelo</span>");
     if(s.faced >= 5){
       const f = s.fold / s.faced;
       const good = [0.33, 0.5, 0.75].filter(b => f > b / (1 + b) + 0.03);   // bluff breakeven = b/(1+b)
       lines.push("Aapke bet pe wo " + Math.round(f * 100) + "% fold karta hai → " +
         (good.length ? "<b>bluff profitable</b> " + Math.round(good[good.length - 1] * 100) + "% pot tak (breakeven " + Math.round(good[good.length - 1] / (1 + good[good.length - 1]) * 100) + "%)"
-                     : "<b>bluff mat karo</b> (33% bet ka breakeven bhi 25%) — value bet thinner aur bada") +
-        (s.faced < 10 ? " <span class='rv-muted'>(n=" + s.faced + " — trend hai, pakka nahi)</span>" : ""));
+                     : "<b>bluff mat karo</b> (33% bet ka breakeven bhi 25%) — value bet thinner aur bada") + rvConf(s.faced));
     } else lines.push("<span class='rv-muted'>Us pe bet ka data kam (n=" + s.faced + ")</span>");
     plans.push('<div class="rv-ex"><b>' + st[0].toUpperCase() + st.slice(1) + ' — mera action:</b><br>' + lines.join("<br>") + '</div>');
   });
   h += '</tbody></table>';
-  const ex = ["flop", "turn", "river"].map(st => S[st].examples.length ? '<div class="rv-muted"><b>' + st + ' bet ke showdowns:</b> ' + S[st].examples.join(" · ") + '</div>' : "").join("");
-  return {html: '<div class="rv-scroll">' + h + '</div>' + plans.join("") + ex, data: S};
+  const ex = ["flop", "turn", "river"].map(st => S[st].examples.length ? '<div class="rv-muted"><b>' + st + ' bet' + (hero ? "" : " ke showdowns") + ':</b> ' + S[st].examples.join(" · ") + '</div>' : "").join("");
+  return {html: '<div class="rv-scroll">' + h + '</div>' + plans.join("") + (hero ? "" : '<div class="rv-muted">Adjusted = uske showdowns + population average (' + RV_PRIOR_K + ' hands ka wazan) — kam data pe extreme numbers se bachata hai</div>') + ex, data: S};
+}
+
+/* --- Mera game: aapka preflop + street deep dive --- */
+function rvHeroPre(hands = rvHands){
+  const p = {tb: 0, tbOpp: 0, fb: 0, f3Opp: 0, preShows: []};
+  hands.forEach(hand => {
+    let raises = 0, opener = null, lvl = 0;
+    hand.acts.filter(a => a.street === "pre").forEach(a => {
+      if(a.name === hand.hero){
+        if(raises === 1 && opener !== hand.hero){ p.tbOpp++; if(a.verb === "raises") p.tb++; }
+        if(raises === 2 && opener === hand.hero){ p.f3Opp++; if(a.verb === "raises") p.fb++; }
+      }
+      if(a.verb === "raises"){ raises++; if(raises === 1) opener = a.name; if(a.name === hand.hero) lvl = raises; }
+    });
+    if(lvl) p.preShows.push({level: Math.min(lvl, 4), code: hand.code});
+  });
+  return p;
 }
 
 
-/* --- Preflop raise ranges: open / 3-bet / 4-bet me showdown pe kya dikhaya (premium vs garbage) --- */
-const RV_PREMIUM = new Set(["AA","KK","QQ","AKs","AKo"]);
-const RV_STRONG  = new Set(["JJ","TT","AQs","AQo","AJs","KQs"]);
-function rvPreBucket(code){
-  if(RV_PREMIUM.has(code)) return "premium";
-  if(RV_STRONG.has(code)) return "strong";
-  const pair = code.length === 2, suited = code[2] === "s";
-  const hi = RV_RANKS.indexOf(code[0]), lo = RV_RANKS.indexOf(code[1]);
-  if(pair) return "spec";                                             // 22-99
-  if(suited && (code[0] === "A" || hi - lo <= 2 || lo >= 8)) return "spec";  // suited aces, connectors, broadways
-  if(!suited && lo >= 9) return "spec";                              // KJo, QJo jaise broadways
-  return "garbage";
-}
-const RV_BUCKET = {premium: "Premium (AA/KK/QQ/AK)", strong: "Strong (JJ/TT/AQ/AJs/KQs)", spec: "Speculative (A5s, 76s, 22-99)", garbage: "Garbage (offsuit kachra)"};
+/* --- Pluribus library: 10k hands (Brown & Sandholm 2019) — reference: "Pluribus is spot me kya karta hai" --- */
+let rvPlu = [], rvPluIndex = null, rvPluState = "idle";
 
-function rvPreflopDiveHTML(p){
-  const names = {1: "Open raise", 2: "3-bet", 3: "4-bet", 4: "5-bet / jam"};
-  const tb = p.tbOpp ? Math.round(p.tb / p.tbOpp * 100) : null, fb = p.f3Opp ? Math.round(p.fb / p.f3Opp * 100) : null;
-  let h = '<div class="rv-muted">3-bet ' + (tb === null ? "–" : tb + "% (" + p.tb + "/" + p.tbOpp + ")") +
-          ' · 3-bet face karke 4-bet ' + (fb === null ? "–" : fb + "% (" + p.fb + "/" + p.f3Opp + ")") + '</div>';
-  const plans = [];
-  [1, 2, 3, 4].forEach(lv => {
-    const shows = p.preShows.filter(s => s.level === lv);
-    if(!shows.length) return;
-    const c = {premium: 0, strong: 0, spec: 0, garbage: 0};
-    shows.forEach(s => c[rvPreBucket(s.code)]++);
-    const n = shows.length, pc = k => Math.round(c[k] / n * 100);
-    h += '<div class="rv-ex"><b>' + names[lv] + ' (showdown n=' + n + '):</b> ' +
-         Object.keys(c).filter(k => c[k]).map(k => RV_BUCKET[k] + " " + pc(k) + "%").join(" · ") +
-         '<br><span class="rv-muted">' + shows.map(s => s.code).join(", ") + '</span></div>';
-    if(lv >= 2){
-      const value = (c.premium + c.strong) / n, bluff = (c.spec + c.garbage) / n;
-      let line;
-      if(n < 4) line = "n=" + n + " — data kam, default ranges khelo";
-      else if(value >= 0.8) line = "Value heavy (" + Math.round(value * 100) + "%) → uske " + names[lv] + " ke khilaf sirf " + (lv === 2 ? "QQ+/AK continue, JJ/AQ fold ya call IP" : "KK+ continue, QQ/AK bhi mushkil");
-      else if(bluff >= 0.4) line = "Bluff/light " + Math.round(bluff * 100) + "% → " + (lv === 2 ? "4-bet value lighter (JJ+, AQ) aur A5s se 4-bet bluff; IP me call wider" : "5-bet jam QQ+/AK, JJ/AQs bhi consider");
-      else line = "Mixed (value " + Math.round(value * 100) + "% / light " + Math.round(bluff * 100) + "%) → standard GTO defence";
-      plans.push('<div class="rv-ex"><b>Mera action vs uska ' + names[lv] + ':</b> ' + line + '</div>');
+function rvParseAll(text){
+  return rvSplit(text).map(rvParseHand).filter(Boolean).map(rvReviewPreflop);
+}
+
+// Spot + hand class -> Pluribus ke actions (preflop reference)
+function rvBuildPluIndex(){
+  const idx = {};
+  rvPlu.forEach(h => h.decisions.forEach(d => {
+    if(!d.id) return;
+    const e = idx[d.id] = idx[d.id] || {all: {fold: 0, call: 0, raise: 0, n: 0}, by: {}};
+    e.all[d.act]++; e.all.n++;
+    const c = e.by[h.code] = e.by[h.code] || {fold: 0, call: 0, raise: 0, n: 0};
+    c[d.act]++; c.n++;
+  }));
+  rvPluIndex = idx;
+}
+
+async function rvLoadPluribus(){
+  if(rvPluState === "loading" || rvPluState === "ready") return;       // error pe dobara try
+  rvPluState = "loading";
+  try{
+    const j = await (await fetch(GTO_URL + "/api/pluribus")).json();
+    if(!j.text) throw new Error(j.error || "no data");
+    rvPlu = rvParseAll(j.text);
+    rvBuildPluIndex();
+    rvPluState = "ready";
+  }catch(e){ rvPluState = "error"; rvPluErr = String(e.message || e); }
+  if(rvTab === "plu") rvRenderPlu();
+  else if(rvTab === "hands") rvRender();
+  mirrorRecommend();               // Pluribus index ready — mirror pe reference turant
+}
+let rvPluErr = "";
+
+function rvPluLine(d, code){
+  if(!rvPluIndex || !d.id || !rvPluIndex[d.id]) return "";
+  const e = rvPluIndex[d.id], f = o => ["raise", "call", "fold"].filter(k => o[k]).map(k => RV_ACT_NAME[k] + " " + Math.round(o[k] / o.n * 100) + "%").join(" · ");
+  const c = e.by[code];
+  return '<div class="rv-plu">&#129302; <b>Pluribus</b> is spot me: ' + f(e.all) + rvConf(e.all.n) +
+         (c ? ' · <b>' + code + '</b> pe: ' + f(c) + rvConf(c.n) : ' · ' + code + ' ka data nahi') + '</div>';
+}
+
+// Hero-type summary (aap ya Pluribus) — comparison ke liye
+function rvSummary(hands){
+  const pos = {}, P = ["UTG", "MP", "CO", "BTN", "SB"];
+  let vpip = 0, pfr = 0;
+  hands.forEach(h => {
+    const pre = h.acts.filter(a => a.street === "pre");
+    const me = pre.filter(a => a.name === h.hero);
+    if(me.some(a => a.verb === "calls" || a.verb === "raises")) vpip++;
+    if(me.some(a => a.verb === "raises")) pfr++;
+    const first = pre.findIndex(a => a.name === h.hero);
+    if(first >= 0 && P.includes(h.heroPos) && !pre.slice(0, first).some(a => a.verb === "raises" || a.verb === "calls")){
+      const e = pos[h.heroPos] = pos[h.heroPos] || {opp: 0, open: 0};
+      e.opp++; if(pre[first].verb === "raises") e.open++;
     }
   });
-  if(!p.preShows.length) h += '<div class="rv-muted">Preflop raise ke saath koi showdown nahi — range ka data nahi</div>';
-  return h + plans.join("");
+  const pre = rvHeroPre(hands), S = rvStreetDive("__hero__", hands);
+  const cb = {opp: 0, n: 0};
+  hands.forEach(h => {
+    const pre = h.acts.filter(a => a.street === "pre"), last = [...pre].reverse().find(a => a.verb === "raises");
+    if(!last || last.name !== h.hero) return;
+    const flop = h.acts.filter(a => a.street === "flop"), mine = flop.findIndex(a => a.name === h.hero);
+    if(mine < 0 || flop.slice(0, mine).some(a => a.verb === "bets")) return;
+    cb.opp++; if(flop[mine].verb === "bets") cb.n++;
+  });
+  const pc = (a, b) => b ? Math.round(a / b * 100) : null;
+  const riv = S.river;
+  return {
+    hands: hands.length, vpip: pc(vpip, hands.length), pfr: pc(pfr, hands.length),
+    open: Object.fromEntries(P.map(p => [p, pos[p] ? pc(pos[p].open, pos[p].opp) : null])),
+    tb: pc(pre.tb, pre.tbOpp), fb: pc(pre.fb, pre.f3Opp), cbet: pc(cb.n, cb.opp),
+    agg: Object.fromEntries(["flop", "turn", "river"].map(st => [st, pc(S[st].agg, S[st].acts)])),
+    foldVsBet: Object.fromEntries(["flop", "turn", "river"].map(st => [st, pc(S[st].fold, S[st].faced)])),
+    riverBluff: riv.sdN ? pc(riv.sd.bluff + riv.sd.draw, riv.sdN) : null,
+    net100: hands.length ? +(hands.reduce((a, h) => a + h.net, 0) / hands.length * 100).toFixed(1) : null
+  };
+}
+
+function rvRenderPlu(){
+  const box = el("rv-plu");
+  if(rvPluState === "idle" || rvPluState === "error"){ rvLoadPluribus(); }
+  if(rvPluState !== "ready"){
+    box.innerHTML = '<div class="statsbox"><div class="rv-muted">' + (rvPluState === "error" ? "Pluribus data load nahi hua: " + rvPluErr : "Pluribus ke 10,000 hands load ho rahe hain…") + '</div></div>';
+    return;
+  }
+  const a = rvHands.length ? rvSummary(rvHands) : null, p = rvSummary(rvPlu);
+  const row = (label, k, fmt = v => v === null || v === undefined ? "–" : v + "%") =>
+    '<tr><td>' + label + '</td><td><b>' + fmt(p[k]) + '</b></td><td>' + (a ? fmt(a[k]) : "–") + '</td></tr>';
+  const rowObj = (label, k, sub) => '<tr><td>' + label + '</td><td><b>' + (p[k][sub] === null ? "–" : p[k][sub] + "%") + '</b></td><td>' + (a && a[k][sub] !== null ? a[k][sub] + "%" : "–") + '</td></tr>';
+  let t = '<div class="rv-scroll"><table class="rv-dive"><thead><tr><th></th><th>Pluribus</th><th>Aap</th></tr></thead><tbody>' +
+    row("Hands", "hands", v => v) + row("VPIP", "vpip") + row("PFR", "pfr") +
+    ["UTG", "MP", "CO", "BTN", "SB"].map(ps => rowObj("Open raise · " + ps, "open", ps)).join("") +
+    row("3-bet", "tb") + row("3-bet face karke 4-bet", "fb") + row("Flop c-bet", "cbet") +
+    ["flop", "turn", "river"].map(st => rowObj("Bet/raise · " + st, "agg", st)).join("") +
+    ["flop", "turn", "river"].map(st => rowObj("Bet face karke fold · " + st, "foldVsBet", st)).join("") +
+    row("River bets me bluff", "riverBluff") + row("Raw result (bb/100)", "net100", v => v === null ? "–" : v) +
+    '</tbody></table></div>';
+  box.innerHTML = '<div class="statsbox"><h3>Pluribus (10,000 hands vs pros, 100bb)</h3>' +
+    '<div class="rv-muted">Brown &amp; Sandholm 2019 (Science) ke released hands. Sabke hole cards pata hain, isliye Pluribus ki value/bluff composition sab hands se hai — sirf showdown nahi. ' +
+    'Raw result luck ke saath hai; paper ka +4.8 bb/100 AIVAT (luck hata ke) naap tha.</div>' +
+    '<h4>Aap vs Pluribus</h4>' + t +
+    '<h4>Pluribus: preflop raise ranges</h4>' + rvPreflopDiveHTML(rvHeroPre(rvPlu)).replace(/<div class="rv-ex"><b>Mera action vs uska[\s\S]*?<\/div>/g, "").replace(/showdown n=/g, "n=") +
+    '<h4>Pluribus: street deep dive</h4>' + rvDiveHTML("__hero__", rvPlu, {plain: true}).html + '</div>';
+}
+
+function rvRenderMe(){
+  const box = el("rv-me");
+  if(!rvHands.length){ box.innerHTML = '<div class="rv-muted">Pehle hands load karo.</div>'; return; }
+  const pre = rvPreflopDiveHTML(rvHeroPre()).replace(/Mera action vs uska/g, "Regs ka jawab aapke").replace(/showdown n=/g, "n=");
+  box.innerHTML = '<div class="statsbox"><h3>Mera game (' + rvHands.length + ' hands)</h3>' +
+    '<div class="rv-muted">Aapke cards har hand me pata hain, isliye yahan sab hands gine jaate hain — sirf showdown nahi.</div>' +
+    '<h4>Preflop: aapki raise ranges</h4>' + pre +
+    '<h4>Street deep dive</h4>' + rvDiveHTML("__hero__").html + '</div>';
+}
+
+/* --- Leak report: kahan sabse zyada galtiyan / bb ja rahe hain --- */
+function rvRenderLeaks(){
+  const box = el("rv-leaks");
+  const by = {};
+  rvHands.forEach(hand => {
+    const seenSpot = new Set();
+    hand.decisions.filter(d => d.verdict && d.id).forEach(d => {
+      const e = by[d.id] = by[d.id] || {id: d.id, title: d.title, n: 0, bad: 0, mixed: 0, net: 0, hands: 0, bad_ex: []};
+      e.n++; if(d.verdict === "bad"){ e.bad++; if(e.bad_ex.length < 6) e.bad_ex.push(hand.code + " " + RV_ACT_NAME[d.act] + "→" + RV_ACT_NAME[d.best]); }
+      if(d.verdict === "mixed") e.mixed++;
+      if(!seenSpot.has(d.id)){ seenSpot.add(d.id); e.net += hand.net; e.hands++; }
+    });
+  });
+  const rows = Object.values(by).filter(e => e.bad > 0).sort((a, b) => b.bad - a.bad || a.net - b.net).slice(0, 15);
+  let h = '<div class="statsbox"><h3>Leak report — preflop</h3><div class="rv-muted">Sabse zyada galtiyon wale spots upar. Net = un hands ka result (luck bhi shamil).</div>';
+  h += rows.length ? '<div class="rv-scroll"><table class="rv-dive"><thead><tr><th>Spot</th><th>Galti</th><th>Decisions</th><th>Net</th><th>Misaal</th><th></th></tr></thead><tbody>' +
+    rows.map(e => '<tr><td>' + e.title + '</td><td><b class="rv-badtxt">' + e.bad + '</b> (' + Math.round(e.bad / e.n * 100) + '%)</td><td>' + e.n + rvConf(e.n) +
+      '</td><td>' + (e.net >= 0 ? "+" : "") + e.net.toFixed(1) + 'bb</td><td class="rv-muted">' + e.bad_ex.join(", ") +
+      '</td><td><button class="ghost rv-drill" data-id="' + e.id + '">Drill</button></td></tr>').join("") + '</tbody></table></div>'
+    : '<div class="rv-muted">Koi preflop galti nahi mili.</div>';
+  // postflop (batch solver ke results se)
+  const post = {flop: {n: 0, bad: 0}, turn: {n: 0, bad: 0}, river: {n: 0, bad: 0}}, worst = [];
+  rvHands.forEach(hand => (hand.post && hand.post.streets || []).forEach(st => (st.steps || []).forEach(s => {
+    if(s.who !== "hero" || !s.verdict) return;
+    post[st.street].n++;
+    if(s.verdict === "bad"){ post[st.street].bad++; worst.push({hand, st: st.street, s}); }
+  })));
+  const pn = post.flop.n + post.turn.n + post.river.n;
+  h += '<h4>Postflop (solver review se)</h4>' + (pn
+    ? '<div>' + ["flop", "turn", "river"].map(st => st + ": <b>" + post[st].bad + "</b>/" + post[st].n + " galti").join(" · ") + '</div>' +
+      worst.sort((a, b) => a.s.freq - b.s.freq).slice(0, 12).map(w => '<div class="rv-ex">' + w.hand.heroPos + " " + w.hand.heroCards.map(rvCard).join("") + " · " + w.st +
+        ": aapne <b>" + w.s.did + "</b> (solver " + w.s.freq + "%), solver: <b>" + w.s.best + "</b> <button class='ghost rv-goto' data-id='" + w.hand.id + "'>Hand dekho</button></div>").join("")
+    : '<div class="rv-muted">Abhi koi postflop solve nahi hua — Hands tab me "Saare postflop solve karo" dabao.</div>');
+  box.innerHTML = h + '</div>';
+  box.querySelectorAll(".rv-drill").forEach(b => b.addEventListener("click", () => {
+    const sp = SPOTS.find(s => s.id === b.dataset.id);
+    S.mode = sp.mode; S.focus = {type: "spot", id: sp.id};
+    save(); showView("play"); buildModes(); deal();
+  }));
+  box.querySelectorAll(".rv-goto").forEach(b => b.addEventListener("click", () => { rvOpen = b.dataset.id; rvShowTab("hands"); rvRender(); }));
+}
+
+/* --- Winrate graph (asli vs all-in EV) + position / session tables --- */
+function rvRenderGraph(){
+  const box = el("rv-graph");
+  const hands = rvHands.slice().sort((a, b) => a.date.localeCompare(b.date));
+  if(hands.length < 2){ box.innerHTML = '<div class="rv-muted">Graph ke liye hands chahiye.</div>'; return; }
+  let cn = 0, ce = 0;
+  const pts = hands.map((h, i) => { cn += h.net; ce += rvAllInEV(h); return {i, net: cn, ev: ce, h}; });
+  const W = Math.max(320, box.clientWidth - 32), H = 240, L = 48, R = 70, T = 14, B = 26;
+  const lo = Math.min(0, ...pts.map(p => Math.min(p.net, p.ev))), hi = Math.max(0, ...pts.map(p => Math.max(p.net, p.ev)));
+  const x = i => L + (W - L - R) * i / (pts.length - 1), y = v => T + (H - T - B) * (hi - v) / ((hi - lo) || 1);
+  const path = k => pts.map((p, j) => (j ? "L" : "M") + x(p.i).toFixed(1) + " " + y(p[k]).toFixed(1)).join("");
+  const ticks = [lo, (lo + hi) / 2, hi].map(v => Math.round(v));
+  const last = pts[pts.length - 1];
+  const bb100 = v => (v / hands.length * 100).toFixed(1);
+  let svg = '<svg class="rv-chart" width="' + W + '" height="' + H + '" role="img" aria-label="Cumulative result in big blinds, actual vs all-in EV">' +
+    ticks.map(v => '<line class="rv-grid" x1="' + L + '" x2="' + (W - R) + '" y1="' + y(v) + '" y2="' + y(v) + '"/><text class="rv-axis" x="' + (L - 6) + '" y="' + (y(v) + 4) + '" text-anchor="end">' + v + '</text>').join("") +
+    '<line class="rv-zero" x1="' + L + '" x2="' + (W - R) + '" y1="' + y(0) + '" y2="' + y(0) + '"/>' +
+    '<path class="rv-line-ev" d="' + path("ev") + '"/><path class="rv-line-net" d="' + path("net") + '"/>' +
+    '<text class="rv-lbl" x="' + (W - R + 6) + '" y="' + (y(last.net) + 4) + '">Asli ' + last.net.toFixed(0) + '</text>' +
+    '<text class="rv-lbl" x="' + (W - R + 6) + '" y="' + (y(last.ev) + (Math.abs(y(last.ev) - y(last.net)) < 14 ? 18 : 4)) + '">EV ' + last.ev.toFixed(0) + '</text>' +
+    '<text class="rv-axis" x="' + L + '" y="' + (H - 6) + '">hand 1</text><text class="rv-axis" x="' + (W - R) + '" y="' + (H - 6) + '" text-anchor="end">hand ' + pts.length + '</text>' +
+    '<line class="rv-cross" y1="' + T + '" y2="' + (H - B) + '" x1="-10" x2="-10"/><circle class="rv-dot-net" r="4" cx="-10" cy="-10"/><circle class="rv-dot-ev" r="4" cx="-10" cy="-10"/>' +
+    '<rect class="rv-hit" x="' + L + '" y="' + T + '" width="' + (W - L - R) + '" height="' + (H - T - B) + '"/></svg>';
+  // tables
+  const group = key => {
+    const g = {};
+    hands.forEach(h => { const k = key(h); const e = g[k] = g[k] || {k, n: 0, net: 0, ev: 0}; e.n++; e.net += h.net; e.ev += rvAllInEV(h); });
+    return Object.values(g);
+  };
+  const tbl = (title, rows) => '<h4>' + title + '</h4><div class="rv-scroll"><table class="rv-dive"><thead><tr><th></th><th>Hands</th><th>Net</th><th>bb/100</th><th>EV bb/100</th></tr></thead><tbody>' +
+    rows.map(e => '<tr><td><b>' + e.k + '</b></td><td>' + e.n + '</td><td>' + (e.net >= 0 ? "+" : "") + e.net.toFixed(1) + '</td><td>' + (e.net / e.n * 100).toFixed(1) + '</td><td>' + (e.ev / e.n * 100).toFixed(1) + '</td></tr>').join("") + '</tbody></table></div>';
+  const posOrder = ["UTG", "MP", "CO", "BTN", "SB", "BB"];
+  box.innerHTML = '<div class="statsbox"><h3>Winrate</h3>' +
+    '<div class="rv-summary">' + hands.length + ' hands · Net <b>' + last.net.toFixed(1) + 'bb</b> (' + bb100(last.net) + ' bb/100) · All-in EV <b>' + last.ev.toFixed(1) + 'bb</b> (' + bb100(last.ev) + ' bb/100) · Luck <b>' + (last.net - last.ev >= 0 ? "+" : "") + (last.net - last.ev).toFixed(1) + 'bb</b></div>' +
+    '<div class="rv-legend"><span><i class="rv-key-net"></i>Asli result</span><span><i class="rv-key-ev"></i>All-in EV (dashed)</span></div>' +
+    '<div class="rv-chartwrap">' + svg + '<div class="rv-tip" hidden></div></div>' +
+    '<div class="rv-muted">EV line: river se pehle all-in aur villain ke cards dikhe to equity × pot; rake shamil nahi.</div>' +
+    tbl("Position-wise", group(h => h.heroPos).sort((a, b) => posOrder.indexOf(a.k) - posOrder.indexOf(b.k))) +
+    tbl("Session-wise (din)", group(h => h.date.slice(0, 10)).sort((a, b) => b.k.localeCompare(a.k))) + '</div>';
+  // hover: crosshair + tooltip
+  const wrap = box.querySelector(".rv-chartwrap"), tip = wrap.querySelector(".rv-tip"), s = wrap.querySelector("svg");
+  const hit = s.querySelector(".rv-hit"), cross = s.querySelector(".rv-cross"), dn = s.querySelector(".rv-dot-net"), de = s.querySelector(".rv-dot-ev");
+  const hide = () => { tip.hidden = true; cross.setAttribute("x1", -10); cross.setAttribute("x2", -10); dn.setAttribute("cx", -10); de.setAttribute("cx", -10); };
+  hit.addEventListener("pointermove", ev => {
+    const r = s.getBoundingClientRect(), px = ev.clientX - r.left;
+    const i = Math.max(0, Math.min(pts.length - 1, Math.round((px - L) / (W - L - R) * (pts.length - 1))));
+    const p = pts[i], cx = x(i);
+    cross.setAttribute("x1", cx); cross.setAttribute("x2", cx);
+    dn.setAttribute("cx", cx); dn.setAttribute("cy", y(p.net)); de.setAttribute("cx", cx); de.setAttribute("cy", y(p.ev));
+    tip.hidden = false;
+    tip.innerHTML = '<b>Hand ' + (i + 1) + '</b> · ' + p.h.date + '<br><i class="rv-key-net"></i>Asli ' + p.net.toFixed(1) + 'bb<br><i class="rv-key-ev"></i>EV ' + p.ev.toFixed(1) + 'bb' +
+                    '<br><span class="rv-muted">' + p.h.heroPos + ' ' + p.h.heroCards.join("") + ' ' + (p.h.net >= 0 ? "+" : "") + p.h.net.toFixed(1) + 'bb</span>';
+    tip.style.left = Math.min(cx + 12, W - 170) + "px"; tip.style.top = "8px";
+  });
+  hit.addEventListener("pointerleave", hide);
+}
+
+/* --- Batch solver: saare heads-up postflop hands ek ke baad ek (server cache karta hai) --- */
+let rvBatchStop = false;
+async function rvBatchSolve(){
+  const btn = el("rv-batch");
+  if(btn.dataset.running === "1"){ rvBatchStop = true; btn.textContent = "Rok raha hai…"; return; }
+  const todo = rvHands.filter(h => !h.post && h.acts.some(a => a.street === "flop" && a.name === h.hero) && !rvRangesFor(h).why);
+  if(!todo.length){ el("rv-status").textContent = "Solve karne layak koi naya hand nahi"; return; }
+  btn.dataset.running = "1"; rvBatchStop = false; btn.textContent = "⏹ Rok do";
+  for(let i = 0; i < todo.length && !rvBatchStop; i++){
+    el("rv-status").textContent = "Solver: " + (i + 1) + "/" + todo.length + " (har hand ~10 sec–3 min, pehle solve hua to turant)";
+    const box = document.createElement("div");
+    await rvSolve(todo[i], box);
+  }
+  btn.dataset.running = "0"; btn.textContent = "🧠 Saare postflop solve karo";
+  el("rv-status").textContent = "Solver batch khatam — Leaks tab me postflop galtiyan dekho";
 }
 
 // Exploit plan + history: pichle snapshot se kya naya aaya, kya ab lagu nahi
@@ -5007,13 +5487,21 @@ async function rvSaveMine(name, text){
 }
 
 let rvTab = "hands";
+const RV_TABS = {hands: "rv-list", players: "rv-players", me: "rv-me", leaks: "rv-leaks", graph: "rv-graph", plu: "rv-plu"};
 function rvShowTab(t){
   rvTab = t;
-  el("rv-list").hidden = t !== "hands";
-  el("rv-players").hidden = t !== "players";
-  el("rv-tab-hands").setAttribute("aria-pressed", String(t === "hands"));
-  el("rv-tab-players").setAttribute("aria-pressed", String(t === "players"));
-  if(t === "players"){ rvRenderPlayers(); rvAutoNotes(); }
+  Object.entries(RV_TABS).forEach(([k, id]) => {
+    el(id).hidden = k !== t;
+    el("rv-tab-" + k).setAttribute("aria-pressed", String(k === t));
+  });
+  rvRenderTab();
+}
+function rvRenderTab(){
+  if(rvTab === "players"){ rvRenderPlayers(); rvAutoNotes(); }
+  else if(rvTab === "me") rvRenderMe();
+  else if(rvTab === "leaks") rvRenderLeaks();
+  else if(rvTab === "graph") rvRenderGraph();
+  else if(rvTab === "plu") rvRenderPlu();
 }
 function rvRenderPlayers(){
   const box = el("rv-players");
@@ -5036,8 +5524,9 @@ async function rvAutoLoad(){
     try{ rvNotes = await (await fetch(GTO_URL + "/api/player_notes")).json(); }catch(e){}
     j.files.forEach(f => rvLoadText(f.text));
     await rvSyncExploits();
+    rvLoadPluribus();                                   // background: Pluribus reference
     el("rv-status").textContent = rvHands.length + " NLHE hands · " + j.files.length + " files (" + j.dirs.length + " folders)";
-    if(rvTab === "players"){ rvRenderPlayers(); rvAutoNotes(); }
+    rvRenderTab();
   }catch(e){
     el("rv-status").textContent = "Auto-load nahi hua (GTO server band?) — Files/Folder chuno se daalo";
   }
@@ -5060,10 +5549,10 @@ function rvInit(){
     el("rv-paste").value = "";
   });
   el("rv-mistakes").addEventListener("change", e => { rvOnlyMistakes = e.target.checked; rvRender(); });
-  el("rv-clear").addEventListener("click", () => { rvHands = []; rvOpen = null; el("rv-status").textContent = ""; rvRender(); if(rvTab === "players") rvRenderPlayers(); });
+  el("rv-clear").addEventListener("click", () => { rvHands = []; rvOpen = null; el("rv-status").textContent = ""; rvRender(); rvRenderTab(); });
   el("rv-refresh").addEventListener("click", rvAutoLoad);
-  el("rv-tab-hands").addEventListener("click", () => rvShowTab("hands"));
-  el("rv-tab-players").addEventListener("click", () => rvShowTab("players"));
+  Object.keys(RV_TABS).forEach(k => el("rv-tab-" + k).addEventListener("click", () => rvShowTab(k)));
+  el("rv-batch").addEventListener("click", rvBatchSolve);
   rvRender();
   rvAutoLoad();
 }

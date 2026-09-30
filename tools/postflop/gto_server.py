@@ -520,6 +520,7 @@ def deepseek_chat(system, user, max_tokens=800):
 # --------------------------------------------------------------------------
 HANDS = {}
 HANDS_LOCK = threading.Lock()
+_PLURIBUS_TEXT = None    # /api/pluribus ka 7MB text ek baar padho, cache rakho
 
 
 class Hand:
@@ -889,6 +890,13 @@ class Handler(BaseHTTPRequestHandler):
         elif self.path == "/api/player_notes":
             import hh_review
             self._send(hh_review.notes_get())
+        elif self.path == "/api/pluribus":
+            # Pluribus ke 10k hands (pluribus_convert.py se bane) — Hand Review ka reference (cached)
+            global _PLURIBUS_TEXT
+            if _PLURIBUS_TEXT is None:
+                f = WORK_DIR / "pluribus_gg.txt"
+                _PLURIBUS_TEXT = f.read_text(encoding="utf-8") if f.exists() else ""
+            self._send({"text": _PLURIBUS_TEXT} if _PLURIBUS_TEXT else {"error": "pluribus_gg.txt nahi mila — tools/postflop/pluribus_convert.py chalao"})
         elif self.path == "/api/hh_files":
             import hh_review
             self._send(hh_review.load_hh_files())

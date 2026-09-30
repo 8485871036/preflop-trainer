@@ -162,7 +162,8 @@ def _solve(board, pot, stack, ip_r, oop_r, sizes, max_iter):
     with g._solve_lock:
         with open(g.CACHE_DIR / f"{key}.log", "w") as lf:
             g.subprocess.run([str(g.SOLVER_EXE), "-i", str(in_path)], cwd=str(g.SOLVER_DIR),
-                             stdout=lf, stderr=g.subprocess.STDOUT, check=True)
+                             stdout=lf, stderr=g.subprocess.STDOUT, check=True,
+                             creationflags=(g.subprocess.CREATE_NO_WINDOW | 0x00004000) if g.os.name == "nt" else 0)
     tree = json.loads(out_path.read_text(encoding="utf-8"))
     cache.write_text(json.dumps(tree), encoding="utf-8")
     out_path.unlink(missing_ok=True)

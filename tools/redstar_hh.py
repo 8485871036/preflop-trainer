@@ -137,16 +137,28 @@ POS_3 = {0: "BTN", 1: "SB", 2: "BB"}
 POS_2 = {0: "SB", 1: "BB"}                  # heads-up: button hi SB post karta hai
 
 
+def _table_title(txt):
+    """XML header ka <tablename> -> 'Bewdley 817748117' (window title isi se shuru hota hai)."""
+    m = re.search(r"<tablename>(.*?)</tablename>", txt)
+    return m.group(1).replace(",", "").strip() if m else ""
+
+
 def _live_table_xml(table_name):
-    """Hero wale table ka live XML text (aur table dir)."""
+    """Hero wale table ka live XML text (aur table dir). table_name (window title) diya ho to
+    SIRF usi table ki XML — multi-table me har window ki apni hand history."""
     tables = _tables()
     for tbl in tables:
         xml_path = tbl.parent / (tbl.name + ".xml")
         if xml_path.exists():
             try:
                 txt = xml_path.read_text(encoding="utf-8", errors="replace")
-                if HERO in txt:
-                    return txt, tbl
+                if HERO not in txt:
+                    continue
+                if table_name:
+                    t = _table_title(txt)
+                    if not t or not table_name.replace(",", "").startswith(t):
+                        continue
+                return txt, tbl
             except Exception:
                 continue
     return None, None
@@ -175,7 +187,13 @@ def _parse_table_state(xml):
     rounds = {}
     for rm in re.finditer(r'<round no="(\d+)">(.*?)(?=<round no=|\Z)', body, re.S):
         rno = int(rm.group(1))
-        acts = re.findall(r'<action[^>]*player="([^"]+)"[^>]*type="(\d+)"', rm.group(2))
+        acts = []
+        for am in re.finditer(r'<action\s+([^>]+)/?>', rm.group(2)):
+            p = re.search(r'player="([^"]+)"', am.group(1))
+            t = re.search(r'type="(\d+)"', am.group(1))
+            s = re.search(r'sum="([^"]*)"', am.group(1))
+            if p and t:
+                acts.append((p.group(1), t.group(1), s.group(1) if s else "0"))
         rounds[rno] = acts
     return {"gamecode": gc, "names": names, "seats": seats, "dealer_idx": dealer_idx, "rounds": rounds}
 
@@ -189,6 +207,11 @@ def _position(names, dealer_idx, hero=HERO):
     return tbl.get(off, "BTN")
 
 
+def _money(v):
+    m = re.search(r"[\d.]+", v)
+    return float(m.group()) if m else 0.0
+
+
 def _next_to_act(names, dealer_idx, acts, preflop, hero=HERO):
     """acts: [(name, type)] — current street ke actions. Returns True agar hero to act."""
     n = len(names)
@@ -196,7 +219,7 @@ def _next_to_act(names, dealer_idx, acts, preflop, hero=HERO):
         return False
     folded, acted = set(), set()
     last_idx = None
-    for nm, t in acts:
+    for nm, t, _ in acts:
         if preflop and t in ("1", "2"):
             continue                      # blinds — order me last aayenge
         if t == "0":
@@ -221,9 +244,11 @@ def _next_to_act(names, dealer_idx, acts, preflop, hero=HERO):
     return False
 
 
-def read_live_state():
-    """Cards + position + hero_to_act — XML gamecode se anchored (100% sync)."""
-    xml, tbl = _live_table_xml(None)
+def read_live_state(use_mem=True, table_name=None):
+    """Cards + position + hero_to_act — XML gamecode se anchored (100% sync).
+    use_mem=False: PokerClient memory scan mat karo (seconds lagte hain, live hand wahan milta nahi).
+    table_name: window title — multi-table me usi table ka state."""
+    xml, tbl = _live_table_xml(table_name)
     if not xml or not tbl:
         h = read_live_hand()
         if h:
@@ -244,7 +269,7 @@ def read_live_state():
     max_r = max(st["rounds"].keys()) if st["rounds"] else 0
     xml_street = {0: None, 1: None, 2: "flop", 3: "turn", 4: "river"}.get(max_r)
     # 1) MEMORY first — client isi hand ka PROTOBUF memory me LIVE likhta hai (no lag)
-    if HAS_MEM:
+    if HAS_MEM and use_mem:
         try:
             pid = redstar_mem.find_pid()
             if pid:
@@ -281,6 +306,30 @@ def read_live_state():
         if p:
             names_by_pos[p] = nm
     hand["names"] = names_by_pos
+    # PREFLOP bets (100% accurate XML se): {pos: total bb invested} — limp + raise exact.
+    # raise (type 23) ka sum = street TOTAL ("to"); blind/call/bet/all-in ka sum = increment.
+    bbv = next((_money(v) for _, t, v in st["rounds"].get(0, []) if t == "2"), 0.0) or 0.02
+    put = {}
+    for no in (0, 1):
+        for nm, t, v in st["rounds"].get(no, []):
+            amt = _money(v)
+            if t == "23":
+                put[nm] = amt                     # raise: sum = total "to"
+            elif t in ("0", "4"):
+                continue                          # fold/check — koi chips nahi
+            else:
+                put[nm] = put.get(nm, 0.0) + amt  # blind/call/bet/all-in: increment
+    pf = {}
+    for nm, amt in put.items():
+        p = _position(st["names"], st["dealer_idx"], nm)
+        if p and amt > 0:
+            pf[p] = round(amt / bbv, 2)
+    hand["pf_bets"] = pf
+    # Live XML hand ke DAURAAN sirf blinds (round 0) likhti hai — preflop actions hand khatam hone
+    # pe aate hain. Round 1 me actions hon tabhi pf_bets poore hain; warna frontend OCR bets le.
+    hand["pf_live"] = bool(st["rounds"].get(1))
+    hero_pos = hand.get("pos")
+    hand["pf_to_call"] = round(max(pf.values(), default=0.0) - pf.get(hero_pos, 0.0), 2) if pf else 0.0
     # street: binary board se, lekin XML rounds se verify karo (round count)
     rounds = st["rounds"]
     street = hand.get("street")

@@ -16,6 +16,7 @@ Usage: python tools/postflop/generate.py
 """
 import concurrent.futures
 import json
+import os
 import re
 import subprocess
 from pathlib import Path
@@ -132,8 +133,11 @@ def solve_one(board_id, board_str, texture):
     log_path = WORK_DIR / f"{board_id}_run.log"
     solver_out_path.unlink(missing_ok=True)
     with open(log_path, "w") as log_f:
+        # BELOW_NORMAL_PRIORITY_CLASS + CREATE_NO_WINDOW — system smooth + kala console nahi khulega
+        flags = (subprocess.CREATE_NO_WINDOW | 0x00004000) if os.name == "nt" else 0
         subprocess.run([str(SOLVER_EXE), "-i", str(in_path)], cwd=str(SOLVER_DIR),
-                        stdout=log_f, stderr=subprocess.STDOUT, check=True)
+                        stdout=log_f, stderr=subprocess.STDOUT, check=True,
+                        creationflags=flags)
     if not solver_out_path.exists():
         raise RuntimeError(f"{board_id}: solver did not produce {solver_out_path} -- check {log_path}")
     solver_out_path.replace(final_out_path)

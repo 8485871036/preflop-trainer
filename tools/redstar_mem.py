@@ -45,7 +45,8 @@ k32.VirtualQueryEx.restype = ctypes.c_size_t
 def find_pid(proc_name="PokerClient.exe"):
     out = subprocess.run(
         ["tasklist", "/FI", f"IMAGENAME eq {proc_name}", "/FO", "CSV", "/NH"],
-        capture_output=True, text=True).stdout
+        capture_output=True, text=True,
+        creationflags=subprocess.CREATE_NO_WINDOW).stdout
     for line in out.splitlines():
         parts = [p.strip().strip('"') for p in line.split('","')]
         if len(parts) >= 2 and parts[0].lower() == proc_name.lower():

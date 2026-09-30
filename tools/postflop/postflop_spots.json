@@ -1,0 +1,282 @@
+{
+ "srp_UTG_BB": {
+  "ip": "UTG",
+  "oop": "BB",
+  "ip_range": {
+   "main": "44+, A2s+, K9s+, Q9s+, J9s+, T9s, 98s, 87s, 76s, 65s, ATo+, KQo",
+   "border": "33, K8s, T8s, J8s, 54s"
+  },
+  "oop_range": {
+   "main": "22-TT, A2s, A3s, A6s-ATs, K2s-KTs, Q5s-QTs, J7s-J9s, T7s, T8s, 96s, 97s, 98s, 86s, 87s, 75s, 64s, 53s, ATo, AJo, AQo, KJo, KQo",
+   "border": "Q2s-Q4s, J5s, J6s, T6s, 95s, 85s, 74s, 63s, 54s, A9o, KTo, QJo"
+  },
+  "pot": 4.9,
+  "eff": 97.8
+ },
+ "srp_MP_BB": {
+  "ip": "MP",
+  "oop": "BB",
+  "ip_range": {
+   "main": "22+, A2s+, K7s+, Q8s+, J8s+, T8s+, 97s, 98s, 86s, 87s, 76s, 65s, 54s, ATo+, KJo+",
+   "border": "K6s, Q7s, J7s, T7s, 96s, 75s, QJo, A9o"
+  },
+  "oop_range": {
+   "main": "22-TT, A2s, A3s, A6s-ATs, K2s-KTs, Q5s-QTs, J7s-J9s, T7s, T8s, 96s, 97s, 98s, 86s, 87s, 75s, 64s, 53s, ATo, AJo, AQo, KJo, KQo",
+   "border": "Q2s-Q4s, J5s, J6s, T6s, 95s, 85s, 74s, 63s, 54s, A9o, KTo, QJo"
+  },
+  "pot": 4.9,
+  "eff": 97.8
+ },
+ "srp_CO_BB": {
+  "ip": "CO",
+  "oop": "BB",
+  "ip_range": {
+   "main": "22+, A2s+, K2s+, Q6s+, J7s+, T7s+, 96s, 97s, 98s, 85s, 86s, 87s, 75s, 76s, 54s, A9o+, KTo+, QJo, JTo",
+   "border": "Q5s, J6s, T6s, 95s, 84s, 74s, 64s, 65s, A5o, A4o, A3o, A2o, K9o, QTo, T9o"
+  },
+  "oop_range": {
+   "main": "22-88, A6s-A9s, K2s-KTs, Q4s-QTs, J6s-J9s, T6s-T8s, 95s, 96s, 97s, 85s, 86s, 74s, 75s, 64s, 53s, 54s, A9o, ATo, AJo, KTo, KJo, KQo, QTo, QJo, JTo, T9o",
+   "border": "Q2s, Q3s, J4s, J5s, T5s, 94s, 84s, 73s, 63s, 43s, A8o, A7o, K9o, Q9o, J9o, 98o"
+  },
+  "pot": 5.5,
+  "eff": 97.5
+ },
+ "srp_BTN_BB": {
+  "ip": "BTN",
+  "oop": "BB",
+  "ip_range": {
+   "main": "22+, A2s+, K2s+, Q2s+, J4s+, T6s+, 95s, 96s, 97s, 98s, 84s, 85s, 86s, 87s, 74s, 75s, 76s, 63s, 64s, 65s, 53s, 54s, 43s, A2o+, K9o+, QTo+, JTo",
+   "border": "J2s, J3s, T5s, 94s, 83s, 73s, 62s, 52s, 42s, 32s, K7o, K8o, Q8o, Q9o, J8o, J9o, T8o, T9o, 98o, 87o"
+  },
+  "oop_range": {
+   "main": "22-66, A6s-A8s, K2s-K9s, Q2s-Q9s, J2s-J8s, T6s-T8s, 95s, 96s, 97s, 84s, 85s, 86s, 74s, 75s, 63s, 64s, 53s, A2o-A9o, K9o-KQo, QTo, QJo, JTo",
+   "border": "T5s, 94s, 83s, 73s, 62s, 52s, 43s, K8o, K7o, Q9o, J9o, T9o, 98o"
+  },
+  "pot": 5.5,
+  "eff": 97.5
+ },
+ "srp_SB_BB": {
+  "ip": "BB",
+  "oop": "SB",
+  "ip_range": {
+   "main": "22-44, A6s, A7s, K2s-K8s, Q2s-Q9s, J2s-J8s, T2s-T7s, 92s-97s, 82s-86s, 72s-75s, 62s-64s, 52s, 53s, 42s, 43s, 32s, A2o-A8o, K2o-KTo, Q6o-QTo, J8o, J9o, JTo, T9o",
+   "border": "Q2o, Q3o, Q4o, Q5o, J6o, J7o, T7o, T8o, 98o, 97o, 87o"
+  },
+  "oop_range": {
+   "main": "22+, A2s+, K2s+, Q2s+, J2s+, T5s+, 95s, 96s, 97s, 98s, 84s, 85s, 86s, 87s, 74s, 75s, 76s, 63s, 64s, 65s, 53s, 54s, 43s, A2o+, K8o+, Q9o+, JTo",
+   "border": "T2s, T3s, T4s, 94s, 93s, 83s, 82s, 73s, 72s, 62s, 52s, 42s, 32s, K3o, K4o, K5o, K6o, K7o, Q6o, Q7o, Q8o, J8o, J9o, T8o, T9o, 97o, 98o, 87o, 86o, 76o, 65o, 54o"
+  },
+  "pot": 6,
+  "eff": 97
+ },
+ "3bp_UTG_MP": {
+  "ip": "MP",
+  "oop": "UTG",
+  "ip_range": {
+   "main": "99+, AJs+, A8s, A9s, A4s, A5s, KJs, KTs, QTs, JTs, T9s, 98s, 65s, AKo",
+   "border": "88, A3s, QJs, 54s"
+  },
+  "oop_range": {
+   "main": "88-JJ, AJs, ATs, KQs, KJs, QJs, JTs, AQo",
+   "border": ""
+  },
+  "pot": 15.5,
+  "eff": 93
+ },
+ "3bp_UTG_CO": {
+  "ip": "CO",
+  "oop": "UTG",
+  "ip_range": {
+   "main": "99+, AJs+, A8s, A9s, A3s-A5s, KJs, KTs, QTs, JTs, T9s, 98s, 76s, 65s, AKo",
+   "border": "88, QJs, 54s, AQo"
+  },
+  "oop_range": {
+   "main": "88-JJ, AJs, ATs, KQs, KJs, QJs, JTs, AQo",
+   "border": ""
+  },
+  "pot": 15.5,
+  "eff": 93
+ },
+ "3bp_UTG_BTN": {
+  "ip": "BTN",
+  "oop": "UTG",
+  "ip_range": {
+   "main": "88+, ATs+, A2s-A5s, KTs+, QTs+, JTs, T9s, 98s, 76s, AQo+",
+   "border": "77, A9s, KJo, 65s, 54s"
+  },
+  "oop_range": {
+   "main": "88-JJ, AJs, ATs, KQs, KJs, QJs, JTs, AQo",
+   "border": ""
+  },
+  "pot": 15.5,
+  "eff": 93
+ },
+ "3bp_UTG_SB": {
+  "ip": "UTG",
+  "oop": "SB",
+  "ip_range": {
+   "main": "88-QQ, AQs, AJs, ATs, KQs, KJs, QJs, AKo, AQo",
+   "border": ""
+  },
+  "oop_range": {
+   "main": "88+, AJs+, A3s-A5s, KJs+, QJs, JTs, T9s, 98s, AQo+",
+   "border": "77, A9s, KTs, QTs, 87s, 76s, 65s, 54s"
+  },
+  "pot": 22,
+  "eff": 89.5
+ },
+ "3bp_UTG_BB": {
+  "ip": "UTG",
+  "oop": "BB",
+  "ip_range": {
+   "main": "88-QQ, AQs, AJs, ATs, KQs, KJs, QJs, AKo, AQo",
+   "border": ""
+  },
+  "oop_range": {
+   "main": "JJ+, AQs+, AJs, A4s, A5s, KQs, KJs, QJs, JTs, T9s, 76s, 65s, 54s, AKo",
+   "border": "TT, A3s, KTs, 98s, 87s"
+  },
+  "pot": 23.5,
+  "eff": 88.5
+ },
+ "3bp_MP_CO": {
+  "ip": "CO",
+  "oop": "MP",
+  "ip_range": {
+   "main": "88+, ATs+, A3s-A5s, KTs+, QTs+, JTs, T9s, 98s, 87s, 76s, 65s, AKo",
+   "border": "77, A2s, A9s, 54s, AQo"
+  },
+  "oop_range": {
+   "main": "88-JJ, AJs, ATs, KQs, KJs, QJs, JTs, AQo",
+   "border": ""
+  },
+  "pot": 15.5,
+  "eff": 93
+ },
+ "3bp_MP_BTN": {
+  "ip": "BTN",
+  "oop": "MP",
+  "ip_range": {
+   "main": "77+, ATs+, A2s-A5s, KTs+, QTs+, JTs, T9s, 98s, 87s, 76s, 65s, AQo+",
+   "border": "66, A9s, K9s, 54s, AJo"
+  },
+  "oop_range": {
+   "main": "88-JJ, AJs, ATs, KQs, KJs, QJs, JTs, AQo",
+   "border": ""
+  },
+  "pot": 15.5,
+  "eff": 93
+ },
+ "3bp_MP_SB": {
+  "ip": "MP",
+  "oop": "SB",
+  "ip_range": {
+   "main": "77-QQ, AQs, AJs, ATs, KQs, KJs, KTs, QJs, JTs, AKo, AQo",
+   "border": ""
+  },
+  "oop_range": {
+   "main": "88+, AJs+, A3s-A5s, KJs+, QJs, JTs, T9s, 98s, AQo+",
+   "border": "77, A9s, KTs, QTs, 87s, 76s, 65s, 54s"
+  },
+  "pot": 22,
+  "eff": 89.5
+ },
+ "3bp_MP_BB": {
+  "ip": "MP",
+  "oop": "BB",
+  "ip_range": {
+   "main": "77-QQ, AQs, AJs, ATs, KQs, KJs, KTs, QJs, JTs, AKo, AQo",
+   "border": ""
+  },
+  "oop_range": {
+   "main": "JJ+, AQs+, AJs, A4s, A5s, KQs, KJs, QJs, JTs, T9s, 76s, 65s, 54s, AKo",
+   "border": "TT, A3s, KTs, 98s, 87s"
+  },
+  "pot": 23.5,
+  "eff": 88.5
+ },
+ "3bp_CO_BTN": {
+  "ip": "BTN",
+  "oop": "CO",
+  "ip_range": {
+   "main": "55+, A2s+, K9s+, Q9s+, J9s+, T9s, 98s, 87s, 76s, 65s, 54s, AJo+",
+   "border": "44, K8s, Q8s, J8s, T8s, ATo, KQo"
+  },
+  "oop_range": {
+   "main": "66-TT, AJs, ATs, KQs, KJs, KTs, QJs, QTs, JTs, J9s, T9s, AQo, AJo",
+   "border": ""
+  },
+  "pot": 15.5,
+  "eff": 93
+ },
+ "3bp_CO_SB": {
+  "ip": "CO",
+  "oop": "SB",
+  "ip_range": {
+   "main": "55-JJ, AQs, AJs, ATs, KQs, KJs, KTs, K9s, QJs, QTs, Q9s, JTs, J9s, T9s, T8s, 98s, 87s, 76s, 65s, AKo, AQo",
+   "border": ""
+  },
+  "oop_range": {
+   "main": "77+, ATs+, A3s-A5s, KTs+, QJs, QTs, JTs, T9s, 98s, 87s, 76s, AQo+",
+   "border": "66, A9s, A2s, K9s, Q9s, 65s, 54s, AJo"
+  },
+  "pot": 24,
+  "eff": 88.5
+ },
+ "3bp_CO_BB": {
+  "ip": "CO",
+  "oop": "BB",
+  "ip_range": {
+   "main": "55-JJ, AQs, AJs, ATs, KQs, KJs, KTs, K9s, QJs, QTs, Q9s, JTs, J9s, T9s, T8s, 98s, 87s, 76s, 65s, AKo, AQo",
+   "border": ""
+  },
+  "oop_range": {
+   "main": "99+, ATs+, A2s-A5s, KJs+, QJs, JTs, T9s, 98s, 87s, 76s, 65s, AQo+",
+   "border": "88, KTs, QTs, 54s"
+  },
+  "pot": 23.5,
+  "eff": 88.5
+ },
+ "3bp_BTN_SB": {
+  "ip": "BTN",
+  "oop": "SB",
+  "ip_range": {
+   "main": "44-JJ, AJs, ATs, A9s, A8s, A7s, A6s, A2s, KQs, KJs, KTs, K8s, K7s, QJs, QTs, Q9s, JTs, J9s, T9s, T8s, 98s, 97s, 87s, 86s, 76s, 65s, 54s, AQo, AJo, KQo, KJo, QJo",
+   "border": ""
+  },
+  "oop_range": {
+   "main": "66+, A2s+, K9s+, QTs+, JTs, T9s, 98s, 87s, 76s, 65s, 54s, ATo+",
+   "border": "55, K8s, Q9s, J9s, T8s, KQo, A9o"
+  },
+  "pot": 24,
+  "eff": 88.5
+ },
+ "3bp_BTN_BB": {
+  "ip": "BTN",
+  "oop": "BB",
+  "ip_range": {
+   "main": "44-JJ, AJs, ATs, A9s, A8s, A7s, A6s, A2s, KQs, KJs, KTs, K8s, K7s, QJs, QTs, Q9s, JTs, J9s, T9s, T8s, 98s, 97s, 87s, 86s, 76s, 65s, 54s, AQo, AJo, KQo, KJo, QJo",
+   "border": ""
+  },
+  "oop_range": {
+   "main": "77+, A9s+, A2s-A5s, KTs+, QTs+, JTs, J9s, T9s, 98s, 87s, 76s, 65s, 54s, ATo+",
+   "border": "66, K9s, Q9s, T8s, A9o, KQo"
+  },
+  "pot": 23.5,
+  "eff": 88.5
+ },
+ "3bp_SB_BB": {
+  "ip": "BB",
+  "oop": "SB",
+  "ip_range": {
+   "main": "55+, A8s+, A2s-A5s, K9s+, QTs+, JTs, J9s, T9s, T8s, 98s, 87s, 76s, 65s, 54s, A9o+, KJo+, QJo",
+   "border": "44, A6s, A7s, Q9s, K8o, QTo, JTo"
+  },
+  "oop_range": {
+   "main": "22-TT, AJs, ATs, A9s, A8s, A7s, A6s, KQs, KJs, KTs, QJs, QTs, JTs, T8s, 97s, 87s, 76s, 65s, 54s, AQo, AJo, KQo, KJo, QJo, QTo, JTo",
+   "border": ""
+  },
+  "pot": 18,
+  "eff": 91
+ }
+}

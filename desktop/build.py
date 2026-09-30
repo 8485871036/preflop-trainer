@@ -25,6 +25,9 @@ def main():
         "--add-data", f"{ROOT / 'manifest.webmanifest'};.",
         # verified card-rank templates (repo root wali file pehle padhi jaati hai, ye fallback)
         "--add-data", f"{ROOT / 'rank_templates.json'};.",
+        # bet / button amount fonts (OpenHoldem-style, hand history se verified)
+        "--add-data", f"{ROOT / 'bet_font.json'};.",
+        "--add-data", f"{ROOT / 'btn_font.json'};.",
         # Mirror + GTO servers exe ke andar chalte hain (solver repo se)
         "--paths", str(ROOT),
         "--paths", str(ROOT / "tools"),
@@ -35,6 +38,7 @@ def main():
         "--hidden-import", "rangeutil",
         "--hidden-import", "redstar_hh",          # Red Star live card reader (mirror_server lazy import)
         "--hidden-import", "redstar_mem",         # Red Star memory reader (redstar_hh lazy import)
+        "--hidden-import", "hud",                 # always-on-top HUD overlay (main.py --hud se)
         "--distpath", str(DESKTOP / "dist"),
         "--workpath", str(DESKTOP / "build"),
         "--specpath", str(DESKTOP),

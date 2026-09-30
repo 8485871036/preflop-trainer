@@ -25,6 +25,8 @@ import re
 import subprocess
 import threading
 import hashlib
+import time
+import queue as _queue
 from itertools import combinations
 from pathlib import Path
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -47,7 +49,8 @@ DEEPSEEK_URL = "https://api.deepseek.com/chat/completions"
 
 TURN_ITER = int(os.environ.get("GTO_TURN_ITER", "100"))
 RIVER_ITER = int(os.environ.get("GTO_RIVER_ITER", "100"))
-THREADS = int(os.environ.get("GTO_THREADS", "12"))
+THREADS = int(os.environ.get("GTO_THREADS", "6"))
+BG_THREADS = int(os.environ.get("GTO_BG_THREADS", "4"))   # background solve (gentle) ke liye kam threads
 
 OPEN_BTN = "22+, A2s+, K2s+, Q2s+, J4s+, T6s+, 95s, 96s, 97s, 98s, 84s, 85s, 86s, 87s, 74s, 75s, 76s, 63s, 64s, 65s, 53s, 54s, 43s, A2o+, K9o+, QTo+, JTo"
 OPEN_BTN_B = "J2s, J3s, T5s, 94s, 83s, 73s, 62s, 52s, 42s, 32s, K7o, K8o, Q8o, Q9o, J8o, J9o, T8o, T9o, 98o, 87o"
@@ -148,6 +151,7 @@ dump_result {out_json}
 """
 
 _solve_lock = threading.Lock()
+_nolock = __import__("contextlib").nullcontext()
 
 # --------------------------------------------------------------------------
 # Cards
@@ -237,7 +241,8 @@ HAND_NAMES = {8: "Straight Flush", 7: "Quads", 6: "Full House", 5: "Flush",
 # --------------------------------------------------------------------------
 # Solver interface
 # --------------------------------------------------------------------------
-def solve(board_str, pot, stack, ip_range, oop_range, out_name, max_iter, template=None):
+def solve(board_str, pot, stack, ip_range, oop_range, out_name, max_iter, template=None, threads=None,
+          low_priority=False, lock=True):
     """Run console_solver.exe. Returns parsed JSON (dump_rounds=1)."""
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     in_path = CACHE_DIR / f"{out_name}_input.txt"
@@ -245,16 +250,25 @@ def solve(board_str, pot, stack, ip_range, oop_range, out_name, max_iter, templa
     script = (template or INPUT_TEMPLATE).format(
         pot=pot, eff=stack, board=board_str,
         ip_range=ip_range, oop_range=oop_range,
-        threads=THREADS, max_iter=max_iter, out_json=f"{out_name}.json",
+        threads=threads or THREADS, max_iter=max_iter, out_json=f"{out_name}.json",
     )
     in_path.write_text(script, encoding="utf-8")
     out_path.unlink(missing_ok=True)
     log_path = CACHE_DIR / f"{out_name}.log"
-    with _solve_lock:
+    # Windows pe solver HAMESHA gentle priority pe chale — warna 6-20 CPU threads
+    # poora system hila dete hain (UI freeze / mouse lag).
+    #   live solve -> BELOW_NORMAL_PRIORITY_CLASS (0x4000)
+    #   background -> IDLE_PRIORITY_CLASS      (0x40)   (library builder, sirf free CPU pe)
+    flags = 0
+    if os.name == "nt":
+        # CREATE_NO_WINDOW: windowed app se console_solver spawn karne par har solve pe
+        # kala console window flash hota tha — ab chupchaap (no console) chalega.
+        flags = subprocess.CREATE_NO_WINDOW | (0x00000040 if low_priority else 0x00004000)
+    with (_solve_lock if lock else _nolock):
         with open(log_path, "w") as lf:
             subprocess.run([str(SOLVER_EXE), "-i", str(in_path)],
                            cwd=str(SOLVER_DIR), stdout=lf, stderr=subprocess.STDOUT,
-                           check=True)
+                           check=True, creationflags=flags)
     if not out_path.exists():
         raise RuntimeError(f"solve failed for {out_name}; see {log_path}")
     return json.loads(out_path.read_text(encoding="utf-8"))
@@ -383,20 +397,57 @@ def _live_cache_path(key):
     return CACHE_DIR / f"{key}.json"
 
 
-def _flop_tree(board_list, pot=POT, stack=EFF_STACK):
+def _flop_key(board_list, pot, stack):
+    return hashlib.md5(f"flop|{','.join(board_list)}|{round(pot,1)}|{round(stack,1)}".encode()).hexdigest()[:16]
+
+
+def _flop_tree(board_list, pot=POT, stack=EFF_STACK, threads=None):
     """Flop tree — exact pre-solved (instant) ya flop-only on-demand solve (~5s). Returns (tree, approx)."""
     if pot == POT and stack == EFF_STACK:
         pre = _pre_solved_flop(board_list)
         if pre is not None:
             return pre, False
     board_str = ",".join(board_list)
-    key = hashlib.md5(f"flop|{board_str}|{round(pot,1)}|{round(stack,1)}".encode()).hexdigest()[:16]
+    key = _flop_key(board_list, pot, stack)
     path = _live_cache_path(key)
     if path.exists():
         return json.loads(path.read_text(encoding="utf-8")), False
-    tree = solve(board_str, pot, stack, IP_RANGE, OOP_RANGE, key, FLOP_ITER, template=FLOP_TEMPLATE)
+    tree = solve(board_str, pot, stack, IP_RANGE, OOP_RANGE, key, FLOP_ITER, template=FLOP_TEMPLATE, threads=threads)
     path.write_text(json.dumps(tree), encoding="utf-8")
     return tree, False
+
+
+# --------------------------------------------------------------------------
+# Background gentle solver — live me naye boards queue me daal ke ek-ek solve
+# karo (kam threads + beech me saans) taaki PC chude nahi aur pre-solved library
+# dheere-dheere badhti rahe. /api/live?bg=1 is queue ka use karta hai.
+# --------------------------------------------------------------------------
+_bg_jobs = _queue.Queue()
+_bg_queued = set()
+_bg_lock = threading.Lock()
+
+
+def enqueue_flop(board_list, pot, stack):
+    key = _flop_key(board_list, pot, stack)
+    with _bg_lock:
+        if key in _bg_queued:
+            return
+        _bg_queued.add(key)
+    _bg_jobs.put(("flop", board_list, pot, stack))
+
+
+def _bg_worker():
+    while True:
+        job = _bg_jobs.get()
+        if job is None:
+            return
+        kind, board_list, pot, stack = job
+        try:
+            if kind == "flop":
+                _flop_tree(board_list, pot, stack, threads=BG_THREADS)
+        except Exception:
+            pass
+        time.sleep(1.0)   # solve ke beech pause — CPU ko saans
 
 
 def solve_street_tree(board_list, pot, stack, ip_w, oop_w, max_iter):
@@ -432,6 +483,21 @@ def _hero_ip_node(tree, facing):
     return children.get(best_key) if best_key else None
 
 
+def _hero_oop_node(tree, facing):
+    """OOP (hero=BB) node — pehla action ho to root; IP ne bet kiya ho (hero ne check kiya tha)
+    to CHECK -> closest BET child (call/fold/raise wala node). Pehle BB ko hamesha root milta tha,
+    bet face karte waqt bhi bet/check strategy dikhti thi."""
+    if not tree or tree.get("node_type") != "action_node":
+        return None
+    if facing <= 0:
+        return tree
+    return _hero_ip_node(tree.get("childrens", {}).get("CHECK"), facing)
+
+
+def _hero_node(tree, facing, hero_pos):
+    return _hero_oop_node(tree, facing) if hero_pos == "BB" else _hero_ip_node(tree, facing)
+
+
 def live_recommend(board, hero, street="flop", pot=POT, stack=EFF_STACK, facing=0.0, hero_pos="BTN"):
     """Hero ke exact hand ki GTO strategy current street ke node pe.
 
@@ -455,12 +521,12 @@ def live_recommend(board, hero, street="flop", pot=POT, stack=EFF_STACK, facing=
         return {"error": f"flop solve failed: {e}"}
 
     if street == "flop":
-        node = _hero_ip_node(flop_tree, facing) if hero_pos != "BB" else flop_tree
+        node = _hero_node(flop_tree, facing, hero_pos)
     elif street == "turn":
         flop_line = ["CHECK", "CHECK"]
         ip_w, oop_w = reach_weights(flop_line, flop_tree)
         turn_tree = solve_street_tree(board[:4], pot, stack, ip_w, oop_w, TURN_ITER)
-        node = _hero_ip_node(turn_tree, facing) if hero_pos != "BB" else turn_tree
+        node = _hero_node(turn_tree, facing, hero_pos)
     elif street == "river":
         flop_line = ["CHECK", "CHECK"]
         ip_w, oop_w = reach_weights(flop_line, flop_tree)
@@ -468,7 +534,7 @@ def live_recommend(board, hero, street="flop", pot=POT, stack=EFF_STACK, facing=
         turn_line = ["CHECK", "CHECK"]
         ip_w, oop_w = reach_weights(turn_line, turn_tree, (ip_w, oop_w))
         river_tree = solve_street_tree(board, pot, stack, ip_w, oop_w, RIVER_ITER)
-        node = _hero_ip_node(river_tree, facing) if hero_pos != "BB" else river_tree
+        node = _hero_node(river_tree, facing, hero_pos)
     else:
         return {"error": "unknown street"}
 
@@ -489,6 +555,262 @@ def live_recommend(board, hero, street="flop", pot=POT, stack=EFF_STACK, facing=
         "actions": [{"key": a, **action_label(a, pot, stack)} for a in actions],
         "approx": bool(approx),
     }
+
+
+# --------------------------------------------------------------------------
+# Spot library — asli preflop spot (SRP / 3-bet pot, positions) ka pre-solved flop.
+# Library me ho to lookup (memory cache ke baad microseconds). Na ho to usi spot ki ranges se
+# live solve (library builder se upar priority) aur library me save — agli baar instant.
+# --------------------------------------------------------------------------
+import spotlib  # noqa: E402
+
+_PRE_ORDER = ["UTG", "MP", "CO", "BTN", "SB", "BB"]
+LIB_ITER = int(os.environ.get("LIB_ITER", "80"))
+_POST_ORDER = ["SB", "BB", "UTG", "MP", "CO", "BTN"]
+_live_jobs = _queue.Queue()
+_live_pending = set()
+_live_lock = threading.Lock()
+
+
+def resolve_spot(hero_pos, villain_pos, pot_type):
+    """-> (spot_id, hero_is_ip, exact). Preflop order me pehle wala = opener."""
+    spots = spotlib.spots()
+    if hero_pos not in _PRE_ORDER or villain_pos not in _PRE_ORDER or hero_pos == villain_pos:
+        sid = "3bp_BTN_BB" if pot_type == "3bp" else "srp_BTN_BB"
+        return sid, hero_pos == "BTN", False
+    a, b = sorted([hero_pos, villain_pos], key=_PRE_ORDER.index)
+    sid = f"3bp_{a}_{b}" if pot_type == "3bp" else f"srp_{a}_BB"
+    exact = sid in spots and (pot_type == "3bp" or b == "BB")
+    if sid not in spots:
+        sid = "3bp_BTN_BB" if pot_type == "3bp" else "srp_BTN_BB"
+    if exact:
+        hero_ip = spots[sid]["ip"] == hero_pos
+    else:
+        hero_ip = _POST_ORDER.index(hero_pos) > _POST_ORDER.index(villain_pos)
+    return sid, hero_ip, exact
+
+
+def _spot_ranges(spot):
+    sp = spotlib.spots()[spot]
+    ip = rangeutil.weighted_range_string(sp["ip_range"]["main"], sp["ip_range"].get("border", ""))
+    oop = rangeutil.weighted_range_string(sp["oop_range"]["main"], sp["oop_range"].get("border", ""))
+    return sp, ip, oop
+
+
+def _solve_spot_flop(spot, canon):
+    """Representative flop POORE tree se (library builder jaisa) — flop-only tree galat tha."""
+    canon = list(canon)
+    sp, ip, oop = _spot_ranges(spot)
+    name = f"live_{spot}_{''.join(canon)}"
+    tree = solve(",".join(canon), sp["pot"], sp["eff"], ip, oop, name, LIB_ITER, template=INPUT_TEMPLATE)
+    nodes = spotlib.extract_nodes(tree)
+    if nodes:
+        spotlib.save(spot, canon, nodes)
+    (SOLVER_DIR / f"{name}.json").unlink(missing_ok=True)
+    return tree
+
+
+def _live_worker():
+    while True:
+        job = _live_jobs.get()
+        try:
+            job[0](*job[1:])
+        except Exception:
+            pass
+        with _live_lock:
+            _live_pending.discard(job[1:])
+
+
+def _enqueue_live(fn, *args):
+    with _live_lock:
+        if args in _live_pending:
+            return
+        _live_pending.add(args)
+    _live_jobs.put((fn, *args))
+
+
+def _hand_combos(hand):
+    r1, r2 = hand[0], hand[1]
+    suited = hand[2:] == "s"
+    out = []
+    for s1 in "shdc":
+        for s2 in "shdc":
+            c1, c2 = r1 + s1, r2 + s2
+            if c1 == c2:
+                continue
+            if r1 == r2 and "shdc".index(s1) >= "shdc".index(s2):
+                continue
+            if r1 != r2 and suited != (s1 == s2):
+                continue
+            out.append((c1, c2))
+    return out
+
+
+def _range_weights(range_str, board):
+    """'AA,KQs:0.5,...' -> {combo: weight} (board cards hata ke)."""
+    w = {}
+    for tok in range_str.split(","):
+        tok = tok.strip()
+        if not tok:
+            continue
+        hand, _, wt = tok.partition(":")
+        wt = float(wt) if wt else 1.0
+        for c1, c2 in _hand_combos(hand):
+            if c1 in board or c2 in board:
+                continue
+            w[combo_key(c1, c2)] = wt
+    return w
+
+
+def _checkcheck_reach(spot, canon, nodes, rep):
+    """Flop check-check line ke baad dono ki ranges (turn solve ke liye) — rep board ki strategy
+    same-feature mapping se har asli combo pe."""
+    sp, ip, oop = _spot_ranges(spot)
+    wi, wo = _range_weights(ip, canon), _range_weights(oop, canon)
+
+    def p_check(key, cb):
+        node = nodes.get(key)
+        if not node or "CHECK" not in node["a"]:
+            return 0.0
+        if rep == canon and cb in node["s"]:
+            v = node["s"][cb]
+            return v[node["a"].index("CHECK")] / (sum(v) or 1)
+        mix, _ = spotlib.mapped_strategy(key, node, rep, [cb[:2], cb[2:]], canon)
+        return (mix or {}).get("CHECK", 0.0)
+    oop_w = {cb: w * p_check("r", cb) for cb, w in wo.items()}
+    ip_w = {cb: w * p_check("c", cb) for cb, w in wi.items()}
+    return ip_w, oop_w
+
+
+def _spot_turn_path(spot, board4):
+    return _live_cache_path(hashlib.md5(("spot_turn|" + spot + "|" + ",".join(board4)).encode()).hexdigest()[:16])
+
+
+def _solve_spot_turn(spot, board4):
+    sp = spotlib.spots()[spot]
+    canon = list(board4[:3])
+    rep = spotlib.load(spot, canon) and canon or spotlib.representative(canon)
+    nodes = spotlib.load(spot, rep)
+    ip_w, oop_w = _checkcheck_reach(spot, canon, nodes, rep)
+    tree = solve_street_tree(list(board4), sp["pot"], sp["eff"], ip_w, oop_w, TURN_ITER)
+    _spot_turn_path(spot, board4).write_text(json.dumps(tree), encoding="utf-8")
+    return tree
+
+
+def _similar_mix(strat_by_combo, actions, hero, board, k=5):
+    """Hero ka hand range me nahi (chart se alag khela) -> board pe usi taaqat ke range hands
+    (made-hand rank + flush draw) me se k sabse kareeb ki average strategy."""
+    def key(c1, c2):
+        cards = [parse_card(c) for c in (c1, c2, *board)]
+        suits = [c[1] for c in (c1, c2, *board)]
+        fd = max(suits.count(x) for x in set(suits)) == 4 and len(board) < 5
+        return seven_rank(cards), fd
+    hk = key(*hero)
+    pool = []
+    for cb, st in strat_by_combo.items():
+        c1, c2 = cb[:2], cb[2:]
+        if c1 in hero or c2 in hero:
+            continue
+        rk = key(c1, c2)
+        if rk[1] != hk[1]:
+            continue
+        pool.append((rk[0], st))
+    if not pool:
+        return None
+    pool.sort(key=lambda x: x[0])
+    ranks = [r for r, _ in pool]
+    import bisect
+    i = bisect.bisect_left(ranks, hk[0])
+    near = pool[max(0, i - k // 2): max(0, i - k // 2) + k]
+    tot = [0.0] * len(actions)
+    for _, st in near:
+        ssum = sum(st) or 1
+        for j, v in enumerate(st):
+            tot[j] += v / ssum
+    n = len(near)
+    return {a: round(tot[j] / n, 4) for j, a in enumerate(actions)}
+
+
+def spot_label(key, pot, stack, facing=0.0):
+    """Seedha karne layak label, BB amount ke saath: 'Call 2bb', 'Bet 1.8bb (33% pot)', 'Raise to 10bb'."""
+    fmt = lambda v: (f"{v:.0f}" if abs(v - round(v)) < 0.05 else f"{v:.1f}") + "bb"
+    if key == "CALL":
+        return "Call " + fmt(facing) if facing > 0 else "Call"
+    m = re.match(r"(BET|RAISE) ([\d.]+)", key)
+    if m:
+        amt = float(m.group(2))
+        if amt >= stack - 1:
+            return f"All-in ({fmt(stack)})"
+        if m.group(1) == "BET":
+            return f"Bet {fmt(amt)} ({round(amt / pot * 100)}% pot)"
+        return f"Raise to {fmt(amt)}"
+    return action_label(key, pot, stack)["label"]
+
+
+def spot_recommend(board, hero, street, facing, hero_pos, villain_pos, pot_type, bg=True):
+    if not board or len(board) < 3 or len(board) > 5:
+        return {"error": "invalid board"}
+    if isinstance(hero, str):
+        hero = [hero[0:2], hero[2:4]]
+    spot, hero_ip, exact = resolve_spot(hero_pos, villain_pos, pot_type)
+    sp = spotlib.spots()[spot]
+    canon, m = spotlib.canonical(board[:3])
+    cboard = canon + spotlib.map_cards(board[3:], m)
+    chero = spotlib.map_cards(hero, m)
+    # exact flop library me ho to wahi, warna bucket ka representative (same-feature mapping)
+    rep = canon if spotlib.lib_path(spot, canon).exists() else spotlib.representative(canon)
+    nodes = spotlib.load(spot, rep)
+    if nodes is None:
+        if bg:
+            _enqueue_live(_solve_spot_flop, spot, tuple(rep))
+            return {"queued": True, "spot": spot, "eta": 170}
+        _solve_spot_flop(spot, rep)
+        nodes = spotlib.load(spot, rep)
+    approx = not exact
+    source = "library" if rep == canon else "library~" + "".join(rep)
+    similar = False
+    if street == "flop":
+        node, nkey = spotlib.pick_node(nodes, hero_ip, facing)
+        nkey = ("c" if hero_ip else "r") if facing <= 0 else ("b" if hero_ip else "cb") + str(nkey)
+        actions = node["a"] if node else []
+        mix = spotlib.hero_strategy(node, chero) if rep == canon else None
+        if mix is None and node:
+            mix, lvl = spotlib.mapped_strategy(nkey, node, rep, chero, canon)
+            similar = rep == canon and mix is not None
+    else:
+        # turn/river: flop check-check maan ke (flop pe bet-call line abhi track nahi) -> approx
+        approx, source = True, "solved"
+        b4 = tuple(cboard[:4])
+        tp = _spot_turn_path(spot, b4)
+        if tp.exists():
+            tree = json.loads(tp.read_text(encoding="utf-8"))
+        elif bg:
+            _enqueue_live(_solve_spot_turn, spot, b4)
+            return {"queued": True, "spot": spot}
+        else:
+            tree = _solve_spot_turn(spot, b4)
+        if street == "river":
+            ip_w, oop_w = _checkcheck_reach(spot, canon, nodes, rep)
+            ip_w, oop_w = reach_weights(["CHECK", "CHECK"], tree, (ip_w, oop_w))
+            tree = solve_street_tree(cboard, sp["pot"], sp["eff"], ip_w, oop_w, RIVER_ITER)
+        node = _hero_node(tree, facing, "BTN" if hero_ip else "BB")
+        if not node or node.get("node_type") != "action_node":
+            return {"error": "no decision node", "spot": spot}
+        actions = node.get("actions", [])
+        strat = node_strategy(node)
+        st = strat.get(combo_key(*chero))
+        mix = {a: round(float(st[i]), 4) for i, a in enumerate(actions)} if st is not None else None
+        if mix is None:
+            mix = _similar_mix(strat, actions, chero, cboard)
+            similar = mix is not None
+    if not mix:
+        return {"error": "hand not in range", "spot": spot, "actions": actions}
+    labels = {a: spot_label(a, sp["pot"], sp["eff"], facing) for a in mix}
+    best = max(mix, key=mix.get)
+    return {"board": board, "street": street, "spot": spot, "hero_ip": hero_ip,
+            "strategy": mix, "best": best, "bestLabel": labels[best], "labels": labels,
+            "approx": approx or similar, "similar": similar, "source": source,
+            "pot": sp["pot"], "eff": sp["eff"]}
 
 
 # --------------------------------------------------------------------------
@@ -951,12 +1273,27 @@ class Handler(BaseHTTPRequestHandler):
             elif self.path == "/api/player_note":
                 import hh_review
                 self._send(hh_review.player_note(self._body()))
+            elif self.path == "/api/spot":
+                b = self._body()
+                self._send(spot_recommend(b.get("board"), b.get("hero"), b.get("street", "flop"),
+                                          float(b.get("facing", 0.0)), b.get("heroPos"), b.get("villainPos"),
+                                          b.get("potType", "srp"), bool(b.get("bg", True))))
             elif self.path == "/api/live":
                 b = self._body()
-                self._send(live_recommend(
-                    b.get("board"), b.get("hero"), b.get("street", "flop"),
-                    float(b.get("pot", POT)), float(b.get("stack", EFF_STACK)),
-                    float(b.get("facing", 0.0)), b.get("heroPos", "BTN")))
+                board = b.get("board")
+                hero = b.get("hero")
+                street = b.get("street", "flop")
+                pot = float(b.get("pot", POT))
+                stack = float(b.get("stack", EFF_STACK))
+                facing = float(b.get("facing", 0.0))
+                hero_pos = b.get("heroPos", "BTN")
+                if b.get("bg") and street == "flop" and board and len(board) >= 3:
+                    flop = board[:3]
+                    if _pre_solved_flop(flop) is None and not _live_cache_path(_flop_key(flop, pot, stack)).exists():
+                        enqueue_flop(flop, pot, stack)
+                        self._send({"queued": True, "board": board, "street": street})
+                        return
+                self._send(live_recommend(board, hero, street, pot, stack, facing, hero_pos))
             else:
                 self._send({"error": "not found"}, 404)
         except Exception as e:  # noqa
@@ -968,6 +1305,8 @@ def start_background():
     if not SOLVER_EXE.exists():
         return None
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    threading.Thread(target=_bg_worker, daemon=True).start()
+    threading.Thread(target=_live_worker, daemon=True).start()
     srv = ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     return srv
@@ -977,6 +1316,8 @@ def main():
     if not SOLVER_EXE.exists():
         raise SystemExit(f"console_solver.exe not found at {SOLVER_EXE}")
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    threading.Thread(target=_bg_worker, daemon=True).start()
+    threading.Thread(target=_live_worker, daemon=True).start()
     srv = ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
     print(f"GTO server on http://127.0.0.1:{PORT}  (AI coach: {'ON' if DEEPSEEK_KEY else 'OFF'})")
     try:

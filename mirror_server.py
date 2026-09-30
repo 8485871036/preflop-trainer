@@ -1073,6 +1073,191 @@ def detect_position(img):
     return None if b is None else seat_positions(img, b).get(HERO_SEAT)
 
 
+# ---------------- OpenHoldem-style font scan (CTransform::DoPlainFontScan port) ----------------
+# Numbers OCR se nahi, exact pixel bitmap se: pixel white ke "radius" ke andar = on; left->right
+# har column ek int (top row = MSB); khaali column pe naya char; char ke columns ka tuple font
+# table me EXACT dhoondo. ~1 ms, aur galat nahi padhta — anjaan char ho to '?' (tab tesseract).
+# Font tables (bet_font.json / btn_font.json) Red Star hand history ke exact amounts se bani hain;
+# naye variants hand khatam hone pe history se verify hoke khud judte hain.
+FONT_RADIUS = 150
+_font_lock = threading.Lock()
+
+
+def _font_load(name):
+    for base in (os.environ.get("PREFLOP_ROOT"), getattr(sys, "_MEIPASS", None),
+                 os.path.dirname(os.path.abspath(__file__))):
+        if not base:
+            continue
+        try:
+            with open(os.path.join(base, name), encoding="utf-8") as f:
+                data = json.load(f)
+            return {tuple(int(v, 16) for v in k.split(",")): c for k, c in data["chars"].items()}
+        except Exception:
+            continue
+    return {}
+
+
+FONTS = {"bet": _font_load("bet_font.json"), "btn": _font_load("btn_font.json")}
+
+
+def _font_mask(crop):
+    a = _np.asarray(crop.convert("RGB"), dtype=_np.int32)
+    return _np.abs(a - 255).sum(2) <= FONT_RADIUS
+
+
+def _font_lines(mask):
+    """Khaali rows pe text lines (button: 'CALL' / '1.50 BB'). Chhote dhabbe (chips ki chamak) nahi."""
+    rows = list(mask.any(1)) + [False]
+    out, start = [], None
+    for y, r in enumerate(rows):
+        if r and start is None:
+            start = y
+        elif not r and start is not None:
+            ln = mask[start:y]
+            if ln.sum() >= 6 and ln.shape[0] >= 5:
+                out.append(ln)
+            start = None
+    return out
+
+
+def _font_chars(line):
+    """Line -> chars; har char = columns ke ints ka tuple (neeche ke khaali bits trim)."""
+    weights = 1 << _np.arange(line.shape[0] - 1, -1, -1, dtype=_np.int64)
+    cols = [int(v) for v in (line.astype(_np.int64) * weights[:, None]).sum(0)]
+    chars, cur = [], []
+    for c in cols + [0]:
+        if c:
+            cur.append(c)
+        elif cur:
+            chars.append(cur)
+            cur = []
+    out = []
+    for ch in chars:
+        low = min((c & -c).bit_length() - 1 for c in ch)
+        out.append(tuple(c >> low for c in ch))
+    return out
+
+
+def _font_read(chars, kind):
+    f = FONTS[kind]
+    return "".join(f.get(ch, "?") for ch in chars)
+
+
+def _amount_text(v):
+    """Client ka format: 1 -> '1BB', 2.5 -> '2.50BB'."""
+    return (str(int(round(v))) if abs(v - round(v)) < 1e-6 else f"{v:.2f}") + "BB"
+
+
+def _font_learn(kind, chars, text):
+    """Verified (chars, text) ko font me jodo. Kisi char ka pehle se alag label ho to kuch nahi."""
+    if len(chars) != len(text):
+        return 0
+    f = FONTS[kind]
+    if any(f.get(ch, c) != c for ch, c in zip(chars, text)):
+        return 0
+    new = {ch: c for ch, c in zip(chars, text) if ch not in f}
+    if not new:
+        return 0
+    with _font_lock:
+        f.update(new)
+        base = os.environ.get("PREFLOP_ROOT") or os.path.dirname(os.path.abspath(__file__))
+        try:
+            with open(os.path.join(base, f"{kind}_font.json"), "w", encoding="utf-8") as fh:
+                json.dump({"format": "ohfont", "radius": FONT_RADIUS,
+                           "chars": {",".join(format(v, "x") for v in ch): c for ch, c in f.items()}},
+                          fh, indent=1, sort_keys=True)
+        except Exception:
+            pass
+    return len(new)
+
+
+FONT_MAX_CHAR_BITS = 11      # text chars ~9 rows ke; isse lamba = chips / kachra
+_last_bet_chars = []         # read_bets ne har seat ke jo chars dekhe (SEAT_ANCHORS order)
+_font_frames = {}            # gamecode -> {"t", "frames": [(to_call, {pos: chars})]} — hero decision frames
+
+
+def _font_record(to_call, pos_by_seat, gc=None):
+    """Hero decision frame: button ka exact to_call + har position ke bet chars. Hand khatam hone pe
+    hand history se exact bets milte hain -> tab label (sirf yahi strict truth; 'amount kahin bhi
+    daala gaya' jaisi kamzor verification ne 3 ko 2 label kar diya tha).
+    gc = isi table ki live XML ka gamecode (multi-table me har table ka apna)."""
+    if gc is None and len(state["tables"]) == 1:
+        gc = _truth.get("gc") if "_truth" in globals() else None
+    if not gc or not pos_by_seat:
+        return
+    chars = {pos_by_seat[i]: ch for i, ch in enumerate(_last_bet_chars) if ch and i in pos_by_seat}
+    p = _font_frames.setdefault(gc, {"t": time.time(), "frames": []})
+    if len(p["frames"]) < 50 and (to_call, chars) not in p["frames"]:
+        p["frames"].append((to_call, chars))
+
+
+def _completed_decisions(gc):
+    """Completed hand XML se hero ke har preflop decision ka (to_call, {pos: bet_bb}) — ya None."""
+    try:
+        files = sorted(redstar_hh.DONE_DATA.glob("*.xml"), key=lambda f: f.stat().st_mtime, reverse=True)[:5]
+    except Exception:
+        return None
+    for f in files:
+        try:
+            xml = f.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            continue
+        m = re.search(r'<game gamecode="%s">(.*?)</game>' % gc, xml, re.S)
+        if not m:
+            continue
+        body = m.group(1)
+        money = lambda v: float(re.search(r"[\d.]+", v).group()) if re.search(r"[\d.]+", v) else 0.0
+        names, dealer = [], 0
+        for ptag in re.findall(r"<player\s+([^>]+)/>", body):
+            nm = re.search(r'name="([^"]+)"', ptag)
+            if nm:
+                names.append(nm.group(1))
+                if 'dealer="1"' in ptag:
+                    dealer = len(names) - 1
+        pos = {nm: redstar_hh._position(names, dealer, nm) for nm in names}
+        def act(no):
+            r = re.search(r'<round no="%d">(.*?)</round>' % no, body, re.S)
+            return re.findall(r'player="([^"]+)" sum="([^"]*)" type="(\d+)"', r.group(1)) if r else []
+        acts0 = act(0)
+        bbv = next((money(v) for _, v, t in acts0 if t == "2"), 0) or 0.02
+        put = {}
+        for n, v, _ in acts0:
+            put[n] = put.get(n, 0) + money(v) / bbv
+        decs = []
+        for n, v, t in act(1):
+            if n == redstar_hh.HERO:
+                decs.append((round(max(put.values(), default=0) - put.get(n, 0), 2),
+                             {pos[k]: round(x, 2) for k, x in put.items() if x > 0 and k in pos}))
+            if t == "23":
+                put[n] = money(v) / bbv                   # raise ka sum = TOTAL "raise to" (screen se verified)
+            elif t not in ("0", "4"):
+                put[n] = put.get(n, 0) + money(v) / bbv   # call/bet/all-in = increment
+        return decs
+    return None
+
+
+def _learn_fonts_from_history(current_gc):
+    """Khatam hue hands: har recorded decision frame ko hand history ke exact bets se label karo."""
+    for gc in list(_font_frames):
+        if gc == current_gc:
+            continue
+        p = _font_frames[gc]
+        decs = _completed_decisions(gc)
+        if decs is None and time.time() - p["t"] < 300:
+            continue                                       # XML abhi likhi nahi gayi
+        _font_frames.pop(gc, None)
+        n = 0
+        for to_call, chars in p["frames"] if decs else []:
+            d = [b for tc, b in decs if abs(tc - to_call) < 0.01]
+            if len(d) != 1:
+                continue
+            for ps, ch in chars.items():
+                if d[0].get(ps, 0) > 0:
+                    n += _font_learn("bet", ch, _amount_text(d[0][ps]))
+        if n:
+            print(f"[font] hand {gc}: {n} naye verified bet chars")
+
+
 _BET_RE = re.compile(r"(\d+(?:\.\d+)?)\s*B")
 
 
@@ -1087,32 +1272,51 @@ def _parse_bet(text):
 _bet_cache = {}
 
 
+_AMOUNT_RE = re.compile(r"\d+(?:\.\d+)?BB")
+
+
 def read_bets(img):
-    """Har seat ke saamne ka bet (BB me) — SEAT_ANCHORS order me list."""
+    """Har seat ke saamne ka bet (BB me) — SEAT_ANCHORS order me list.
+    Pehle font scan (exact, ~1 ms); koi char anjaan ho tabhi tesseract."""
     img = img.convert("RGB")
     w, h = img.size
-    out = []
+    out, chars_by_seat = [], []
     for x0, y0, x1, y1 in BET_BOXES:
         c = img.crop((int(x0 * w), int(y0 * h), int(x1 * w), int(y1 * h)))
-        c = c.resize((c.width * 4, c.height * 4), Image.LANCZOS)
-        a = _np.asarray(c, dtype=_np.int32)
-        white = (a.min(2) > 160) & ((a.max(2) - a.min(2)) < 50)   # safed text, rangeen chips nahi
-        if white.sum() < 40:                                       # khaali — tesseract mat chalao
-            out.append(0.0)
+        lines = _font_lines(_font_mask(c))
+        chars = _font_chars(max(lines, key=lambda l: l.sum())) if lines else []
+        chars = [ch for ch in chars if max(ch).bit_length() <= FONT_MAX_CHAR_BITS]   # chips ka kachra
+        chars_by_seat.append(tuple(chars))
+        s = _font_read(chars, "bet")
+        if _AMOUNT_RE.fullmatch(s):
+            out.append(float(s[:-2]))
             continue
-        key = white.tobytes()
-        if key not in _bet_cache:                                  # same label = same pixels
-            bw = Image.fromarray(_np.where(white, 0, 255).astype(_np.uint8))
-            try:
-                t = pytesseract.image_to_string(
-                    bw, config="--psm 7 -c tessedit_char_whitelist=0123456789.B").strip()
-            except Exception:
-                t = ""
-            if len(_bet_cache) > 500:
-                _bet_cache.clear()
-            _bet_cache[key] = _parse_bet(t)
-        out.append(_bet_cache[key])
+        out.append(_tess_bet(c))
+    _last_bet_chars[:] = chars_by_seat
     return out
+
+
+def _tess_bet(c):
+    """Purana tesseract path — sirf jab font me koi char anjaan ho."""
+    if not HAS_TESS:
+        return 0.0
+    c = c.resize((c.width * 4, c.height * 4), Image.LANCZOS)
+    a = _np.asarray(c, dtype=_np.int32)
+    white = (a.min(2) > 160) & ((a.max(2) - a.min(2)) < 50)   # safed text, rangeen chips nahi
+    if white.sum() < 40:                                       # khaali — tesseract mat chalao
+        return 0.0
+    key = white.tobytes()
+    if key not in _bet_cache:                                  # same label = same pixels
+        bw = Image.fromarray(_np.where(white, 0, 255).astype(_np.uint8))
+        try:
+            t = pytesseract.image_to_string(
+                bw, config="--psm 7 -c tessedit_char_whitelist=0123456789.B").strip()
+        except Exception:
+            t = ""
+        if len(_bet_cache) > 500:
+            _bet_cache.clear()
+        _bet_cache[key] = _parse_bet(t)
+    return _bet_cache[key]
 
 
 def board_present(img):
@@ -1123,6 +1327,29 @@ def board_present(img):
                     dtype=_np.int32)
     colored = (a.max(2) > 90) | ((a.max(2) - a.min(2)) > 60)
     return colored.mean() > 0.1
+
+
+# Red Star table ke fixed pixels (OpenHoldem "tablepoint" jaisa): window FRACTION -> RGB.
+# Default theme + default size pe har table frame me constant — lobby / settings / doosre
+# room ki window ya badla hua theme ho to match nahi karte, aur tab kuch padhna hi nahi.
+TABLE_POINTS = [
+    ((0.03, 0.55), (12, 69, 24)),     # bahar ka green background
+    ((0.13, 0.50), (43, 37, 37)),     # table ka rim
+    ((0.70, 0.45), (46, 46, 46)),     # dark felt
+]
+TABLE_POINT_TOL = 30                  # |dR|+|dG|+|dB|
+
+
+def is_table_frame(img):
+    """Frame sach me (default theme wali) Red Star table hai?"""
+    a = _np.asarray(img.convert("RGB"), dtype=_np.int32)
+    h, w = a.shape[:2]
+    for (fx, fy), rgb in TABLE_POINTS:
+        x, y = int(fx * w), int(fy * h)
+        c = a[max(0, y - 2):y + 3, max(0, x - 2):x + 3].reshape(-1, 3).mean(0)
+        if abs(c - _np.array(rgb)).sum() > TABLE_POINT_TOL:
+            return False
+    return True
 
 
 def _action_buttons(img):
@@ -1138,21 +1365,139 @@ def _action_buttons(img):
 RS_SEATS = [1, 3, 5, 6, 8, 10]   # Red Star 6-max XML seat numbers, clockwise (action order)
 
 
-def xml_seat_positions(st, hero=None):
-    """Live XML (dealt players + seat + dealer) -> ({screen_seat: "BTN"/...}, dealer_screen_seat).
+def card_back_seats(img):
+    """Jin opponent seats ke saamne face-down cards (blue back + chip logo) hain — screen seat set.
+    Hand ke shuru me (fold se pehle) yahi batata hai ki kaun DEAL hua; live XML me wait-for-BB /
+    naye baithe players bhi hote hain jinhe cards nahi milte."""
+    a = _np.asarray(img.convert("RGB"), dtype=_np.int32)
+    h, w = a.shape[:2]
+    R, G, B = a[..., 0], a[..., 1], a[..., 2]
+    blue = ((B > R + 40) & (B > 110) & (G < B)).astype(_np.uint8)
+    n, _, st, cen = _cv2.connectedComponentsWithStats(blue, 8)
+    bx0, by0, bx1, by1 = BOARD_REGION
+    seats = set()
+    for i in range(1, n):
+        x, y, bw, bh, ar = (int(v) for v in st[i])
+        if ar < w * h * 0.0015 or bh < h * 0.04:
+            continue
+        cx, cy = cen[i][0] / w, cen[i][1] / h
+        if bx0 <= cx <= bx1 and by0 <= cy <= by1:
+            continue                                   # board ke diamond cards
+        if not _is_card_back(img.crop((x, y, x + bw, y + bh))):
+            continue
+        s = min(range(len(SEAT_ANCHORS)),
+                key=lambda k: (cx - SEAT_ANCHORS[k][0]) ** 2 + (cy - SEAT_ANCHORS[k][1]) ** 2)
+        if s != HERO_SEAT:
+            seats.add(s)
+    return seats
+
+
+def xml_seat_positions(st, hero=None, dealt_seats=None):
+    """Live XML (players + seat + dealer) -> ({screen_seat: "BTN"/...}, dealer_screen_seat).
     Screen pe hero hamesha HERO_SEAT (bottom-center), seats clockwise — isliye XML seat ka
-    order-offset hi screen index hai. Sit-out / wait-for-BB wale XML me hote hi nahi."""
+    order-offset hi screen index hai.
+    dealt_seats: is hand me jin opponent screen-seats pe card backs dikhe (hand ki SHURUAAT se dekha
+    ho tabhi do) — live XML me baithe-par-deal-na-hue players bhi hote hain, woh hata do."""
     hero = hero or redstar_hh.HERO
     names, seats = st.get("names") or [], st.get("seats") or []
     if hero not in names or len(seats) != len(names) or any(s not in RS_SEATS for s in seats):
         return None, None
     k = RS_SEATS.index(seats[names.index(hero)])
     scr = lambda s: (HERO_SEAT + RS_SEATS.index(s) - k) % len(SEAT_ANCHORS)
-    pos = {scr(s): redstar_hh._position(names, st["dealer_idx"], nm) for nm, s in zip(names, seats)}
-    return pos, scr(seats[st["dealer_idx"]])
+    dealer_scr = scr(seats[st["dealer_idx"]])
+    # Live XML me "Wait for BB" wala player bhi list me hota hai (deal nahi hua). Blinds ke asli
+    # posters se check: dealer ke baad pehla SB poster, uske baad BB poster — beech me jo baithe
+    # hain unhone blind nahi diya = is hand me nahi. Unhe hata ke positions nikaalo.
+    blinds = {t: nm for nm, t, _ in (st.get("rounds") or {}).get(0, []) if t in ("1", "2")}
+    n, d = len(names), st["dealer_idx"]
+    order = [names[(d + i) % n] for i in range(1, n + 1)]          # dealer ke baad clockwise, dealer last
+    keep = set(names)
+    sb, bb = blinds.get("1"), blinds.get("2")
+    if bb in order:
+        stop = order.index(sb) if sb in order else order.index(bb)
+        keep -= set(order[:stop])                                   # dealer -> SB ke beech
+        if sb in order:
+            keep -= set(order[order.index(sb) + 1:order.index(bb)])  # SB -> BB ke beech
+    if dealt_seats:
+        # BB ke baad baithe wait wale (blinds se pakde nahi jaate): jinke saamne cards aaye hi nahi
+        keep -= {nm for nm, s in zip(names, seats)
+                 if nm not in (hero, sb, bb) and scr(s) not in dealt_seats}
+    dealt = [nm for nm in names if nm in keep]
+    if names[d] not in keep:
+        return None, dealer_scr
+    dd = dealt.index(names[d])
+    pos = {scr(s): redstar_hh._position(dealt, dd, nm) for nm, s in zip(names, seats) if nm in keep}
+    return pos, dealer_scr
 
 
-def detect_action(img, board_obs=None, xml_pos=None):
+_btn_cache = {}
+
+
+def _button_text(img, x0, x1):
+    """Button ka tesseract text (fallback). Same pixels = cache."""
+    w, h = img.size
+    c = img.convert("RGB").crop((int(x0 * w), int(0.905 * h), int(x1 * w), int(0.995 * h)))
+    c = c.resize((c.width * 4, c.height * 4), Image.LANCZOS)
+    a = _np.asarray(c, dtype=_np.int32)
+    white = (a.min(2) > 150) & ((a.max(2) - a.min(2)) < 50)
+    if white.sum() < 40:
+        return ""
+    key = (x0, white.tobytes())
+    if key not in _btn_cache:
+        try:
+            t = pytesseract.image_to_string(
+                Image.fromarray(_np.where(white, 0, 255).astype(_np.uint8)),
+                config="--psm 6 -c tessedit_char_whitelist=CALHEKIN-B0123456789.").strip()
+        except Exception:
+            t = ""
+        if len(_btn_cache) > 300:
+            _btn_cache.clear()
+        _btn_cache[key] = t
+    return _btn_cache[key]
+
+
+BTN_MID, BTN_RIGHT = (0.755, 0.877), (0.878, 0.995)
+
+
+def _button_lines(img, xs):
+    w, h = img.size
+    return _font_lines(_font_mask(img.crop((int(xs[0] * w), int(0.905 * h), int(xs[1] * w), int(0.995 * h)))))
+
+
+def read_call_button(img, chips_to_call=None):
+    """Hero ki baari pe exact call amount (BB) buttons se: CHECK -> (0, False),
+    CALL 1.50 BB -> (1.5, False); chhota stack ho to beech wala button hota hi nahi, sirf
+    ALL-IN 65.25 BB -> (65.25, True). Na padh paaye to None.
+    CHECK vs CALL: CHECK button pe koi NUMBER nahi hota — amount mile to CALL, na mile to CHECK.
+    (Line ginna galat tha: bade table size pe halka "CALL" text mask me aata hi nahi.)
+    Amount font scan se (exact); anjaan char ho tabhi tesseract, jiska jawab chips wale to_call
+    se mile to font me jod dete hain."""
+    mid = _button_lines(img, BTN_MID)
+    allin = False
+    if not mid:
+        mid, allin = _button_lines(img, BTN_RIGHT), True     # beech ka button nahi = sirf ALL-IN
+        if not mid:
+            return None
+    chars = _font_chars(mid[-1])
+    s = _font_read(chars, "btn")
+    if _AMOUNT_RE.fullmatch(s):
+        return float(s[:-2]), allin
+    t = _button_text(img, *(BTN_RIGHT if allin else BTN_MID))
+    m = re.search(r"(\d+(?:\.\d+)?)\s*B", t)
+    if not m:
+        if not allin and t and not re.search(r"\d", t):
+            return 0.0, False                                 # number hi nahi = CHECK
+        return None
+    try:
+        v = float(m.group(1))
+    except ValueError:
+        return None
+    if chips_to_call is not None and abs(v - chips_to_call) < 0.01:
+        _font_learn("btn", chars, _amount_text(v))       # do alag tareeke same bole = verified
+    return v, allin
+
+
+def detect_action(img, board_obs=None, xml_pos=None, gc=None):
     """Preflop/postflop action: position, bets, board, hero_to_act.
     hero_to_act = abhi hero ki baari hai (call/check/raise ka faisla).
     xml_pos = xml_seat_positions() ka jawab — ho to positions usi se (100% sahi); screen se
@@ -1160,10 +1505,8 @@ def detect_action(img, board_obs=None, xml_pos=None):
     b = _button_seat(img)
     if b is None:
         return None
-    if xml_pos and xml_pos[0] and xml_pos[1] == b:     # screen ka button = XML ka dealer (same hand)
-        pos = xml_pos[0]
-    else:
-        pos = seat_positions(img, b)
+    from_xml = bool(xml_pos and xml_pos[0] and xml_pos[1] == b)   # screen ka button = XML ka dealer
+    pos = xml_pos[0] if from_xml else seat_positions(img, b)
     hero = pos.get(HERO_SEAT)
     bets = read_bets(img)
     bets_by_pos = {pos[i]: amt for i, amt in enumerate(bets) if amt > 0 and i in pos}
@@ -1173,13 +1516,20 @@ def detect_action(img, board_obs=None, xml_pos=None):
     # Hero ki baari = FOLD/CALL/RAISE buttons dikh rahe hain. Pehle to_call > 0 se andaza tha —
     # hero fold karke bahar ho ya uske baad kisi aur ki baari ho, tab bhi "aapki baari" bolta tha.
     hero_to_act = _action_buttons(img)
+    call_allin = False
+    if hero_to_act:
+        cb = read_call_button(img, to_call)
+        if cb is not None:
+            to_call, call_allin = cb
+            if from_xml and not call_allin and not board_present(img):
+                _font_record(round(to_call, 2), pos, gc)  # hand khatam hone pe exact bets se font seekhega
     if board_present(img):
         board = detect_board(img, board_obs)
         return {"street": "postflop", "hero": hero, "bets": bets_by_pos,
                 "board": board or [], "streetName": _street_name(board),
-                "hero_to_act": hero_to_act, "to_call": round(to_call, 1)}
+                "hero_to_act": hero_to_act, "to_call": round(to_call, 2), "call_allin": call_allin}
     return {"street": "preflop", "hero": hero, "bets": bets_by_pos,
-            "hero_to_act": hero_to_act, "to_call": round(to_call, 1)}
+            "hero_to_act": hero_to_act, "to_call": round(to_call, 2), "call_allin": call_allin}
 
 
 def _street_name(board):
@@ -1313,6 +1663,10 @@ def truth_loop():
                         done.append((g, None, None))      # file kabhi nahi aayi — chhod do
                 for g, _, _ in done:
                     _truth["pending"].pop(g, None)
+            try:
+                _learn_fonts_from_history(gc)
+            except Exception:
+                pass
             for g, p, f in done:
                 if p is None:
                     continue
@@ -1327,6 +1681,27 @@ def truth_loop():
         time.sleep(0.5)
 
 
+def livecards_loop():
+    """/api/livecards ke liye Red Star XML/file state background me — HTTP request kabhi wait nahi karti.
+    Memory scan band: har call pe seconds lagte the aur live hand memory me milta hi nahi."""
+    while True:
+        try:
+            tables = list(state["tables"].items())
+            multi = len(tables) > 1
+            for title, t in tables:
+                # multi-table: har window ki apni XML (<tablename> se match) — warna ek hi table ki
+                # positions saari windows pe lag jaati thi
+                name = title if multi else None
+                t["livecards"] = redstar_hh.read_live_state(use_mem=False, table_name=name)
+                xml, _ = redstar_hh._live_table_xml(name)
+                t["xml_st"] = redstar_hh._parse_table_state(xml) if xml else None
+            sel = state["tables"].get(state.get("selected_title")) or (tables[0][1] if tables else None)
+            state["livecards"] = sel.get("livecards") if sel else redstar_hh.read_live_state(use_mem=False)
+        except Exception:
+            pass
+        time.sleep(0.25)
+
+
 def action_loop():
     """Background: har TABLE ke naye frame pe cards + bets/action padho.
     Action OCR flicker se bachne ke liye 2 frame same aaye tabhi publish."""
@@ -1338,6 +1713,19 @@ def action_loop():
             if img is None or img is seen.get(title) or t.get("blocked"):
                 continue
             seen[title] = img
+            # Sirf Hold'em table ka saaf frame padho — Omaha (4 cards), lobby, popup ya badla
+            # theme ho to galat cards/bets padhne se behtar kuch na padhna.
+            if "omaha" in title.lower():
+                t["layout"] = "omaha"
+            elif HAS_CV and not is_table_frame(img):
+                t["layout"] = "unknown"
+            else:
+                t["layout"] = "ok"
+            if t["layout"] != "ok":
+                t["last_ocr"] = None
+                t["action"] = None
+                t["position"] = None
+                continue
             if USE_OCR and HAS_TESS and t.get("manual_hand") is None:
                 try:
                     hkey = _hero_region_key(img)
@@ -1361,19 +1749,33 @@ def action_loop():
                 try:
                     bobs = []
                     xml_pos = None
-                    if HAS_REDSTAR and _truth.get("st") and len(state["tables"]) == 1:
-                        xml_pos = xml_seat_positions(_truth["st"])
-                    act = detect_action(img, bobs, xml_pos)
+                    if HAS_REDSTAR and t.get("xml_st"):          # isi table ki XML (multi-table bhi)
+                        gc = t["xml_st"].get("gamecode")
+                        dl = t.get("dealt")
+                        if not dl or dl["gc"] != gc:
+                            # naya hand: shuru se dekh rahe hain tabhi (pichla gc pata ho) card-back
+                            # union bharosemand — beech se join kiya to fold wale miss honge
+                            dl = t["dealt"] = {"gc": gc, "seats": set(), "n": 0,
+                                               "from_start": bool(dl), "t0": time.time()}
+                        if dl["from_start"] and time.time() - dl["t0"] < 8:
+                            dl["seats"] |= card_back_seats(img)   # deal ke baad, fold hone se pehle
+                            dl["n"] += 1
+                        use = dl["seats"] if (dl["from_start"] and dl["n"] >= 3 and dl["seats"]) else None
+                        xml_pos = xml_seat_positions(t["xml_st"], dealt_seats=use)
+                    act = detect_action(img, bobs, xml_pos, (t.get("xml_st") or {}).get("gamecode"))
                     if bobs:
                         _record_obs("board", tuple(bobs))
                     t["position"] = act and act["hero"]
-                    if act is not None and act == prev.get(title):
+                    # 2 frame same aaye tabhi publish; None bhi 2 baar aaye to hatao — pehle purana
+                    # action (pichle hand ka board) atka reh jaata tha
+                    if act == prev.get(title):
                         t["action"] = act
                     prev[title] = act
                 except Exception:
                     pass
-            # Seat names (throttled — har 3 sec) villain auto-select ke liye
-            if USE_OCR and HAS_TESS and time.time() - t.get("names_time", 0) > 3:
+            # Seat names (throttled — har 3 sec) villain auto-select ke liye. Red Star pe naam XML se
+            # exact aate hain (/api/livecards) — yeh ~400 ms ka OCR loop rok deta tha, isliye skip.
+            if USE_OCR and HAS_TESS and not HAS_REDSTAR and time.time() - t.get("names_time", 0) > 3:
                 try:
                     raw_names = detect_names(img)
                     btn = _button_seat(img)
@@ -1393,6 +1795,7 @@ def action_loop():
             state["frame_jpeg"] = sel.get("frame_jpeg")
             state["last_img"] = sel.get("last_img")
             state["blocked"] = sel.get("blocked", False)
+            state["layout"] = sel.get("layout")
         time.sleep(0.03)
 
 
@@ -1462,15 +1865,18 @@ class Handler(BaseHTTPRequestHandler):
             ctype = "application/json"
         if isinstance(body, str):
             body = body.encode("utf-8")
-        self.send_response(code)
-        self.send_header("Content-Type", ctype)
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
-        self.send_header("Cache-Control", "no-store")
-        self.send_header("Content-Length", str(len(body)))
-        self.end_headers()
-        self.wfile.write(body)
+        try:
+            self.send_response(code)
+            self.send_header("Content-Type", ctype)
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+            self.send_header("Access-Control-Allow-Headers", "Content-Type")
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+        except (ConnectionAbortedError, ConnectionResetError, BrokenPipeError):
+            pass                                     # browser ne beech me request chhod di (reload) — server nahi girna chahiye
 
     def _qparam(self, name):
         from urllib.parse import urlparse, parse_qs
@@ -1482,11 +1888,14 @@ class Handler(BaseHTTPRequestHandler):
         return state["tables"].get(title) if title else None
 
     def do_OPTIONS(self):
-        self.send_response(204)
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
-        self.end_headers()
+        try:
+            self.send_response(204)
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+            self.send_header("Access-Control-Allow-Headers", "Content-Type")
+            self.end_headers()
+        except (ConnectionAbortedError, ConnectionResetError, BrokenPipeError):
+            pass
 
     def do_GET(self):
         if self.path.startswith("/api/health"):
@@ -1500,12 +1909,14 @@ class Handler(BaseHTTPRequestHandler):
                 "table_count": len(state.get("windows", [])),
                 "pinned": state.get("pinned", False),
                 "blocked": state.get("blocked", False),
+                "layout": state.get("layout"),
             })
         elif self.path.startswith("/api/livecards"):
             out = {"available": HAS_REDSTAR}
             if HAS_REDSTAR:
                 try:
-                    h = redstar_hh.read_live_state()
+                    tq = self._table()                    # ?table=<title> — multi-table
+                    h = (tq or {}).get("livecards") or state.get("livecards")   # livecards_loop har 0.25s
                     out["hand_id"] = h["hand_id"] if h else None
                     out["hand"] = h["hero"] if h else []
                     out["hand_str"] = "".join(h["hero"]) if h else None
@@ -1515,6 +1926,9 @@ class Handler(BaseHTTPRequestHandler):
                     out["hero_to_act"] = h.get("hero_to_act") if h else None
                     out["dealer"] = h.get("dealer") if h else None
                     out["names"] = h.get("names", {}) if h else {}
+                    out["pf_bets"] = h.get("pf_bets", {}) if h else {}
+                    out["pf_to_call"] = h.get("pf_to_call") if h else None
+                    out["pf_live"] = bool(h and h.get("pf_live"))
                 except Exception as e:
                     out["error"] = str(e)
             self._send(200, out)
@@ -1535,6 +1949,7 @@ class Handler(BaseHTTPRequestHandler):
                      "action": t.get("action"),
                      "names": t.get("names", {}),
                      "blocked": t.get("blocked", False),
+                     "layout": t.get("layout"),
                      "has_frame": bool(t.get("frame_jpeg"))}
                     for t in state["tables"].values()
                 ],
@@ -1645,6 +2060,7 @@ def start_background():
     threading.Thread(target=action_loop, daemon=True).start()
     if HAS_REDSTAR:
         threading.Thread(target=truth_loop, daemon=True).start()
+        threading.Thread(target=livecards_loop, daemon=True).start()
     srv = ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     return srv

@@ -700,6 +700,35 @@ kbd{
 .rv-plu{margin-top:4px;padding:4px 8px;border-radius:4px;background:var(--surface);font-size:12px}
 .rv-mine{width:100%;box-sizing:border-box;font:13px system-ui,sans-serif;background:var(--sunken);color:var(--text);border:1px solid var(--line);border-radius:var(--r-md);padding:6px 8px}
 
+/* ---------- HUD overlay mode (index.html#hud) ---------- */
+html.hud, html.hud body{ background:transparent; }
+html.hud .wrap{ max-width:none; margin:0; padding:0; }
+html.hud .topbar, html.hud .modes{ display:none; }
+html.hud .stage{ display:block; gap:0; }
+html.hud #view-mirror{ display:block; }
+html.hud #view-mirror > section[aria-label="Live mirror"],
+html.hud #mirror-tables-wrap,
+html.hud #mirror-status,
+html.hud #view-mirror .prompt,
+html.hud #view-mirror .mirror-controls,
+html.hud #mirror-actions,
+html.hud #mirror-postflop,
+html.hud #mirror-players{ display:none; }
+html.hud #view-mirror > .panel{
+  background:rgba(10,12,16,.82);
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:12px;
+  padding:10px 14px;
+  box-shadow:0 6px 24px rgba(0,0,0,.5);
+}
+html.hud .mirror-reco{ margin:0; padding:0; border:0; background:transparent; }
+html.hud .mirror-reco .big{ display:none; }
+html.hud .mirror-reco .sub{ font-size:13px; opacity:.92; }
+html.hud .mirror-reco .rv-plu{ display:none; }
+html.hud .mirror-reco .mixrow{ margin-top:8px; gap:7px; }
+html.hud .mirror-reco .track{ background:rgba(255,255,255,.13); height:9px; }
+html.hud .mirror-reco .row{ font-size:14px; }
+
 </style>
 
 <div class="wrap">
@@ -3591,6 +3620,8 @@ let mirrorSpotManual = false;   // user ne spot khud choose kiya to auto-detect 
 let mirrorLastPos = null;       // pichla detected position — badle to naya hand
 let mirrorLastHand = null;      // pichle detected cards — same ho to dobara render mat karo
 let mirrorPfKey = null;         // pichla postflop solve (board|hand) — dobara fetch na ho
+let mirrorPfVillain = null;     // preflop ka villain (opener / 3-bettor) — postflop IP/OOP ke liye
+let mirrorPfMaxBet = 0;         // preflop ka sabse bada bet (BB) — >4.6 = 3-bet pot
 let mirrorRandomize = true;     // GTO mix me se ek action random pick karo
 let mirrorRnd = {};             // key -> picked action (per hand stable)
 let mirrorVillain = "";         // selected opponent (Hand Review players se) — GTO + exploit club
@@ -3664,35 +3695,67 @@ function mirrorSpotFromAction(a){
   // raise kam se kam 2bb; 1bb = limp / naye player ka posted blind, 1.5bb = dead blind
   const raisers = POS_ORDER.filter(p => amt(p) >= 1.99);
   const limpers = POS_ORDER.filter(p => p !== "BB" && p !== hero && Math.abs(amt(p) - 1) < 0.01);
-  const limpTxt = limpers.length ? " · " + limpers.join(", ") + " limp/post (approx)" : "";
-  let cands = [], mode, text;
+  let limpTxt = limpers.length ? " · " + limpers.join(", ") + " limp/post (approx)" : "";
+  let cands = [], mode, text, vill = null;
 
   if(!raisers.length || (raisers.length === 1 && raisers[0] === hero)){
     // koi raise nahi (ya hero ne hi open kiya, jawab ka wait)
-    mode = "open";
-    cands = ["rfi_" + hero];
-    text = raisers.length ? "Aapne open kiya " + bb(heroBet)
-         : hero === "BB" ? "Walk — sab fold" : "Sab fold — aapka open";
+    if(limpers.length){
+      // Limped pot — koi raise nahi, bas limp/post. GTO spots me is line ke ranges nahi.
+      if(hero === "BB"){
+        return {id: null, villain: null,
+                text: limpers.join(", ") + " limp · aap BB me ho — free check"};
+      }
+      if(hero === "SB"){
+        return {id: null, villain: null,
+                text: limpers.join(", ") + " limp · aap SB me ho — complete/raise (ranges nahi)"};
+      }
+      mode = "open";                                   // limpers ke upar isolate = open spot se kareeb
+      cands = ["rfi_" + hero];
+      text = limpers.join(", ") + " limp · aapka open/isolate (approx: open range)";
+      limpTxt = "";
+    } else {
+      mode = "open";
+      cands = ["rfi_" + hero];
+      text = raisers.length ? "Aapne open kiya " + bb(heroBet)
+           : hero === "BB" ? "Walk — sab fold" : "Sab fold — aapka open";
+    }
   } else {
     const sizes = [...new Set(raisers.map(amt))].sort((x, y) => x - y);
     const opener = raisers.find(p => amt(p) === sizes[0]);
     const big = sizes[sizes.length - 1];
-    const villain = raisers.find(p => p !== hero && amt(p) === big);
+    // bade amount pe kai log hon to raiser wahi jo hero ke BAAD baitha hai — hero se pehle wale
+    // (jaise opener) us raise ko sirf call karke wahan pahunche (UTG open, hero call, SB 3-bet, UTG call)
+    const atBig = raisers.filter(p => p !== hero && amt(p) === big);
+    const villain = atBig.find(p => idx(p) > idx(hero)) || atBig[0];
     const first = raisers[0];                            // action order me pehla raiser
     if(sizes.length === 1 || (!raisers.includes(hero) && villain === first)){
       // ek hi raise (baaki ne call kiya; chhota amount = short all-in call)
       const op = sizes.length === 1 ? opener : villain;
       const callers = raisers.filter(p => p !== op && p !== hero);
+      vill = op;
       if(raisers.includes(hero)){
-        return {id: null, text: "Aapne " + op + " ka open call kiya — ab jawab ka wait"};
+        return {id: null, villain: op, text: "Aapne " + op + " ka open call kiya — ab jawab ka wait"};
       }
       text = op + " open " + bb(amt(op)) + (callers.length ? " · " + callers.join(", ") + " call" : "");
       mode = callers.length ? "squeeze" : hero === "BB" ? "bbdef" : "3bet";
       if(callers.length) cands.push("sq_" + hero + "_" + op + "_" + callers[0]);
       cands.push(hero === "BB" ? "bb_" + op : "3b_" + hero + "_" + op);
     } else if(heroBet >= 1.99 && heroBet < big){
+      vill = villain;
       const before = raisers.filter(p => p !== hero && idx(p) < idx(hero));
       if(!before.length){
+        // hero ne open kiya. Do alag villain sizes = kisi ne 3-bet karke kisi aur ne COLD 4-BET
+        // kiya (hero ke peeche). Is line ke ranges nahi hain — galat 4bet spot mat lagao.
+        // hero ke open ke barabar wale = callers (raiser nahi) — unhe gino mat
+        const others = raisers.filter(p => p !== hero && Math.abs(amt(p) - heroBet) > 0.01);
+        if(new Set(others.map(amt)).size > 1){
+          const tb = others.find(p => amt(p) !== big) || others[0];
+          return {id: null, villain,
+                  text: "Aapka open " + bb(heroBet) + " · " + tb + " 3-bet " + bb(amt(tb))
+                        + " · " + villain + " cold 4-bet " + bb(big)
+                        + " (is line ke ranges nahi — dropdown se chuno)"};
+        }
         mode = "4bet";                                   // hero ne open kiya, villain ne 3-bet
         text = "Aapka open " + bb(heroBet) + " · " + villain + " 3-bet " + bb(big);
         // exact na mile to: blinds se 3-bet -> "_BB" wala, IP se -> "_BTN" wala
@@ -3703,11 +3766,12 @@ function mirrorSpotFromAction(a){
         text = "Aapka 3-bet " + bb(heroBet) + " · " + villain + " 4-bet " + bb(big);
         cands = ["5b_" + hero + "_" + villain];
       } else {
-        return {id: null, text: "Aapne " + first + " ka open call kiya · " + villain + " 3-bet " + bb(big)
+        return {id: null, villain, text: "Aapne " + first + " ka open call kiya · " + villain + " 3-bet " + bb(big)
                 + " (is line ke ranges nahi — dropdown se chuno)"};
       }
     } else {
       mode = "cold4";                                    // open + 3-bet, hero abhi tak bahar
+      vill = villain;
       text = first + " open " + bb(amt(first)) + " · " + villain + " 3-bet " + bb(big);
       cands = ["c4_" + hero];
     }
@@ -3718,7 +3782,7 @@ function mirrorSpotFromAction(a){
     const s = SPOTS.find(s => s.mode === mode && s.hero === hero && mirrorHasSpot(s.id));
     id = s && s.id;
   }
-  return {id, text};
+  return {id, text, villain: vill};
 }
 
 function mirrorApplyAction(a){
@@ -3730,6 +3794,8 @@ function mirrorApplyAction(a){
     return;
   }
   const r = mirrorSpotFromAction(a);
+  if(r.villain) mirrorPfVillain = r.villain;
+  mirrorPfMaxBet = Math.max(mirrorPfMaxBet, ...Object.values(a.bets || {}), 0);
   if(st) st.textContent = a.hero + " · " + r.text
     + (!r.id ? " (is action ka spot nahi — dropdown se chuno)" : mirrorSpotManual ? " (manual spot)" : "");
   if(r.id) mirrorSelectSpot(r.id);
@@ -3749,6 +3815,8 @@ function mirrorClearHand(){
 function mirrorNewHandCheck(pos){
   if(pos !== mirrorLastPos){          // button hila = naya hand — manual lock hatao + panel clear
     mirrorLastPos = pos;
+    mirrorPfVillain = null;
+    mirrorPfMaxBet = 0;
     mirrorSpotManual = false;
     mirrorLastHand = null;
     mirrorClearHand();
@@ -3837,8 +3905,11 @@ async function mirrorTick(){
     } else if(res && res.window){
       el("mirror-frame").src = MIRROR_URL + "/api/frame?t=" + Date.now();
       el("mirror-overlay").hidden = true;
-      mirrorStatus("Mirroring: " + res.window
-        + (res.redstar ? " · Accurate file reading on" : res.ocr ? " · OCR on" : " · OCR off (manual)"), false);
+      const layoutMsg = res.layout === "omaha" ? " · Omaha table — sirf Hold'em padhte hain"
+        : res.layout === "unknown" ? " · Table pehchan nahi aayi (popup band karo, default theme/size rakho) — reading ruki"
+        : "";
+      mirrorStatus("Mirroring: " + res.window + layoutMsg
+        + (res.redstar ? " · Accurate file reading on" : res.ocr ? " · OCR on" : " · OCR off (manual)"), !!layoutMsg);
     } else {
       el("mirror-overlay").hidden = false;
       el("mirror-overlay").textContent = "Window nahi mili &mdash; mirror_server.py me WINDOW_TITLE sahi karo.";
@@ -3871,9 +3942,18 @@ async function mirrorDetectTick(){
     // position + action apply. Pehle `if(pos)` hamesha jeet jaata tha (Red Star pe XML pos
     // hamesha hoti hai), isliye 3bet/4bet/5bet kabhi detect hi nahi hota tha — sirf RFI.
     // Screen ke bets screen ki positions pe hain — XML position se na mile to action mat lagao.
+    // XML ke exact preflop bets (pf_bets) SIRF tab jab live XML me preflop actions sach me hon
+    // (pf_live). Red Star hand ke dauraan sirf blinds likhta hai — tab pf_bets = {SB:0.5, BB:1}
+    // hota tha aur OCR ke limp/raise/3-bet chhup jaate the (har spot "open" ban jaata tha).
     const xmlPos = accLive && accLive.pos;
-    if(act && act.hero && (!xmlPos || xmlPos === act.hero)) mirrorApplyAction(act);
-    else {
+    const pfBets = (accLive && accLive.street === null && accLive.pf_live && accLive.pf_bets
+        && Object.keys(accLive.pf_bets).length) ? accLive.pf_bets : null;
+    if(act && act.hero && (!xmlPos || xmlPos === act.hero)){
+      if(act.street === "preflop" && pfBets) mirrorApplyAction({street:"preflop", hero: act.hero, bets: pfBets});
+      else mirrorApplyAction(act);
+    } else if((!act || !act.hero) && pfBets && pos){
+      mirrorApplyAction({street:"preflop", hero: pos, bets: pfBets});   // OCR action na mile par XML bets hain
+    } else {
       if(pos) mirrorSetPosition(pos);
       const st = el("mirror-action-status");
       if(st && act && act.hero) st.textContent = "Seat padhne me farak (screen " + act.hero + " / file " + xmlPos
@@ -3896,11 +3976,23 @@ async function mirrorDetectTick(){
         mirrorSetDetected(hand);
         mirrorRecommend();
       }
-      // postflop board: OCR live pehle, binary fallback
+      // postflop: sirf HERO KI BAARI pe (tabhi pata hai check hua ya bet face kar rahe hain).
+      // facing = button ka exact to_call; IP/OOP = bettor (ya preflop villain) ke against asli order.
+      // Pehle facing bheja hi nahi jaata tha aur BB ke alawa sab ko BTN (IP) maan liya jaata tha.
       if(act && act.street === "postflop" && Array.isArray(act.board) && act.board.length >= 3){
-        mirrorPostflop(act.board, hand, act.hero === "BB" ? "BB" : "BTN");
+        if(act.hero_to_act){
+          const heroP = pos || act.hero;
+          const facing = act.to_call || 0;
+          const bettor = facing > 0 ? Object.entries(act.bets || {})
+              .filter(([p]) => p !== heroP).sort((x, y) => y[1] - x[1]).map(x => x[0])[0] : null;
+          const vill = bettor || mirrorPfVillain;
+          const ip = vill ? POSTFLOP_ORDER.indexOf(heroP) > POSTFLOP_ORDER.indexOf(vill) : heroP === "BTN";
+          mirrorPostflop(act.board, hand, ip ? "BTN" : "BB", facing, heroP, vill);
+        } else {
+          el("mirror-postflop-big").textContent = "Villain ki baari — aapki baari aane pe action dikhega";
+        }
       } else if(accLive && accLive.board && accLive.board.length >= 3){
-        mirrorPostflop(accLive.board, hand, pos === "BB" ? "BB" : "BTN");
+        mirrorPostflop(accLive.board, hand, pos === "BB" ? "BB" : "BTN", 0, pos, null);
       } else {
         const box = el("mirror-postflop");
         if(box && !box.hidden){ box.hidden = true; mirrorPfKey = null; }
@@ -3914,20 +4006,28 @@ async function mirrorDetectTick(){
   }
 }
 
-async function mirrorPostflop(board, hand, heroPos){
+const POSTFLOP_ORDER = ["SB", "BB", "UTG", "MP", "CO", "BTN"];   // postflop pehle kaun bolta hai
+
+// heroPos = solver role: "BTN" = IP, "BB" = OOP (solver BTN-vs-BB single-raised pot ka hai)
+let mirrorPostflopCtx = null;
+async function mirrorPostflop(board, hand, heroPos, facing, realPos, villain){
+  facing = facing || 0;
+  mirrorPostflopCtx = {hero: realPos, villain};
   const streetName = board.length === 3 ? "flop" : board.length === 4 ? "turn" : "river";
-  const key = board.join("") + "|" + hand + "|" + heroPos;
+  const key = board.join("") + "|" + hand + "|" + heroPos + "|" + facing;
   const box = el("mirror-postflop");
   if(!box) return;
   box.hidden = false;
-  el("mirror-postflop-street").textContent = "Postflop · " + (streetName[0].toUpperCase() + streetName.slice(1));
+  el("mirror-postflop-street").textContent = "Postflop · " + (streetName[0].toUpperCase() + streetName.slice(1))
+    + " · " + (realPos || "?") + (villain ? " vs " + villain : "") + " · " + (heroPos === "BTN" ? "IP" : "OOP")
+    + (facing > 0 ? " · " + facing + "bb bet face" : " · check / pehla action");
   el("mirror-board").innerHTML = board.map((c, i) => pfCardHTML(pfParseCard(c), 60 + i * 90)).join("");
   if(key === mirrorPfKey) return;                    // same board+hand — dobara solve mat karo
   mirrorPfKey = key;
   const heroCards = hand && hand.length === 4 ? [hand.slice(0, 2), hand.slice(2, 4)] : null;
 
   // 1) INSTANT: Pluribus pre-solved lookup (0 sec)
-  const plu = heroCards ? rvPluPostLookup(board, heroCards, streetName, 0) : null;
+  const plu = heroCards ? rvPluPostLookup(board, heroCards, streetName, facing) : null;
   if(plu){
     mirrorPluPostflopRender(plu, streetName);
   } else {
@@ -3936,19 +4036,24 @@ async function mirrorPostflop(board, hand, heroPos){
   }
 
   // 2) GTO server: bg mode — cache me ho to turant, warna queue (gentle background solve)
-  await mirrorPostflopFetch(board, hand, heroPos, streetName, key, heroCards, plu, 0);
+  await mirrorPostflopFetch(board, hand, heroPos, streetName, key, heroCards, plu, 0, facing);
 }
 
-async function mirrorPostflopFetch(board, hand, heroPos, streetName, key, heroCards, plu, attempt){
+async function mirrorPostflopFetch(board, hand, heroPos, streetName, key, heroCards, plu, attempt, facing){
   try{
-    const r = await fetch(GTO_URL + "/api/live", {
+    // Spot library: asli position + villain + pot type -> pre-solved flop (instant), warna live solve
+    const ctx = mirrorPostflopCtx || {};
+    const r = await fetch(GTO_URL + "/api/spot", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({board, hero: hand, street: streetName, heroPos, bg: true})
+      body: JSON.stringify({board, hero: hand, street: streetName, facing: facing || 0, bg: true,
+                            heroPos: ctx.hero || heroPos, villainPos: ctx.villain || "",
+                            potType: mirrorPfMaxBet > 4.6 ? "3bp" : "srp"})
     }).then(r => r.json());
     if(r && r.queued){
-      if(attempt < 15 && key === mirrorPfKey){   // 2 sec baad dobara try (background solve chal raha)
-        setTimeout(() => mirrorPostflopFetch(board, hand, heroPos, streetName, key, heroCards, plu, attempt + 1), 2000);
+      if(!plu) el("mirror-postflop-big").textContent = "Solve ho raha hai (" + (r.spot || "") + ")&hellip;";
+      if(attempt < 40 && key === mirrorPfKey){   // 1 sec baad dobara (live solve ~10-15 sec, library me ho to turant)
+        setTimeout(() => mirrorPostflopFetch(board, hand, heroPos, streetName, key, heroCards, plu, attempt + 1, facing), 1000);
       }
       return;
     }
@@ -3956,7 +4061,8 @@ async function mirrorPostflopFetch(board, hand, heroPos, streetName, key, heroCa
       if(!plu) el("mirror-postflop-big").textContent = (r && r.error) || "Solve fail";
       return;
     }
-    mirrorPostflopLast = {strategy: r.strategy, labels: r.labels, key, board, heroCards, streetName};
+    mirrorPostflopLast = {strategy: r.strategy, labels: r.labels, key, board, heroCards, streetName, facing,
+                          spot: r.spot, approx: r.approx, similar: r.similar, source: r.source};
     mirrorPostflopRender(mirrorPostflopLast);
   }catch(e){
     if(!plu) el("mirror-postflop-big").textContent = "GTO server offline — run: python tools/postflop/gto_server.py";
@@ -3990,7 +4096,8 @@ function mirrorPostflopRender(last){
     pick = mirrorRnd[last.key];
     rnd = true;
   } else pick = gtoBest;
-  el("mirror-postflop-big").textContent = ((exploit && exploit.pick) ? "&#127919; " : rnd ? "&#127922; " : "Best: ") + nameOf(pick);
+  el("mirror-postflop-big").textContent = ((exploit && exploit.pick) ? "&#127919; " : rnd ? "&#127922; " : "&#10148; ")
+    + nameOf(pick) + " (" + Math.round((last.strategy[pick] || 0) * 100) + "%)";
   el("mirror-postflop-villain").innerHTML = mirrorVillainTipHTML("postflop", last.strategy, nameOf, exploit);
   el("mirror-postflop-mix").innerHTML = Object.entries(last.strategy)
     .sort((a, b) => b[1] - a[1])
@@ -4001,7 +4108,10 @@ function mirrorPostflopRender(last){
            + '<span class="fill" style="width:' + pct + '%;background:' + (a === pick ? "var(--good)" : "var(--accent)") + '"></span></span>'
            + '<span class="pc">' + pct + '%</span></div>';
     }).join("")
-    + (last.board && last.heroCards ? rvPluPostflopLine(last.board, last.heroCards, last.streetName) : "");
+    + '<div class="rv-muted">' + (last.spot || "") + (last.source === "library" ? " · library (instant)" : " · live solve")
+    + (last.similar ? " · aapka hand chart range me nahi — milte-julte hands ki strategy" : "")
+    + (last.approx && !last.similar ? " · approx (spot/line pura match nahi)" : "") + '</div>'
+    + (last.board && last.heroCards ? rvPluPostflopLine(last.board, last.heroCards, last.streetName, last.facing) : "");
 }
 
 async function mirrorWindowsTick(){
@@ -5447,8 +5557,8 @@ function rvPluPostLookup(board, heroCards, street, facing){
   return {bucket, tot, tex, cat};
 }
 
-function rvPluPostflopLine(board, heroCards, streetName){
-  const plu = rvPluPostLookup(board, heroCards, streetName, 0);
+function rvPluPostflopLine(board, heroCards, streetName, facing){
+  const plu = rvPluPostLookup(board, heroCards, streetName, facing || 0);
   if(!plu) return "";
   const labels = {check: "Check", call: "Call", bet: "Bet", raise: "Raise", fold: "Fold"};
   return '<div class="rv-muted">&#129302; Pluribus: ' + Object.entries(plu.bucket).sort((a, b) => b[1] - a[1])
@@ -6074,5 +6184,17 @@ else if(S.mode === "mirror"){ showView("mirror"); mirrorStart(); }
 else if(S.mode === "hhreview"){ showView("review"); rvInit(); }
 else { showView("play"); deal(); }
 
+})();
+</script>
+<script>
+(function(){
+  if(location.hash !== "#hud") return;
+  document.documentElement.classList.add("hud");
+  S.theme = "dark"; applyTheme();   // transparent HUD pe hamesha light text (readable)
+  // Boot (upar wala) abhi chala hai — HUD ke liye mirror view + auto-detect loop phir se kholo.
+  S.mode = "mirror";
+  showView("mirror");
+  buildModes();
+  mirrorStart();
 })();
 </script>

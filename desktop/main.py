@@ -46,7 +46,7 @@ def start_servers():
     Koi pehle se chal raha ho to use hi use karo. Fail ho to app phir bhi khule."""
     root = repo_root()
     os.environ.setdefault("PREFLOP_ROOT", str(root))
-    sys.path[:0] = [str(root), str(root / "tools" / "postflop")]
+    sys.path[:0] = [str(root), str(root / "tools"), str(root / "tools" / "postflop")]
     started = []
     for name in ("mirror_server", "gto_server"):
         try:

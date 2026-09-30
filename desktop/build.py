@@ -23,13 +23,18 @@ def main():
         "--add-data", f"{ROOT / 'index.html'};.",
         "--add-data", f"{ROOT / 'icons'};icons",
         "--add-data", f"{ROOT / 'manifest.webmanifest'};.",
+        # verified card-rank templates (repo root wali file pehle padhi jaati hai, ye fallback)
+        "--add-data", f"{ROOT / 'rank_templates.json'};.",
         # Mirror + GTO servers exe ke andar chalte hain (solver repo se)
         "--paths", str(ROOT),
+        "--paths", str(ROOT / "tools"),
         "--paths", str(ROOT / "tools" / "postflop"),
         "--hidden-import", "mirror_server",
         "--hidden-import", "gto_server",
         "--hidden-import", "hh_review",           # /api/review (lazy import)
         "--hidden-import", "rangeutil",
+        "--hidden-import", "redstar_hh",          # Red Star live card reader (mirror_server lazy import)
+        "--hidden-import", "redstar_mem",         # Red Star memory reader (redstar_hh lazy import)
         "--distpath", str(DESKTOP / "dist"),
         "--workpath", str(DESKTOP / "build"),
         "--specpath", str(DESKTOP),

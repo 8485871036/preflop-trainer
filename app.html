@@ -619,6 +619,17 @@ kbd{
 .mirror-villainrow{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin:8px 0 4px}
 .mirror-villainrow select{max-width:240px}
 .mirror-villainrow .sub{color:var(--muted)}
+.mirror-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-top:10px}
+.mirror-tile{border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden;background:var(--surface);cursor:pointer}
+.mirror-tile.sel{border-color:var(--brass);box-shadow:0 0 0 2px var(--brass)}
+.mirror-tile img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;background:var(--sunken)}
+.mirror-tile-bar{display:flex;gap:8px;align-items:center;padding:6px 8px;font:12px "IBM Plex Mono",monospace;flex-wrap:wrap}
+.mirror-tile-bar .pos{font-family:Oswald,sans-serif;font-weight:600}
+.mirror-tile-bar .cards{letter-spacing:.5px}
+.mirror-tile-bar .gto{color:var(--good);margin-left:auto;font-weight:600}
+.mirror-tile-bar .gto i{opacity:.6;font-style:normal}
+.mirror-tile-bar .blk{color:var(--bad);margin-left:auto;font-size:11px}
+#mirror-tables-wrap h3{font-family:Oswald,sans-serif;font-weight:500;letter-spacing:.05em;text-transform:uppercase;font-size:14px;margin:14px 0 2px}
 .mirror-controls label.mirror-pin{flex-direction:row;align-items:center;gap:6px;font-size:13px}
 /* Hand review */
 .rv-controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:8px}
@@ -889,6 +900,11 @@ kbd{
         <h3>Live Mirror</h3>
         <p class="lead">Ye aapke poker table (ya kisi bhi app) ka live mirror hai. Spot aur apne cards chuno &mdash; trainer GTO ke hisaab se jawab dega.</p>
       </div>
+    </section>
+
+    <section id="mirror-tables-wrap" hidden>
+      <h3>Tables <span class="rv-muted" id="mirror-tables-count"></span></h3>
+      <div class="mirror-tiles" id="mirror-tiles"></div>
     </section>
 
     <section class="panel">
@@ -3570,7 +3586,7 @@ if(_gtoLangSel){
    9c. LIVE MIRROR — real table padho, GTO preflop jawab pao
    ============================================================ */
 const MIRROR_URL = "http://127.0.0.1:8676";
-let mirrorTimer = null, mirrorDetectTimer = null, mirrorWinTimer = null;
+let mirrorTimer = null, mirrorDetectTimer = null, mirrorWinTimer = null, mirrorTablesTimer = null;
 let mirrorSpotManual = false;   // user ne spot khud choose kiya to auto-detect band (is hand ke liye)
 let mirrorLastPos = null;       // pichla detected position — badle to naya hand
 let mirrorLastHand = null;      // pichle detected cards — same ho to dobara render mat karo
@@ -3579,8 +3595,13 @@ let mirrorRandomize = true;     // GTO mix me se ek action random pick karo
 let mirrorRnd = {};             // key -> picked action (per hand stable)
 let mirrorVillain = "";         // selected opponent (Hand Review players se) — GTO + exploit club
 let mirrorPlayers = [];         // cached rvPlayerStats(rvHands), hands desc
-let mirrorPostflopLast = null;  // pichla postflop result {strategy, labels, key} — villain change pe re-render
+let mirrorPostflopLast = null;  // pichla postflop result {strategy, labels, key, board, heroCards, streetName}
 let mirrorPlayersLoaded = false;
+let mirrorWaitShown = false;    // hero ki baari nahi — panel clear + wait dikhaya
+let mirrorVillainManual = false;   // user ne villain khud chuna to auto-select band
+let mirrorAtTable = [];         // table pe baithhe opponents ke db names (seat naam se match)
+let mirrorLiveHandId = null;    // Red Star file reader ka live hand_id — badle to naya hand
+let mirrorNamesSig = null;      // accurate seat names ka signature — badle to villain re-select
 
 async function mirrorFetch(path, body){
   const r = await fetch(MIRROR_URL + path, {
@@ -3633,50 +3654,65 @@ function mirrorHasSpot(id){
 
 // Table ke bets padh ke spot nikalo: kisne open kiya, kisne 3-bet, kaun call kiya.
 // bets = {pos: bb} — sirf abhi saamne pade chips (fold wale ke bhi rehte hain).
-const MIRROR_MAX_OPEN = 4.5;   // isse bada pehla raise = 3-bet (opener ke chips chhup gaye)
+// Kaun pehle raise kiya, ye SIZE se nahi, preflop ACTION ORDER (POS_ORDER) se: sabse bada
+// raiser hero se pehle baitha hai to usne open karke 4-bet kiya; baad me hai to 3-bet.
+// (Red Star ke 2400 hands ke exact sequence pe check: 1884 me se 1884 sahi.)
 function mirrorSpotFromAction(a){
   const hero = a.hero, amt = p => (a.bets && a.bets[p]) || 0;
-  const heroBet = amt(hero);
-  const sizes = [...new Set(POS_ORDER.map(amt).filter(x => x > 1))].sort((x, y) => x - y);
-  const firstWith = sz => POS_ORDER.find(p => p !== hero && amt(p) === sz);
+  const heroBet = amt(hero), idx = p => POS_ORDER.indexOf(p);
   const bb = x => x + "bb";
+  // raise kam se kam 2bb; 1bb = limp / naye player ka posted blind, 1.5bb = dead blind
+  const raisers = POS_ORDER.filter(p => amt(p) >= 1.99);
+  const limpers = POS_ORDER.filter(p => p !== "BB" && p !== hero && Math.abs(amt(p) - 1) < 0.01);
+  const limpTxt = limpers.length ? " · " + limpers.join(", ") + " limp/post (approx)" : "";
   let cands = [], mode, text;
 
-  const opener = sizes.length ? POS_ORDER.find(p => amt(p) === sizes[0]) : null;
-
-  if(!sizes.length || (sizes.length === 1 && opener === hero)){
+  if(!raisers.length || (raisers.length === 1 && raisers[0] === hero)){
     // koi raise nahi (ya hero ne hi open kiya, jawab ka wait)
     mode = "open";
     cands = ["rfi_" + hero];
-    text = sizes.length ? "Aapne open kiya " + bb(heroBet)
+    text = raisers.length ? "Aapne open kiya " + bb(heroBet)
          : hero === "BB" ? "Walk — sab fold" : "Sab fold — aapka open";
-  } else if(sizes.length === 1){
-    const callers = POS_ORDER.filter(p => p !== opener && p !== hero && amt(p) === sizes[0]);
-    text = opener + " open " + bb(sizes[0]) + (callers.length ? " · " + callers.join(", ") + " call" : "");
-    mode = callers.length ? "squeeze" : hero === "BB" ? "bbdef" : "3bet";
-    if(callers.length) cands.push("sq_" + hero + "_" + opener + "_" + callers[0]);
-    cands.push(hero === "BB" ? "bb_" + opener : "3b_" + hero + "_" + opener);
   } else {
-    // 2+ raise sizes: pehla = open, agla = 3-bet, agla = 4-bet
-    const big = sizes[sizes.length - 1], villain = firstWith(big);
-    if(heroBet > 1 && heroBet < big){
-      if(heroBet <= MIRROR_MAX_OPEN){
-        mode = "4bet";                                   // hero ne open kiya, 3-bet aaya
+    const sizes = [...new Set(raisers.map(amt))].sort((x, y) => x - y);
+    const opener = raisers.find(p => amt(p) === sizes[0]);
+    const big = sizes[sizes.length - 1];
+    const villain = raisers.find(p => p !== hero && amt(p) === big);
+    const first = raisers[0];                            // action order me pehla raiser
+    if(sizes.length === 1 || (!raisers.includes(hero) && villain === first)){
+      // ek hi raise (baaki ne call kiya; chhota amount = short all-in call)
+      const op = sizes.length === 1 ? opener : villain;
+      const callers = raisers.filter(p => p !== op && p !== hero);
+      if(raisers.includes(hero)){
+        return {id: null, text: "Aapne " + op + " ka open call kiya — ab jawab ka wait"};
+      }
+      text = op + " open " + bb(amt(op)) + (callers.length ? " · " + callers.join(", ") + " call" : "");
+      mode = callers.length ? "squeeze" : hero === "BB" ? "bbdef" : "3bet";
+      if(callers.length) cands.push("sq_" + hero + "_" + op + "_" + callers[0]);
+      cands.push(hero === "BB" ? "bb_" + op : "3b_" + hero + "_" + op);
+    } else if(heroBet >= 1.99 && heroBet < big){
+      const before = raisers.filter(p => p !== hero && idx(p) < idx(hero));
+      if(!before.length){
+        mode = "4bet";                                   // hero ne open kiya, villain ne 3-bet
         text = "Aapka open " + bb(heroBet) + " · " + villain + " 3-bet " + bb(big);
         // exact na mile to: blinds se 3-bet -> "_BB" wala, IP se -> "_BTN" wala
         cands = ["4b_" + hero + "_" + villain,
                  "4b_" + hero + "_" + (villain === "SB" || villain === "BB" ? "BB" : "BTN")];
-      } else {
+      } else if(idx(villain) < idx(hero) || heroBet > Math.max(...before.map(amt))){
         mode = "5bet";                                   // hero ne 3-bet kiya, 4-bet aaya
         text = "Aapka 3-bet " + bb(heroBet) + " · " + villain + " 4-bet " + bb(big);
         cands = ["5b_" + hero + "_" + villain];
+      } else {
+        return {id: null, text: "Aapne " + first + " ka open call kiya · " + villain + " 3-bet " + bb(big)
+                + " (is line ke ranges nahi — dropdown se chuno)"};
       }
     } else {
       mode = "cold4";                                    // open + 3-bet, hero abhi tak bahar
-      text = opener + " open " + bb(sizes[0]) + " · " + villain + " 3-bet " + bb(big);
+      text = first + " open " + bb(amt(first)) + " · " + villain + " 3-bet " + bb(big);
       cands = ["c4_" + hero];
     }
   }
+  text += limpTxt;
   let id = cands.find(mirrorHasSpot);
   if(!id){                                               // exact spot nahi — same type ka hero wala lo
     const s = SPOTS.find(s => s.mode === mode && s.hero === hero && mirrorHasSpot(s.id));
@@ -3699,10 +3735,23 @@ function mirrorApplyAction(a){
   if(r.id) mirrorSelectSpot(r.id);
 }
 
+function mirrorClearHand(){
+  mirrorPfKey = null;
+  mirrorPostflopLast = null;
+  const box = el("mirror-reco");
+  if(box) box.innerHTML = '<div class="big">Cards detect ho rahe hain&hellip;</div>';
+  const pf = el("mirror-postflop");
+  if(pf) pf.hidden = true;
+  const acts = el("mirror-actions");
+  if(acts) acts.innerHTML = "";
+}
+
 function mirrorNewHandCheck(pos){
-  if(pos !== mirrorLastPos){          // button hila = naya hand — manual lock hatao
+  if(pos !== mirrorLastPos){          // button hila = naya hand — manual lock hatao + panel clear
     mirrorLastPos = pos;
     mirrorSpotManual = false;
+    mirrorLastHand = null;
+    mirrorClearHand();
   }
 }
 
@@ -3788,7 +3837,8 @@ async function mirrorTick(){
     } else if(res && res.window){
       el("mirror-frame").src = MIRROR_URL + "/api/frame?t=" + Date.now();
       el("mirror-overlay").hidden = true;
-      mirrorStatus("Mirroring: " + res.window + (res.ocr ? " · OCR on" : " · OCR off (manual)"), false);
+      mirrorStatus("Mirroring: " + res.window
+        + (res.redstar ? " · Accurate file reading on" : res.ocr ? " · OCR on" : " · OCR off (manual)"), false);
     } else {
       el("mirror-overlay").hidden = false;
       el("mirror-overlay").textContent = "Window nahi mili &mdash; mirror_server.py me WINDOW_TITLE sahi karo.";
@@ -3803,28 +3853,61 @@ async function mirrorTick(){
 
 async function mirrorDetectTick(){
   try{
-    const res = await mirrorFetch("/api/detect");
-    if(res && res.action) mirrorApplyAction(res.action);
-    else if(res && res.pos) mirrorSetPosition(res.pos);   // purana server — sirf position
-    if(res && res.hand){
-      el("mirror-detect-status").textContent = "Detected: " + res.hand + (res.pos ? " · " + res.pos : "");
-      if(res.hand !== mirrorLastHand){      // naya hand — tabhi re-render (tez polling me flicker nahi)
-        mirrorLastHand = res.hand;
-        mirrorSetDetected(res.hand);
+    let res = null, live = null;
+    try{ res = await mirrorFetch("/api/detect"); }catch(e){}
+    try{ live = await mirrorFetch("/api/livecards"); }catch(e){}
+    const act = res && res.action;
+    const accLive = (live && live.available) ? live : null;
+    // OCR LIVE cards PRIMARY (live feed) — binary accurate sirf fallback (1 hand purana)
+    const ocrHand = (res && res.hand && res.hand.length === 4) ? res.hand : null;
+    const binHand = (accLive && accLive.hand_str && accLive.hand_str.length === 4) ? accLive.hand_str : null;
+    const hand = ocrHand || binHand;
+    // position: XML (accurate) > OCR (galat ho sakta hai Red Star pe)
+    const pos = (accLive && accLive.pos) || (act && act.hero) || (res && res.pos);
+    // hero ki baari: OCR live > XML (XML preflop actions flush nahi karta)
+    const heroToAct = (act && act.hero_to_act !== null && act.hero_to_act !== undefined)
+        ? act.hero_to_act : (accLive ? accLive.hero_to_act : null);
+
+    // position + action apply. Pehle `if(pos)` hamesha jeet jaata tha (Red Star pe XML pos
+    // hamesha hoti hai), isliye 3bet/4bet/5bet kabhi detect hi nahi hota tha — sirf RFI.
+    // Screen ke bets screen ki positions pe hain — XML position se na mile to action mat lagao.
+    const xmlPos = accLive && accLive.pos;
+    if(act && act.hero && (!xmlPos || xmlPos === act.hero)) mirrorApplyAction(act);
+    else {
+      if(pos) mirrorSetPosition(pos);
+      const st = el("mirror-action-status");
+      if(st && act && act.hero) st.textContent = "Seat padhne me farak (screen " + act.hero + " / file " + xmlPos
+        + ") — action detect off, spot dropdown se chuno";
+    }
+
+    // accurate seat names (XML se) — villain auto-select (OCR names se behtar)
+    if(accLive && accLive.names && Object.keys(accLive.names).length){
+      const sig = JSON.stringify(accLive.names);
+      if(sig !== mirrorNamesSig){ mirrorNamesSig = sig; mirrorAutoVillain(accLive.names); }
+    }
+
+    if(hand){
+      mirrorWaitShown = false;
+      el("mirror-detect-status").textContent = (ocrHand ? "Detected: " : "&#10004; Accurate: ")
+        + hand + (pos ? " · " + pos : "")
+        + (heroToAct === true ? " · aapki baari" : "");
+      if(hand !== mirrorLastHand){
+        mirrorLastHand = hand;
+        mirrorSetDetected(hand);
         mirrorRecommend();
       }
-      // postflop board aaya to GTO solve karo
-      const act = res.action;
+      // postflop board: OCR live pehle, binary fallback
       if(act && act.street === "postflop" && Array.isArray(act.board) && act.board.length >= 3){
-        mirrorPostflop(act.board, res.hand, act.hero === "BB" ? "BB" : "BTN");
+        mirrorPostflop(act.board, hand, act.hero === "BB" ? "BB" : "BTN");
+      } else if(accLive && accLive.board && accLive.board.length >= 3){
+        mirrorPostflop(accLive.board, hand, pos === "BB" ? "BB" : "BTN");
       } else {
         const box = el("mirror-postflop");
         if(box && !box.hidden){ box.hidden = true; mirrorPfKey = null; }
       }
     } else {
-      el("mirror-detect-status").textContent = res && res.pos
-        ? ("Position: " + res.pos + " — cards dropdown se chuno")
-        : "Cards nahi mile — dropdown se manual chuno";
+      if(mirrorLastHand){ mirrorLastHand = null; mirrorClearHand(); }
+      el("mirror-detect-status").textContent = (pos ? pos + " · " : "") + "Cards detect ho rahe hain&hellip;";
     }
   }catch(e){
     el("mirror-detect-status").textContent = "Detect fail — server check karo";
@@ -3841,23 +3924,57 @@ async function mirrorPostflop(board, hand, heroPos){
   el("mirror-board").innerHTML = board.map((c, i) => pfCardHTML(pfParseCard(c), 60 + i * 90)).join("");
   if(key === mirrorPfKey) return;                    // same board+hand — dobara solve mat karo
   mirrorPfKey = key;
-  el("mirror-postflop-big").textContent = "GTO solve ho raha hai\u2026";
-  el("mirror-postflop-mix").innerHTML = "";
+  const heroCards = hand && hand.length === 4 ? [hand.slice(0, 2), hand.slice(2, 4)] : null;
+
+  // 1) INSTANT: Pluribus pre-solved lookup (0 sec)
+  const plu = heroCards ? rvPluPostLookup(board, heroCards, streetName, 0) : null;
+  if(plu){
+    mirrorPluPostflopRender(plu, streetName);
+  } else {
+    el("mirror-postflop-big").textContent = "GTO solve ho raha hai&hellip;";
+    el("mirror-postflop-mix").innerHTML = "";
+  }
+
+  // 2) GTO server: bg mode — cache me ho to turant, warna queue (gentle background solve)
+  await mirrorPostflopFetch(board, hand, heroPos, streetName, key, heroCards, plu, 0);
+}
+
+async function mirrorPostflopFetch(board, hand, heroPos, streetName, key, heroCards, plu, attempt){
   try{
     const r = await fetch(GTO_URL + "/api/live", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({board, hero: hand, street: streetName, heroPos})
+      body: JSON.stringify({board, hero: hand, street: streetName, heroPos, bg: true})
     }).then(r => r.json());
-    if(!r || r.error){
-      el("mirror-postflop-big").textContent = (r && r.error) || "Solve fail";
+    if(r && r.queued){
+      if(attempt < 15 && key === mirrorPfKey){   // 2 sec baad dobara try (background solve chal raha)
+        setTimeout(() => mirrorPostflopFetch(board, hand, heroPos, streetName, key, heroCards, plu, attempt + 1), 2000);
+      }
       return;
     }
-    mirrorPostflopLast = {strategy: r.strategy, labels: r.labels, key};
+    if(!r || r.error){
+      if(!plu) el("mirror-postflop-big").textContent = (r && r.error) || "Solve fail";
+      return;
+    }
+    mirrorPostflopLast = {strategy: r.strategy, labels: r.labels, key, board, heroCards, streetName};
     mirrorPostflopRender(mirrorPostflopLast);
   }catch(e){
-    el("mirror-postflop-big").textContent = "GTO server offline — run: python tools/postflop/gto_server.py";
+    if(!plu) el("mirror-postflop-big").textContent = "GTO server offline — run: python tools/postflop/gto_server.py";
   }
+}
+
+function mirrorPluPostflopRender(plu, streetName){
+  const labels = {check: "Check", call: "Call", bet: "Bet", raise: "Raise", fold: "Fold"};
+  const entries = Object.entries(plu.bucket).sort((a, b) => b[1] - a[1]);
+  const best = entries[0], tot = plu.tot;
+  el("mirror-postflop-big").textContent = "&#129302; Pluribus: " + (labels[best[0]] || best[0]) + " " + Math.round(best[1] / tot * 100) + "%";
+  el("mirror-postflop-mix").innerHTML = entries.map(([v, c]) => {
+    const pct = Math.round(c / tot * 100);
+    return '<div class="row"><span>' + (labels[v] || v) + '</span><span class="track">'
+      + '<span class="fill" style="width:' + pct + '%;background:' + (v === best[0] ? "var(--good)" : "var(--accent)") + '"></span></span>'
+      + '<span class="pc">' + pct + '%</span></div>';
+  }).join("") + '<div class="rv-muted">&#129302; Pluribus 10k hands · ' + plu.tex + ' · ' + plu.cat + ' · n=' + tot + ' — exact GTO solve ho raha hai&hellip;</div>';
+  el("mirror-postflop-villain").innerHTML = "";
 }
 
 // Postflop result ko render karo (GTO mix + exploit decision) — solve ke baad ya villain change pe
@@ -3883,7 +4000,8 @@ function mirrorPostflopRender(last){
       return '<div class="row"><span>' + lbl + '</span><span class="track">'
            + '<span class="fill" style="width:' + pct + '%;background:' + (a === pick ? "var(--good)" : "var(--accent)") + '"></span></span>'
            + '<span class="pc">' + pct + '%</span></div>';
-    }).join("");
+    }).join("")
+    + (last.board && last.heroCards ? rvPluPostflopLine(last.board, last.heroCards, last.streetName) : "");
 }
 
 async function mirrorWindowsTick(){
@@ -3907,6 +4025,113 @@ async function mirrorWindowsTick(){
   }catch(e){}
 }
 
+// Multi-table: har table ka compact GTO (preflop) ya street label
+function mirrorTableGTO(tbl){
+  if(!tbl || !tbl.hand || !tbl.action || !tbl.action.hero) return null;
+  if(tbl.action.street !== "preflop"){
+    return {label: (tbl.action.streetName || "postflop"), pct: 0, post: true};
+  }
+  const c1 = pfParseCard(tbl.hand.slice(0, 2)), c2 = pfParseCard(tbl.hand.slice(2, 4));
+  if(!c1 || !c2 || !R.includes(c1.r) || !R.includes(c2.r)) return null;
+  const code = mirrorCardsToCode(c1, c2);
+  const r = mirrorSpotFromAction(tbl.action);
+  const sp = SPOTS.find(s => s.id === r.id) || SPOTS[0];
+  if(!sp) return null;
+  const freqs = mixActions(sp, code) || {[correctFor(sp, code)]: 1};
+  const best = Object.entries(freqs).sort((a, b) => b[1] - a[1])[0][0];
+  const f = sp.acts.find(x => x.key === best);
+  return {label: f ? (f.big + (f.sub ? " " + f.sub : "")) : best, pct: Math.round(freqs[best] * 100)};
+}
+
+// Multi-table grid: /api/tables se saari tables ke tiles (frame + pos + cards + GTO)
+async function mirrorTablesTick(){
+  const wrap = el("mirror-tables-wrap"), grid = el("mirror-tiles");
+  if(!wrap || !grid) return;
+  try{
+    const res = await mirrorFetch("/api/tables");
+    if(!res || !res.tables || !res.tables.length){ wrap.hidden = true; return; }
+    wrap.hidden = false;
+    el("mirror-tables-count").textContent = res.tables.length;
+    const map = {};
+    grid.querySelectorAll(".mirror-tile").forEach(t => map[t.dataset.title] = t);
+    const titles = new Set(res.tables.map(t => t.title));
+    Object.keys(map).forEach(k => { if(!titles.has(k)) map[k].remove(); });
+    res.tables.forEach(tbl => {
+      let tile = map[tbl.title];
+      if(!tile){
+        tile = document.createElement("div");
+        tile.className = "mirror-tile";
+        tile.dataset.title = tbl.title;
+        tile.innerHTML = '<img alt="table"><div class="mirror-tile-bar"></div>';
+        tile.addEventListener("click", () => {
+          mirrorFetch("/api/select", {title: tbl.title}).then(() => {
+            const tsel = el("mirror-table");
+            if(tsel){ tsel.dataset.manual = tbl.title; if([...tsel.options].some(o => o.value === tbl.title)) tsel.value = tbl.title; }
+            el("mirror-detect-status").textContent = "";
+            mirrorAtTable = [];
+            mirrorVillainManual = false;
+            mirrorPlayersRender();
+            mirrorTick();
+          }).catch(()=>{});
+        });
+        grid.appendChild(tile);
+      }
+      tile.querySelector("img").src = MIRROR_URL + "/api/frame?table=" + encodeURIComponent(tbl.title) + "&t=" + Date.now();
+      const g = mirrorTableGTO(tbl);
+      tile.querySelector(".mirror-tile-bar").innerHTML =
+        '<span class="pos">' + (tbl.pos || "?") + '</span>' +
+        '<span class="cards">' + (tbl.hand || "--") + '</span>' +
+        (tbl.blocked ? '<span class="blk">&#128683; blocked</span>'
+         : g ? (g.post ? '<span class="gto">' + g.label + '</span>'
+                       : '<span class="gto">&rarr; ' + g.label + ' <i>' + g.pct + '%</i></span>')
+         : "");
+      tile.classList.toggle("sel", tbl.title === res.selected);
+    });
+    // Selected table ke seat names se villain auto-select (db match)
+    const sel = res.tables.find(t => t.title === res.selected) || res.tables[0];
+    if(sel && sel.names) mirrorAutoVillain(sel.names);
+  }catch(e){}
+}
+
+// Villain auto-select: table ke seat names ko DB (rvHands players) se match karo
+function mirrorMatchNames(names){
+  if(!names || !Object.keys(names).length) return [];
+  const players = rvPlayerStats(rvHands);
+  const low = s => String(s).toLowerCase().trim();
+  const out = [];
+  Object.values(names).forEach(nm => {
+    const hit = players.find(p => {
+      const a = low(p.name), b = low(nm);
+      return a === b || (a.length >= 4 && b.length >= 4 && (a.includes(b) || b.includes(a)));
+    });
+    if(hit && !out.some(p => p.name === hit.name)) out.push(hit);
+  });
+  return out;
+}
+
+function mirrorAutoVillain(names){
+  if(mirrorVillainManual) return;
+  const hits = mirrorMatchNames(names);
+  mirrorAtTable = hits.map(h => h.name);
+  if(!hits.length){ mirrorPlayersRender(); return; }
+  // spot ke opener position ka naam pehle, baaki fallback
+  const sel = el("mirror-spot");
+  const sp = SPOTS.find(s => s.id === sel.value);
+  const low = s => String(s).toLowerCase().trim();
+  let pick = hits[0];
+  if(sp && sp.opener && names[sp.opener]){
+    const w = low(names[sp.opener]);
+    pick = hits.find(p => { const a = low(p.name); return a === w || a.includes(w) || w.includes(a); }) || hits[0];
+  }
+  mirrorVillain = pick.name;
+  mirrorVillainTip();
+  mirrorRecommend();
+  if(mirrorPostflopLast) mirrorPostflopRender(mirrorPostflopLast);
+  const vsel = el("mirror-villain");
+  if(vsel && [...vsel.options].some(o => o.value === pick.name)) vsel.value = pick.name;
+  mirrorPlayersRender();
+}
+
 function mirrorStart(){
   mirrorSpotManual = false;   // Live Mirror kholte hi auto-detect on
   buildMirrorSpotPicker();
@@ -3916,6 +4141,7 @@ function mirrorStart(){
     vs._bound = true;
     vs.addEventListener("change", () => {
       mirrorVillain = vs.value;
+      mirrorVillainManual = !!vs.value;   // khali (— koi nahi —) pe auto-select wapas on
       mirrorVillainTip();
       mirrorRecommend();
       if(mirrorPostflopLast) mirrorPostflopRender(mirrorPostflopLast);
@@ -3953,20 +4179,24 @@ function mirrorStart(){
   clearInterval(mirrorTimer);
   clearInterval(mirrorDetectTimer);
   clearInterval(mirrorWinTimer);
+  clearInterval(mirrorTablesTimer);
   mirrorRecommend();
   mirrorTick();
   mirrorDetectTick();
   mirrorWindowsTick();
+  mirrorTablesTick();
   mirrorLastHand = null;
   mirrorTimer = setInterval(mirrorTick, 300);
   mirrorDetectTimer = setInterval(mirrorDetectTick, 250);   // server ab cache se turant padhta hai
   mirrorWinTimer = setInterval(mirrorWindowsTick, 2000);
+  mirrorTablesTimer = setInterval(mirrorTablesTick, 800);
 }
 
 function mirrorStop(){
   clearInterval(mirrorTimer);
   clearInterval(mirrorDetectTimer);
   clearInterval(mirrorWinTimer);
+  clearInterval(mirrorTablesTimer);
 }
 
 function pickWeighted(freqs){
@@ -4049,10 +4279,9 @@ function mirrorVillainTip(){
   t.textContent = pr.cat + " · VPIP " + f(pr.vpip) + " / PFR " + f(pr.pfr) + " / 3B " + f(pr.tb) + " · " + p.hands + " hands";
 }
 
-function mirrorPlayersHTML(){
+function mirrorPlayersHTML(players){
   const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
-  const players = mirrorPlayers.slice(0, 40);
-  if(!players.length) return '<div class="rv-muted">Abhi koi opponent data nahi — Hand Review me hand history load karo (ya GTO server band hai).</div>';
+  if(!players.length) return '<div class="rv-muted">Table pe koi known opponent nahi.</div>';
   const f = v => v === null ? "–" : v;
   return players.map(p => {
     const pr = rvProfile(p), saved = rvNotes[p.name] || {};
@@ -4078,18 +4307,30 @@ function mirrorPlayersRender(){
   mirrorPlayers = rvPlayerStats(rvHands).sort((a, b) => b.hands - a.hands);
   if(!mirrorPlayers.length){ box.hidden = true; return; }
   box.hidden = false;
+  // Sirf table pe baithhe opponents dikhao (seat naam match se)
+  const atTable = mirrorPlayers.filter(p => mirrorAtTable.includes(p.name));
   const sel = el("mirror-villain");
   if(sel){
     sel.innerHTML = '<option value="">— koi nahi —</option>';
-    mirrorPlayers.slice(0, 40).forEach(p => {
+    atTable.forEach(p => {
       const o = document.createElement("option");
       o.value = p.name; o.textContent = p.name + " (" + p.hands + "h)";
       if(p.name === mirrorVillain) o.selected = true;
       sel.appendChild(o);
     });
+    if(mirrorVillain && !atTable.some(p => p.name === mirrorVillain)){
+      const o = document.createElement("option");
+      o.value = mirrorVillain; o.textContent = mirrorVillain;
+      o.selected = true;
+      sel.appendChild(o);
+    }
   }
   const list = el("mirror-players-list");
-  if(list) list.innerHTML = mirrorPlayersHTML();
+  if(list){
+    list.innerHTML = atTable.length
+      ? mirrorPlayersHTML(atTable)
+      : '<div class="rv-muted">Table ke opponents detect nahi hue — mirror_server ke NAME_REGIONS tune karo (naam OCR).</div>';
+  }
   mirrorVillainTip();
 }
 
@@ -5139,6 +5380,81 @@ function rvBuildPluIndex(){
   rvPluIndex = idx;
 }
 
+/* --- Pluribus POSTFLOP index: (street, board texture, hand cat, facing) -> action freq --- */
+let rvPluPost = null;
+
+function rvBoardTex(board){
+  const rs = board.map(c => RV_RANKS.indexOf(c[0])).sort((a, b) => b - a);
+  const hi = RV_RANKS[rs[0]];
+  const paired = rs[0] === rs[1] || (rs.length > 2 && rs[1] === rs[2]);
+  const suits = new Set(board.map(c => c[1])).size;
+  const gaps = rs[0] - rs[rs.length - 1];
+  const conn = gaps <= 3 ? "conn" : gaps <= 6 ? "mid" : "dry";
+  return hi + "|" + (paired ? "paired" : "unpaired") + "|" + {1:"mono",2:"tt",3:"rb"}[suits] + "|" + conn;
+}
+
+function rvBuildPluPostflopIndex(){
+  const idx = {};
+  const N = {flop: 3, turn: 4, river: 5};
+  rvPlu.forEach(h => {
+    ["flop","turn","river"].forEach(st => {
+      const n = N[st];
+      if(h.board.length < n) return;
+      const board = h.board.slice(0, n);
+      const tex = rvBoardTex(board);
+      const acts = h.acts.filter(a => a.street === st);
+      if(!acts.length) return;
+      let faced = false, seen = false;
+      for(const a of acts){
+        if(a.name === h.hero){ seen = true; break; }
+        if(!seen && (a.verb === "bets" || a.verb === "raises")){ faced = true; }
+      }
+      const mine = acts.filter(a => a.name === h.hero);
+      if(!mine.length) return;
+      const cat = rvStrength(h.heroCards, board);
+      const fk = faced ? "f" : "c";
+      const e = idx[st] = idx[st] || {};
+      const t = e[tex] = e[tex] || {};
+      const c = t[cat] = t[cat] || {f:{}, c:{}};
+      const bucket = c[fk];
+      const v = mine[0].verb === "checks" ? "check" : mine[0].verb === "calls" ? "call"
+              : mine[0].verb === "bets" ? "bet" : mine[0].verb === "raises" ? "raise"
+              : mine[0].verb === "folds" ? "fold" : null;
+      if(v) bucket[v] = (bucket[v] || 0) + 1;
+    });
+  });
+  rvPluPost = idx;
+}
+
+function rvPluPostLookup(board, heroCards, street, facing){
+  if(!rvPluPost) return null;
+  const N = {flop: 3, turn: 4, river: 5};
+  const n = N[street];
+  if(!n || board.length < n) return null;
+  const b = board.slice(0, n);
+  const tex = rvBoardTex(b);
+  const cat = rvStrength(heroCards, b);
+  const fk = facing ? "f" : "c";
+  const st = rvPluPost[street];
+  if(!st) return null;
+  const t = st[tex];
+  if(!t) return null;
+  const c = t[cat];
+  if(!c) return null;
+  const bucket = c[fk];
+  const tot = Object.values(bucket).reduce((a, x) => a + x, 0);
+  if(!tot) return null;
+  return {bucket, tot, tex, cat};
+}
+
+function rvPluPostflopLine(board, heroCards, streetName){
+  const plu = rvPluPostLookup(board, heroCards, streetName, 0);
+  if(!plu) return "";
+  const labels = {check: "Check", call: "Call", bet: "Bet", raise: "Raise", fold: "Fold"};
+  return '<div class="rv-muted">&#129302; Pluribus: ' + Object.entries(plu.bucket).sort((a, b) => b[1] - a[1])
+    .map(([v, c]) => (labels[v] || v) + " " + Math.round(c / plu.tot * 100) + "%").join(" · ") + ' (n=' + plu.tot + ')</div>';
+}
+
 async function rvLoadPluribus(){
   if(rvPluState === "loading" || rvPluState === "ready") return;       // error pe dobara try
   rvPluState = "loading";
@@ -5147,6 +5463,7 @@ async function rvLoadPluribus(){
     if(!j.text) throw new Error(j.error || "no data");
     rvPlu = rvParseAll(j.text);
     rvBuildPluIndex();
+    rvBuildPluPostflopIndex();
     rvPluState = "ready";
   }catch(e){ rvPluState = "error"; rvPluErr = String(e.message || e); }
   if(rvTab === "plu") rvRenderPlu();

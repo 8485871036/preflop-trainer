@@ -29,7 +29,10 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 WINDOW_TITLE = ["NL Hold'em", "NLHP", "Natural8"]
 # Process ke naam se bhi match karo (title empty/badle to bhi pakde).
 PROCESS_NAMES = ["pokerclient", "ggnet"]
+# Lobby windows ke exact titles — inke card-preview / banners ko hero cards padh leta tha.
+LOBBY_TITLES = {"natural8", "redstar poker", "red star poker", "ggpoker"}
 PORT = int(os.environ.get("MIRROR_PORT", "8676"))
+MAX_TABLES = int(os.environ.get("MIRROR_MAX_TABLES", "4"))   # multi-table: ek saath kitni tables
 # Hero ke 2 cards ka region — window ka FRACTION (x, y, width, height).
 # (0,0) = top-left, (1,1) = bottom-right. Apne poker client ke liye tune karo.
 # Natural8 (5-seat layout): hero cards bottom-center, naam/stack ke UPAR hote hain.
@@ -81,6 +84,16 @@ BADGE_BOXES = [
 ]
 # Board cards ka area — yahan rang dikhe to flop aa chuka hai (preflop khatam)
 BOARD_REGION = (0.30, 0.37, 0.58, 0.50)
+# Har seat ka NAAM — plaque ke upar ka hissa (stack neeche hota hai). HERO skip.
+# Best-effort: OCR fail ho to names nahi milte (villain auto-select ka fallback dropdown hai).
+NAME_REGIONS = [
+    (0.72, 0.705, 0.86, 0.745),   # 0 bottom-right
+    None,                          # 1 HERO
+    (0.14, 0.675, 0.27, 0.715),    # 2 bottom-left
+    (0.06, 0.285, 0.19, 0.325),    # 3 top-left
+    (0.43, 0.165, 0.57, 0.205),    # 4 top-center
+    (0.80, 0.265, 0.94, 0.30),     # 5 top-right
+]
 # ============================================================
 
 RANKS = "AKQJT98765432"
@@ -104,6 +117,7 @@ state = {
     "position": None,
     "last_img": None,
     "action": None,
+    "tables": {},   # title -> {hwnd, frame_jpeg, last_img, blocked, last_ocr, raw, position, action, manual_hand}
 }
 
 # ---------------- optional deps ----------------
@@ -136,6 +150,13 @@ try:
     HAS_CV = True
 except Exception:
     HAS_CV = False
+
+try:
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "tools"))
+    import redstar_hh
+    HAS_REDSTAR = True
+except Exception:
+    HAS_REDSTAR = False
 
 # High-DPI screens pe coordinates sahi rakhne ke liye
 if HAS_WIN32:
@@ -179,6 +200,8 @@ def find_windows(title, proc_names=None):
         if win32gui.IsIconic(hwnd):          # minimized window skip karo
             return True
         t = win32gui.GetWindowText(hwnd)
+        if t.strip().lower() in LOBBY_TITLES:  # lobby window — table nahi
+            return True
         title_ok = bool(t) and any(s.lower() in t.lower() for s in titles)
         proc_ok = False
         if not title_ok and procs:
@@ -195,12 +218,17 @@ def find_windows(title, proc_names=None):
                 return True
         except Exception:
             return True
-        found.append((hwnd, t))
+        found.append((hwnd, t, title_ok))
         return True
     try:
         win32gui.EnumWindows(cb, None)
     except Exception:
         pass
+    # Title se table windows mili hain to sirf process se mili windows (lobby/settings) hatao —
+    # warna lobby ke card-preview ko hero cards padh lete hain
+    if any(ok for _, _, ok in found):
+        found = [f for f in found if f[2]]
+    found = [(hwnd, t) for hwnd, t, _ in found]
     found.sort(key=lambda x: win32gui.GetWindowRect(x[0])[2] * win32gui.GetWindowRect(x[0])[3], reverse=True)
     return found
 
@@ -429,49 +457,75 @@ def _card_bbox(half):
     return mask.getbbox()
 
 
-def _body_color(card):
-    """Card body ka median color (white rank + dark text hata kar)."""
+def _suit_from_card(card):
+    """Red Star (white card + colored text) ke liye suit: card ke colored
+    rank+suit text ka dominant hue. Red=heart, green=club, blue=diamond, black=spade."""
     w, h = card.size
     px = card.convert("RGB").load()
-    rs, gs, bs = [], [], []
+    counts = {"h": 0, "d": 0, "c": 0, "s": 0}
     for y in range(h):
         for x in range(w):
             r, g, b = px[x, y]
             mx = max(r, g, b)
             mn = min(r, g, b)
-            if mx <= 60:                      # dark text / felt
+            if mn > 195:                     # white body
                 continue
-            if (mx - mn) < 30 and mx > 200:   # white rank letter
+            if mx < 60:                      # black text (spade)
+                counts["s"] += 1
                 continue
-            rs.append(r)
-            gs.append(g)
-            bs.append(b)
-    if not rs:
-        return None
-    rs.sort()
-    gs.sort()
-    bs.sort()
-    m = len(rs) // 2
-    return (rs[m], gs[m], bs[m])
+            if (mx - mn) < 35:               # gray border (not a suit color)
+                continue
+            if r > g and r > b and (r - g) > 25:
+                counts["h"] += 1
+            elif g > r and g >= b and (g - r) > 20:
+                counts["c"] += 1
+            elif b > r and b >= g and (b - r) > 20:
+                counts["d"] += 1
+            else:
+                counts["s"] += 1
+    best = max(counts, key=counts.get)
+    return best if counts[best] > 0 else None
 
 
-def _suit_from_color(rgb):
-    """Card body color -> suit. Natural8 4-color deck ke hisaab se:
-    ♥=red, ♦=cyan(blue), ♣=green, ♠=black/gray."""
-    if not rgb:
-        return None
-    r, g, b = rgb
-    mx = max(r, g, b)
-    mn = min(r, g, b)
-    if mx - mn < 25:
-        return "s"                            # neutral gray/black -> spade
-    if r >= g and r >= b and (r - g) > 40 and (r - b) > 40:
-        return "h"                            # red -> heart
-    if g >= r and g >= b and (g - r) > 40 and (g - b) > 30:
-        return "c"                            # green -> club
-    if b >= g and b > r and (b - r) > 60 and g > 70:
-        return "d"                            # cyan -> diamond
-    return "s"
+def _card_body_rgb(card):
+    """Card ke upar wale hisse ka median color (neeche Rabbit Hunt ka brown hissa ho sakta hai)."""
+    a = _np.asarray(card.convert("RGB"), dtype=_np.int32)
+    a = a[:max(1, int(a.shape[0] * 0.55))]
+    return tuple(int(v) for v in _np.median(a.reshape(-1, 3), axis=0))
+
+
+def _suit(card):
+    """Card ka suit. Colored-body deck (Red Star/Natural8 4-color: gray=s, red=h, blue=d,
+    green=c) -> body color se. White-body deck -> rank/suit text ke color se."""
+    r, g, b = _card_body_rgb(card)
+    if min(r, g, b) > 190:
+        return _suit_from_card(card)
+    mx, mn = max(r, g, b), min(r, g, b)
+    if mx - mn < 30:
+        return "s"
+    if r == mx:
+        return "h"
+    if g == mx and g - b > 15:
+        return "c"
+    return "d"                                # blue / cyan
+
+
+def _is_card_back(card):
+    """Opponent ka face-down card: blue body + red/white chip logo."""
+    a = _np.asarray(card.convert("RGB"), dtype=_np.int32)
+    R, G, B = a[..., 0], a[..., 1], a[..., 2]
+    r, g, b = _card_body_rgb(card)
+    return b > r + 40 and ((R > 170) & (G < 90) & (B < 90)).mean() > 0.02
+
+
+def _is_rabbit_card(card):
+    """Rabbit Hunt card (hand khatam hone ke baad dikhaya 'jo aata') — neeche brown patti.
+    Ye asli board nahi hai, hand file me bhi nahi hota."""
+    a = _np.asarray(card.convert("RGB"), dtype=_np.int32)
+    a = a[int(a.shape[0] * 0.6):]
+    R, G, B = a[..., 0], a[..., 1], a[..., 2]
+    brown = (R > 50) & (R < 160) & (G * 100 > R * 45) & (G * 100 < R * 80) & (B * 10 < G * 6)
+    return brown.mean() > 0.15
 
 
 def _ocr_binary(bw_img, whitelist, psm):
@@ -483,9 +537,23 @@ def _ocr_binary(bw_img, whitelist, psm):
         return ""
 
 
-# Rank glyph templates — tesseract is blocky font pe Q ko A, 5 ko 9 jaisa padh deta hai.
-# rank_templates.json me live table se liye VERIFIED glyphs hain (rank -> fingerprints).
-# Naya glyph sabse kareebi template se match hota hai; koi paas na ho tabhi tesseract.
+# Rank glyph templates — tesseract itne chhote (~7x12 px) glyph pe 3->A, J->T, 8->6 padhta hai.
+# rank_templates.json me VERIFIED glyphs hain (hand file ke exact cards se auto-label).
+# Glyph = card ke top-left corner ka "body color se contrast" map (FEAT_W x FEAT_H grayscale).
+# Match = normalized cross-correlation (+-1 px shift). Koi confident match na ho tabhi tesseract.
+FEAT_W, FEAT_H = 12, 16
+TEMPLATE_MIN_SCORE = 0.84    # isse kam correlation = anjaan glyph
+TEMPLATE_SURE_SCORE = 0.92   # saare 13 ranks ke templates na hon tab itna chahiye (cross-rank max ~0.88)
+TEMPLATE_MIN_MARGIN = 0.06   # best rank doosre rank se kam se kam itna aage ho
+TEMPLATE_DUP_SCORE = 0.985   # same rank ka itna milta template pehle se hai to naya mat jodo
+TEMPLATE_CONFLICT_SCORE = 0.97   # doosre rank ka itna milta template = galat label tha, hata do
+_SHIFTS = [(dy, dx) for dy in (-1, 0, 1) for dx in (-1, 0, 1)]
+
+
+def _templates_path(base):
+    return os.path.join(base, "rank_templates.json")
+
+
 def _load_templates():
     # Pehle repo root (PREFLOP_ROOT) — exe me bhi yahi writable/persistent hai,
     # taaki naye verified glyphs bina rebuild ke add ho sakein.
@@ -496,47 +564,116 @@ def _load_templates():
         if not base:
             continue
         try:
-            with open(os.path.join(base, "rank_templates.json"), encoding="utf-8") as f:
+            with open(_templates_path(base), encoding="utf-8") as f:
                 data = json.load(f)
-            return [(rank, int(fp, 2)) for rank, fps in data.items() for fp in fps]
+            if data.get("format") != f"ncc{FEAT_W}x{FEAT_H}":
+                continue                     # purana binary format — dobara seekh lenge
+            return [(rank, bytes.fromhex(h)) for rank, hs in data["templates"].items() for h in hs]
         except Exception:
             continue
     return []
 
 
 RANK_TEMPLATES = _load_templates()
-TEMPLATE_MAX_DIST = 50       # 320 bits me se itne tak farak chalega (same-rank ~45, cross-rank 116+)
+_tmpl_arr = {"id": None, "ranks": [], "arr": None}
 _rank_cache = {}             # sirf memory me — galat OCR disk pe pakka nahi hota
 
 
-def _glyph_key(glyph):
-    """Glyph ka chhota (16x20) binary fingerprint — halke anti-alias farak ko ignore karta hai."""
-    g = glyph.resize((16, 20), Image.BILINEAR)
-    return "".join("1" if v > 127 else "0" for v in g.tobytes())
+def _rank_feat(card):
+    """Card ke top-left rank glyph ka contrast map -> FEAT_W*FEAT_H bytes (glyph key).
+    Corner = card WIDTH se naapa (board card ka blob height badalta rehta hai); usme body
+    color se sabse bada contrast blob = glyph, uska tight crop (edges/suit symbol bahar)."""
+    if not HAS_CV:
+        return None
+    a = _np.asarray(card.convert("RGB"), dtype=_np.float32)
+    ch, cw = a.shape[:2]
+    c = a[:min(ch, max(6, round(cw * 0.65))), :max(6, round(cw * 0.55))]
+    body = _np.median(c.reshape(-1, 3), axis=0)
+    d = _np.clip(_np.abs(c - body).sum(2), 0, 255)
+    if d.max() < 60:                     # corner me kuch nahi (card back / khaali)
+        return None
+    m = d > max(60, 0.45 * d.max())
+    m[:2, :] = False                     # card ka top/left edge glyph nahi
+    m[:, :2] = False
+    n, _, st, _ = _cv2.connectedComponentsWithStats(m.astype(_np.uint8), 8)
+    if n < 2:
+        return None
+    i = 1 + int(_np.argmax(st[1:, _cv2.CC_STAT_AREA]))
+    x, y, w, h = (int(v) for v in st[i, :4])
+    if h < 5:
+        return None
+    g = d[max(0, y - 1):y + h + 1, max(0, x - 1):x + w + 1]
+    g = _cv2.resize(g, (FEAT_W, FEAT_H), interpolation=_cv2.INTER_AREA)
+    return _np.clip(g, 0, 255).astype(_np.uint8).tobytes()
+
+
+def _tmpl_matrix():
+    """Templates ka (N, H, W) float array — templates badle tabhi dobara banta hai."""
+    tl = RANK_TEMPLATES
+    if _tmpl_arr["id"] is not tl:
+        arr = _np.array([_np.frombuffer(k, _np.uint8) for _, k in tl], dtype=_np.float32)
+        _tmpl_arr.update(id=tl, ranks=[r for r, _ in tl],
+                         arr=arr.reshape(-1, FEAT_H, FEAT_W) if len(tl) else None)
+    return _tmpl_arr["ranks"], _tmpl_arr["arr"]
+
+
+def _ncc_scores(key, arr):
+    """Har template se best correlation (+-1 px shift me)."""
+    q = _np.frombuffer(key, _np.uint8).astype(_np.float32).reshape(FEAT_H, FEAT_W)
+    best = _np.full(len(arr), -1.0, dtype=_np.float32)
+    for dy, dx in _SHIFTS:
+        qs = q[max(0, dy):FEAT_H + min(0, dy), max(0, dx):FEAT_W + min(0, dx)]
+        ts = arr[:, max(0, -dy):FEAT_H + min(0, -dy), max(0, -dx):FEAT_W + min(0, -dx)]
+        qs = qs - qs.mean()
+        ts = ts - ts.mean(axis=(1, 2), keepdims=True)
+        den = _np.sqrt((qs * qs).sum() * (ts * ts).sum(axis=(1, 2))) + 1e-6
+        best = _np.maximum(best, (ts * qs).sum(axis=(1, 2)) / den)
+    return best
+
+
+def _match_scores(key):
+    """{rank: best score} — har rank ka sabse milta template."""
+    ranks, arr = _tmpl_matrix()
+    if not key or arr is None:
+        return {}
+    out = {}
+    for r, sc in zip(ranks, _ncc_scores(key, arr).tolist()):
+        if sc > out.get(r, -1.0):
+            out[r] = sc
+    return out
 
 
 def _match_template(key):
-    """Sabse kareebi verified template ka rank, ya None agar koi kaafi paas nahi."""
-    if not RANK_TEMPLATES:
+    """Confident template match ka rank, ya None (anjaan / do ranks me confusion).
+    Jab tak kisi rank ka template bana hi nahi, uska glyph kisi aur rank se ~0.88 tak
+    mil sakta hai — isliye tab sirf bahut pakka (>= TEMPLATE_SURE_SCORE) match maanya."""
+    sc = sorted(_match_scores(key).items(), key=lambda kv: -kv[1])
+    if not sc or sc[0][1] < TEMPLATE_MIN_SCORE:
         return None
-    v = int(key, 2)
-    dist, rank = min((bin(v ^ fp).count("1"), r) for r, fp in RANK_TEMPLATES)
-    return rank if dist <= TEMPLATE_MAX_DIST else None
+    if len(sc) > 1 and sc[0][1] - sc[1][1] < TEMPLATE_MIN_MARGIN:
+        return None
+    if sc[0][1] < TEMPLATE_SURE_SCORE and len(sc) < len(RANKS):
+        return None
+    return sc[0][0]
 
 
 def _rank_glyph(card):
-    """Card ke top-left se white rank glyph (cropped) nikalo — ya None."""
+    """Card ke top-left corner se rank glyph nikalo (tesseract fallback ke liye) — ya None.
+    Red Star cards WHITE body + colored text hote hain; Natural8 colored body +
+    white text. Isliye body color se CONTRAST wale pixels hi rank glyph hain."""
     cw, ch = card.size
     corner = card.crop((0, 0, int(cw * 0.65), int(ch * 0.65)))
     w, h = corner.size
     px = corner.convert("RGB").load()
+    vals = [px[x, y] for y in range(h) for x in range(w)]
+    vals.sort()
+    br, bg, bb = vals[len(vals) // 2]          # body color (median)
     mask = Image.new("L", (w, h), 0)
     mp = mask.load()
     for y in range(h):
         for x in range(w):
             r, g, b = px[x, y]
-            # white rank letter — colored body/suit tint ka min channel low hota hai
-            if min(r, g, b) > 115:
+            if abs(r - br) + abs(g - bg) + abs(b - bb) > 150:
                 mp[x, y] = 255
     mask = _largest_component(mask)
     bbox = mask.getbbox()
@@ -544,17 +681,40 @@ def _rank_glyph(card):
 
 
 def _read_rank(card):
-    """Card ke top-left me white rank letter padho."""
-    glyph = _rank_glyph(card)
-    if not glyph:
-        return None
-    key = _glyph_key(glyph)
+    """Card ke top-left me rank padho."""
+    return _read_rank_key(card)[0]
+
+
+# True = sirf verified templates se padho (anjaan glyph = None, kabhi galat nahi).
+# False = jab tak saare 13 ranks ke templates nahi bane, anjaan glyph pe tesseract ka
+# andaza (galat ho sakta hai); 13 ranks ho jaane ke baad tesseract band.
+TEMPLATES_ONLY = False
+
+
+def _templates_complete():
+    return len({r for r, _ in RANK_TEMPLATES}) == len(RANKS)
+
+
+def _read_rank_key(card):
+    """(rank, glyph_key) — key se baad me hand file ke exact cards se template banta hai."""
+    key = _rank_feat(card)
+    if not key:
+        return None, None
     if key in _rank_cache:
-        return _rank_cache[key]
-    tm = _match_template(key)
-    if tm:
-        _rank_cache[key] = tm
-        return tm
+        return _rank_cache[key], key
+    rank = _match_template(key)
+    if rank is None and not TEMPLATES_ONLY and not _templates_complete():
+        rank = _tesseract_rank(card)
+    if len(_rank_cache) > 2000:
+        _rank_cache.clear()
+    _rank_cache[key] = rank          # same pixels = same jawab (None bhi)
+    return rank, key
+
+
+def _tesseract_rank(card):
+    glyph = _rank_glyph(card)
+    if not glyph or not HAS_TESS:
+        return None
     s = max(glyph.size) + 12
     canvas = Image.new("L", (s, s), 0)
     canvas.paste(glyph, ((s - glyph.width) // 2, (s - glyph.height) // 2))
@@ -566,12 +726,7 @@ def _read_rank(card):
             if ch.upper() in "AKQJT98765432":
                 return ch.upper()
         return None
-
-    # Tesseract same image pe hamesha same jawab deta hai — isliye result (None bhi) cache
-    if len(_rank_cache) > 2000:
-        _rank_cache.clear()
-    _rank_cache[key] = _ocr_rank(try_psm)
-    return _rank_cache[key]
+    return _ocr_rank(try_psm)
 
 
 def _ocr_rank(try_psm):
@@ -586,59 +741,69 @@ def _ocr_rank(try_psm):
     return r13 or r8
 
 
-def add_rank_template(rank, fp):
-    """Verified glyph fingerprint ko templates me add karo (memory + repo disk)."""
+_tmpl_lock = threading.Lock()
+_tmpl_state = {"gen": 0}
+
+
+def _tmpl_gen():
+    return _tmpl_state["gen"]
+
+
+def add_rank_template(rank, key):
+    """Verified glyph key ko templates me add karo (memory + repo disk).
+    Isi glyph jaisa doosre rank ka template (purani galat training) hata deta hai."""
     global RANK_TEMPLATES
-    v = int(fp, 2)
-    if any(r == rank and f == v for r, f in RANK_TEMPLATES):
+    if not key or rank not in RANKS:
         return False
-    RANK_TEMPLATES.append((rank, v))
-    base = os.environ.get("PREFLOP_ROOT") or os.path.dirname(os.path.abspath(__file__))
-    path = os.path.join(base, "rank_templates.json")
-    try:
-        data = json.load(open(path, encoding="utf-8"))
-    except Exception:
+    with _tmpl_lock:
+        ranks, arr = _tmpl_matrix()
+        sc = _ncc_scores(key, arr).tolist() if arr is not None else []
+        if any(s >= TEMPLATE_DUP_SCORE and r == rank for r, s in zip(ranks, sc)):
+            return False
+        bad = {i for i, (r, s) in enumerate(zip(ranks, sc)) if s >= TEMPLATE_CONFLICT_SCORE and r != rank}
+        RANK_TEMPLATES = [t for i, t in enumerate(RANK_TEMPLATES) if i not in bad] + [(rank, key)]
+        _rank_cache.clear()      # purane (tesseract) jawab ab galat ho sakte hain
+        _tmpl_state["gen"] += 1  # action_loop current cards dobara padhega
         data = {}
-    data.setdefault(rank, []).append(fp)
-    try:
-        json.dump(data, open(path, "w", encoding="utf-8"))
-    except Exception:
-        pass
+        for r, k in RANK_TEMPLATES:
+            data.setdefault(r, []).append(k.hex())
+        base = os.environ.get("PREFLOP_ROOT") or os.path.dirname(os.path.abspath(__file__))
+        try:
+            with open(_templates_path(base), "w", encoding="utf-8") as fh:
+                json.dump({"format": f"ncc{FEAT_W}x{FEAT_H}", "templates": data}, fh)
+        except Exception:
+            pass
     return True
 
 
-def learn_from_hand(hand):
-    """User ne cards manually correct kiye — unka glyph template bana lo.
-    hand = "4c8d" (4-char). Hero ke left/right glyphs ko is label se save karta hai."""
-    img = state.get("last_img")
+def learn_from_hand(hand, img=None):
+    """User ne cards manually correct kiye — hero ke dono glyphs is label se save karo.
+    hand = "4c8d" (4-char), left card pehle."""
+    img = img or state.get("last_img")
     if not img or not isinstance(hand, str) or len(hand) != 4:
         return {"ok": False, "error": "no frame / invalid hand"}
-    glyphs = []
-    for x, y, bw, bh, _area in _find_card_blobs(img):
-        for sx, sy, sw, sh in _split_wide(x, y, bw, bh):
-            g = _rank_glyph(img.crop((sx, sy, sx + sw, sy + sh)))
-            if g is not None:
-                glyphs.append((sx, g))
-    if len(glyphs) < 2:
+    obs = []
+    detect(img, obs)
+    if len(obs) != 2:
         return {"ok": False, "error": "hero cards not found"}
-    glyphs.sort(key=lambda g: g[0])       # left -> right
-    added = []
-    for rank, (_, g) in zip((hand[0], hand[2]), glyphs[:2]):
-        rank = rank.upper()
-        if rank in "AKQJT98765432" and add_rank_template(rank, _glyph_key(g)):
-            added.append(rank)
+    added = [r for r, (k, _) in zip((hand[0].upper(), hand[2].upper()), obs) if add_rank_template(r, k)]
     return {"ok": True, "added": added}
 
 
-def read_card(card_img):
-    """Ek card se (rank, suit) nikalo — rank OCR se, suit body color se."""
+def read_card(card_img, obs=None):
+    """Ek card se (rank, suit) nikalo — rank OCR se, suit text color se.
+    obs list di ho to (glyph_key, suit) usme append hota hai (auto-labelling ke liye)."""
     if not card_img:
         return None, None
     cw, ch = card_img.size
     if cw < 8 or ch < 8:
         return None, None
-    rank = _read_rank(card_img)
-    suit = _suit_from_color(_body_color(card_img))
+    if _is_card_back(card_img):
+        return None, None
+    rank, key = _read_rank_key(card_img)
+    suit = _suit(card_img)
+    if obs is not None:
+        obs.append((key, suit))
     return rank, suit
 
 
@@ -673,22 +838,26 @@ def _find_card_blobs(img, y0f=0.40, y1f=1.0):
     cyan = (B > 100) & (R < 90) & (G > 70) & (B >= G)
     gray = ((R > 75) & (R < 150) & (G > 75) & (G < 150) & (B > 75) & (B < 150)
             & (_np.maximum(_np.maximum(R, G), B) - _np.minimum(_np.minimum(R, G), B) < 25))
-    mask = (red | green | cyan | gray)
-    mask[:int(h * y0f), :] = False
-    mask[int(h * y1f):, :] = False
-    mask = (mask.astype(_np.uint8)) * 255
-    n, labels, stats, _ = _cv2.connectedComponentsWithStats(mask, 8)
+    # WHITE card body — Red Star ke hero cards white hote hain (colored text ke saath)
+    white = (R > 165) & (G > 165) & (B > 165)
     min_area = int(w * h * 0.0004)
     min_w, min_h = int(w * 0.03), int(h * 0.05)
     blobs = []
-    for i in range(1, n):
-        x, y, bw, bh, area = stats[i]
-        if area < min_area or bw < min_w or bh < min_h:
-            continue
-        if area / (bw * bh) < 0.6:      # solid rectangle hi card hai (text/strips nahi)
-            continue
-        blobs.append((int(x), int(y), int(bw), int(bh), int(area)))
-    return blobs
+    # Har body color ke blobs ALAG — ek combined mask me chips / "48 BB" jaisa white text
+    # card se jud jaata tha aur card ka rectangle test fail ho jaata tha.
+    for mask in (red, green, cyan, gray, white):
+        mask = mask.copy()
+        mask[:int(h * y0f), :] = False
+        mask[int(h * y1f):, :] = False
+        n, labels, stats, _ = _cv2.connectedComponentsWithStats(mask.astype(_np.uint8) * 255, 8)
+        for i in range(1, n):
+            x, y, bw, bh, area = stats[i]
+            if area < min_area or bw < min_w or bh < min_h:
+                continue
+            if area / (bw * bh) < 0.6:      # solid rectangle hi card hai (text/strips nahi)
+                continue
+            blobs.append((int(x), int(y), int(bw), int(bh), int(area)))
+    return sorted(blobs)
 
 
 def _split_wide(x, y, bw, bh):
@@ -700,7 +869,8 @@ def _split_wide(x, y, bw, bh):
 
 
 def _pick_pair(cards):
-    """Valid cards me se hero ka side-by-side pair chuno."""
+    """Valid cards me se hero ka side-by-side pair chuno — bottom-most row.
+    Hero cards sabse neeche hote hain (board center, opponents side me)."""
     if len(cards) == 2:
         a, b = sorted(cards, key=lambda c: c[0])
         if abs((a[1] + a[3] / 2) - (b[1] + b[3] / 2)) <= 0.6 * max(a[3], b[3]):
@@ -708,74 +878,90 @@ def _pick_pair(cards):
         return None
     if len(cards) < 2:
         return None
-    best, best_dist = None, 1e18
-    for i in range(len(cards)):
-        for j in range(i + 1, len(cards)):
-            a, b = cards[i], cards[j]
-            if abs((a[1] + a[3] / 2) - (b[1] + b[3] / 2)) > 0.6 * max(a[3], b[3]):
-                continue
-            dist = abs((a[0] + a[2] / 2) - (b[0] + b[2] / 2))
-            if dist < best_dist:
-                best_dist, best = dist, (a, b)
-    return [best[0], best[1]] if best else None
+    # bottom-most card se shuru karke uski same-row pair dhoondo
+    cards = sorted(cards, key=lambda c: -(c[1] + c[3]))   # y descending
+    for i, a in enumerate(cards):
+        for b in cards[i + 1:]:
+            if abs((a[1] + a[3] / 2) - (b[1] + b[3] / 2)) <= 0.6 * max(a[3], b[3]):
+                return sorted([a, b], key=lambda c: c[0])
+    return None
 
 
-def detect(img):
-    """Hero ke dono cards padho — position auto-detect, rank + suit."""
+def detect(img, obs=None):
+    """Hero ke dono cards padho — position auto-detect, rank + suit.
+    obs list di ho to hero ke 2 cards ke (glyph_key, suit) left->right usme aate hain."""
     if not img or not USE_OCR or not HAS_PIL or not HAS_TESS:
         return None, None
-    # 1) card-body blobs dhoondo, 2) har blob se card padho (sirf valid rakhna)
+    # 1) card-body blobs dhoondo (sirf bottom band — board center me hota hai),
+    # 2) har blob se card padho (sirf valid rakhna)
     cards = []
-    for x, y, bw, bh, _area in _find_card_blobs(img):
+    for x, y, bw, bh, _area in _find_card_blobs(img, y0f=0.55, y1f=0.95):
         for sx, sy, sw, sh in _split_wide(x, y, bw, bh):
-            r, s = read_card(img.crop((sx, sy, sx + sw, sy + sh)))
-            if r and s:
-                cards.append((sx, sy, sw, sh, r + s))
-    # 3) side-by-side pair
+            # hero hamesha bottom-CENTER — side wali seats ke cards/backs hero nahi
+            if not 0.35 <= (sx + sw / 2) / img.width <= 0.65:
+                continue
+            o = []
+            r, s = read_card(img.crop((sx, sy, sx + sw, sy + sh)), o)
+            if o and o[0][0] and s:
+                cards.append((sx, sy, sw, sh, (r or "?") + s, o[0]))
+    # 3) side-by-side pair (bottom-most = hero)
     pair = _pick_pair(cards)
     if pair and len(pair) == 2:
-        return pair[0][4] + pair[1][4], pair[0][4] + " " + pair[1][4]
+        if obs is not None:
+            obs.extend([pair[0][5], pair[1][5]])
+        if "?" not in pair[0][4] + pair[1][4]:
+            return pair[0][4] + pair[1][4], pair[0][4] + " " + pair[1][4]
+        return None, pair[0][4] + " " + pair[1][4]
     # fallback: fixed HERO_REGION (agar dynamic detect fail ho)
     crop, _ = crop_hero(img)
     fixed = isolate_cards(crop) if crop else []
-    parts = []
+    parts, o = [], []
     for c in fixed[:2]:
-        r, s = read_card(c)
+        r, s = read_card(c, o)
         if r and s:
             parts.append(r + s)
+    if obs is not None and len(o) == 2 and all(k and s for k, s in o):
+        obs.extend(o)
     if len(parts) == 2:
         return parts[0] + parts[1], " ".join(parts)
     return None, None
 
 
-def detect_board(img):
-    """Board (flop/turn/river) cards — table ke center band se, left->right order me."""
+def detect_board(img, obs=None):
+    """Board (flop/turn/river) cards — table ke center band se, left->right order me.
+    obs list di ho to saare board cards ke (glyph_key, suit) left->right usme aate hain."""
     if not img or not HAS_CV or not HAS_TESS or not board_present(img):
         return None
     blobs = _find_card_blobs(img, y0f=0.30, y1f=0.58)
-    cards = []
+    cards, seen_obs = [], []
     for x, y, bw, bh, _area in blobs:
         if bh < 8:
             continue
-        n = max(1, round(bw / bh))          # overlapping board cards ek wide blob me
+        # paas-paas ke board cards ek wide blob me — card width ~0.74*h, beech me ~0.07*h gap.
+        # (round(bw/bh) 3 cards ko 2 gin leta tha aur card beech se kat jaata tha)
+        gap = 0.07 * bh
+        n = max(1, round((bw + gap) / (0.81 * bh)))
+        pitch = (bw + gap) / n
         for k in range(n):
-            sx = x + int(k * bw / n)
-            sw = max(8, int(bw / n))
-            r, s = read_card(img.crop((sx, y, sx + sw, y + bh)))
-            if r and s:
-                cards.append((sx, y, sw, bh, r + s))
-    if len(cards) < 3:
-        return None
-    # same row wale cards: y-center ke paas, sabse bada cluster
+            sx = x + int(round(k * pitch))
+            sw = max(8, int(round(pitch - gap)))
+            card = img.crop((sx, y, sx + sw, y + bh))
+            if _is_card_back(card) or _is_rabbit_card(card):
+                continue
+            o = []
+            r, s = read_card(card, o)
+            if o and o[0][0] and s:
+                seen_obs.append((sx, o[0]))
+                cards.append((sx, (r + s) if r else None))
     cards.sort(key=lambda c: c[0])
-    board = [c[4] for c in cards[:5]]
-    # duplicate remove (overlap se same card do baar aa sakta hai)
-    seen, out = set(), []
-    for c in board:
-        if c not in seen:
-            seen.add(c)
-            out.append(c)
-    return out if 3 <= len(out) <= 5 else None
+    seen_obs.sort(key=lambda c: c[0])
+    if obs is not None and 3 <= len(seen_obs) <= 5:
+        obs.extend(o for _, o in seen_obs)
+    board = [c for _, c in cards]
+    # ek bhi card anjaan / duplicate = board pe bharosa nahi (chhota board galat street deta hai)
+    if not 3 <= len(board) <= 5 or None in board or len(set(board)) != len(board):
+        return None
+    return board
 
 
 def _detect_button(img):
@@ -939,20 +1125,61 @@ def board_present(img):
     return colored.mean() > 0.1
 
 
-def detect_action(img):
-    """Preflop/postflop action: position, bets, aur board. {"street", "hero", "bets", "board"}."""
+def _action_buttons(img):
+    """Neeche-right FOLD / CALL / RAISE panel (red glow) dikh raha hai = hero ki baari.
+    Baaki time wahan sirf felt + "Check/Fold" checkboxes hote hain (red ~0%, panel 7-23%)."""
+    a = _np.asarray(img.convert("RGB"), dtype=_np.int32)
+    h, w = a.shape[:2]
+    r = a[int(h * 0.86):int(h * 0.99), int(w * 0.60):int(w * 0.99)]
+    R, G, B = r[..., 0], r[..., 1], r[..., 2]
+    return bool(((R > 70) & (R > 2 * G) & (R > 2 * B)).mean() > 0.04)
+
+
+RS_SEATS = [1, 3, 5, 6, 8, 10]   # Red Star 6-max XML seat numbers, clockwise (action order)
+
+
+def xml_seat_positions(st, hero=None):
+    """Live XML (dealt players + seat + dealer) -> ({screen_seat: "BTN"/...}, dealer_screen_seat).
+    Screen pe hero hamesha HERO_SEAT (bottom-center), seats clockwise — isliye XML seat ka
+    order-offset hi screen index hai. Sit-out / wait-for-BB wale XML me hote hi nahi."""
+    hero = hero or redstar_hh.HERO
+    names, seats = st.get("names") or [], st.get("seats") or []
+    if hero not in names or len(seats) != len(names) or any(s not in RS_SEATS for s in seats):
+        return None, None
+    k = RS_SEATS.index(seats[names.index(hero)])
+    scr = lambda s: (HERO_SEAT + RS_SEATS.index(s) - k) % len(SEAT_ANCHORS)
+    pos = {scr(s): redstar_hh._position(names, st["dealer_idx"], nm) for nm, s in zip(names, seats)}
+    return pos, scr(seats[st["dealer_idx"]])
+
+
+def detect_action(img, board_obs=None, xml_pos=None):
+    """Preflop/postflop action: position, bets, board, hero_to_act.
+    hero_to_act = abhi hero ki baari hai (call/check/raise ka faisla).
+    xml_pos = xml_seat_positions() ka jawab — ho to positions usi se (100% sahi); screen se
+    active seats ginne me dim plaque (wait-for-BB) wale bhi gine jaate the aur sab khisak jaata tha."""
     b = _button_seat(img)
     if b is None:
         return None
-    pos = seat_positions(img, b)
+    if xml_pos and xml_pos[0] and xml_pos[1] == b:     # screen ka button = XML ka dealer (same hand)
+        pos = xml_pos[0]
+    else:
+        pos = seat_positions(img, b)
     hero = pos.get(HERO_SEAT)
-    if board_present(img):
-        board = detect_board(img)
-        return {"street": "postflop", "hero": hero, "bets": {},
-                "board": board or [], "streetName": _street_name(board)}
     bets = read_bets(img)
-    return {"street": "preflop", "hero": hero,
-            "bets": {pos[i]: amt for i, amt in enumerate(bets) if amt > 0 and i in pos}}
+    bets_by_pos = {pos[i]: amt for i, amt in enumerate(bets) if amt > 0 and i in pos}
+    mx = max(bets_by_pos.values()) if bets_by_pos else 0.0
+    hero_bet = bets_by_pos.get(hero, 0.0)
+    to_call = mx - hero_bet
+    # Hero ki baari = FOLD/CALL/RAISE buttons dikh rahe hain. Pehle to_call > 0 se andaza tha —
+    # hero fold karke bahar ho ya uske baad kisi aur ki baari ho, tab bhi "aapki baari" bolta tha.
+    hero_to_act = _action_buttons(img)
+    if board_present(img):
+        board = detect_board(img, board_obs)
+        return {"street": "postflop", "hero": hero, "bets": bets_by_pos,
+                "board": board or [], "streetName": _street_name(board),
+                "hero_to_act": hero_to_act, "to_call": round(to_call, 1)}
+    return {"street": "preflop", "hero": hero, "bets": bets_by_pos,
+            "hero_to_act": hero_to_act, "to_call": round(to_call, 1)}
 
 
 def _street_name(board):
@@ -962,84 +1189,268 @@ def _street_name(board):
     return {3: "flop", 4: "turn", 5: "river"}.get(len(board))
 
 
-def action_loop():
-    """Background: har naye frame pe cards + bets/action padho (capture loop ko rokta nahi).
-    Action OCR flicker se bachne ke liye 2 frame same aaye tabhi publish."""
-    prev = None
-    seen = None
-    while True:
-        img = state.get("last_img")
-        if img is None or img is seen or state["blocked"] or not HAS_TESS:
-            time.sleep(0.03)
+def _ocr_name(crop):
+    """Plaque se naam OCR karo (best-effort). Empty matlab naam nahi mila."""
+    if not HAS_TESS:
+        return ""
+    g = crop.convert("L")
+    for im in (g, ImageOps.invert(g)):
+        bw = im.point(lambda p: 255 if p > 150 else 0)
+        try:
+            t = pytesseract.image_to_string(bw, config="--psm 7").strip()
+            t = "".join(c for c in t if c.isalnum() or c in "._-")
+            if 2 <= len(t) <= 15 and not t.isdigit():
+                return t
+        except Exception:
+            pass
+    return ""
+
+
+def detect_names(img):
+    """{seat_index: naam} — sirf jahan OCR kuch padh paya."""
+    if not HAS_TESS or not img:
+        return {}
+    w, h = img.size
+    out = {}
+    for i, box in enumerate(NAME_REGIONS):
+        if box is None:
             continue
-        seen = img
-        if USE_OCR and state["manual_hand"] is None:
-            try:
-                hand, raw = detect(img)
-                state["raw"] = raw
-                if hand:
-                    state["last_ocr"] = hand
-                elif raw:
-                    state["last_ocr"] = None
-            except Exception:
-                pass
-        if HAS_CV:
-            try:
-                act = detect_action(img)
-                state["position"] = act and act["hero"]
-                if act is not None and act == prev:
-                    state["action"] = act
-                prev = act
-            except Exception:
-                pass
+        x0, y0, x1, y1 = box
+        try:
+            nm = _ocr_name(img.crop((int(x0 * w), int(y0 * h), int(x1 * w), int(y1 * h))))
+            if nm:
+                out[i] = nm
+        except Exception:
+            pass
+    return out
+
+
+def _hero_region_key(img):
+    """Hero cards wale area ka chhota hash — cards same rahe to dobara OCR skip karo."""
+    try:
+        w, h = img.size
+        x, y, rw, rh = (0.35, 0.62, 0.30, 0.20)
+        crop = img.crop((int(x * w), int(y * h), int((x + rw) * w), int((y + rh) * h)))
+        crop = crop.resize((64, 32), Image.BILINEAR)
+        return crop.tobytes()
+    except Exception:
+        return None
+
+
+# ---------------- ground-truth auto-labelling (Red Star) ----------------
+# Live hand ke cards client kahin readable nahi rakhta — sirf hand KHATAM hone pe
+# TempData\...\Tables\<table>\<gamecode> binary file likhta hai (exact cards).
+# Isliye har frame ke rank glyphs us waqt ke gamecode ke naam yaad rakhte hain, aur
+# file aate hi unhe EXACT rank se template bana dete hain. Har hand ke baad OCR aur
+# pakka hota jaata hai — galat padhe glyph (3->A) bhi sahi ho jaate hain.
+TRUTH_SETTLE_SECS = 1.5    # naya gamecode aane ke baad itni der purane cards screen pe reh sakte hain
+TRUTH_MIN_FRAMES = 5       # itne frames me same glyphs dikhe tabhi label (animation/transition nahi)
+_truth = {"gc": None, "tbl": None, "since": 0.0, "pending": {}, "st": None}
+_truth_lock = threading.Lock()
+
+
+def _record_obs(kind, obs):
+    """Current frame ke (glyph_key, suit) tuples ko current gamecode ke saath gino."""
+    if not HAS_REDSTAR or len(state["tables"]) != 1:     # multi-table: gamecode kis table ka, pata nahi
+        return
+    with _truth_lock:
+        gc = _truth["gc"]
+        if not gc or time.time() - _truth["since"] < TRUTH_SETTLE_SECS:
+            return
+        p = _truth["pending"].setdefault(gc, {"tbl": _truth["tbl"], "t": time.time(),
+                                              "hero": {}, "board": {}})
+        p[kind][obs] = p[kind].get(obs, 0) + 1
+
+
+def _label_cards(obs, truth):
+    """obs [(key, suit)] ko truth ['Td', '3c'] se label karo — sirf jab har suit match kare."""
+    if len(obs) > len(truth) or any(s != c[1] for (_, s), c in zip(obs, truth)):
+        return 0
+    return sum(1 for (k, _), c in zip(obs, truth) if add_rank_template(c[0], k))
+
+
+def _learn_truth(p, hh):
+    added = 0
+    hero = hh.get("hero") or []
+    votes = sorted(p["hero"].items(), key=lambda kv: -kv[1])
+    if len(hero) == 2 and votes and votes[0][1] >= TRUTH_MIN_FRAMES:
+        obs = votes[0][0]
+        same_suit = hero[0][1] == hero[1][1] and hero[0][0] != hero[1][0]
+        if not same_suit:
+            # suit order se hi pata chalta hai kaunsa glyph kaunsa card hai
+            added += _label_cards(obs, hero) or _label_cards(obs[::-1], hero[::-1])
+        else:
+            # suited hand: order suit se tay nahi hota — maujooda template se decide karo
+            m = [_match_template(k) for k, _ in obs]
+            if m[0] == hero[0][0] or m[1] == hero[1][0]:
+                added += _label_cards(obs, hero)
+            elif m[0] == hero[1][0] or m[1] == hero[0][0]:
+                added += _label_cards(obs[::-1], hero[::-1])
+    board = hh.get("board") or []
+    for obs, n in p["board"].items():
+        if n >= TRUTH_MIN_FRAMES and board:
+            added += _label_cards(obs, board)
+    return added
+
+
+def truth_loop():
+    """Background: current gamecode track karo; purane hands ki file aate hi label karo."""
+    while True:
+        try:
+            xml, tbl = redstar_hh._live_table_xml(None)
+            st = redstar_hh._parse_table_state(xml) if xml else None
+            gc = st["gamecode"] if st else None
+            with _truth_lock:
+                if gc != _truth["gc"]:
+                    _truth.update(gc=gc, tbl=tbl, since=time.time())
+                _truth["st"] = st
+                done = []
+                for g, p in _truth["pending"].items():
+                    f = p["tbl"] / g if p["tbl"] else None
+                    if f is not None and f.is_file():
+                        done.append((g, p, f))
+                    elif g != gc and time.time() - p["t"] > 900:
+                        done.append((g, None, None))      # file kabhi nahi aayi — chhod do
+                for g, _, _ in done:
+                    _truth["pending"].pop(g, None)
+            for g, p, f in done:
+                if p is None:
+                    continue
+                try:
+                    n = _learn_truth(p, redstar_hh._parse(f.read_bytes(), g, 0))
+                    if n:
+                        print(f"[ocr] hand {g}: {n} naye verified rank templates")
+                except Exception:
+                    pass
+        except Exception:
+            pass
+        time.sleep(0.5)
+
+
+def action_loop():
+    """Background: har TABLE ke naye frame pe cards + bets/action padho.
+    Action OCR flicker se bachne ke liye 2 frame same aaye tabhi publish."""
+    prev = {}
+    seen = {}
+    while True:
+        for title, t in list(state["tables"].items()):
+            img = t.get("last_img")
+            if img is None or img is seen.get(title) or t.get("blocked"):
+                continue
+            seen[title] = img
+            if USE_OCR and HAS_TESS and t.get("manual_hand") is None:
+                try:
+                    hkey = _hero_region_key(img)
+                    if hkey != t.get("hero_hash") or t.get("tmpl_gen") != _tmpl_gen():
+                        obs = []                        # cards badle (ya naye templates) tabhi OCR
+                        hand, raw = detect(img, obs)
+                        t["raw"] = raw
+                        t["hero_hash"] = hkey
+                        t["tmpl_gen"] = _tmpl_gen()
+                        t["hero_obs"] = tuple(obs) if len(obs) == 2 else None
+                        if hand:
+                            t["last_ocr"] = hand
+                        elif raw:
+                            t["last_ocr"] = None
+                    # Har frame ke glyphs current gamecode ke naam — hand file aate hi exact label
+                    if t.get("hero_obs"):
+                        _record_obs("hero", t["hero_obs"])
+                except Exception:
+                    pass
+            if HAS_CV:
+                try:
+                    bobs = []
+                    xml_pos = None
+                    if HAS_REDSTAR and _truth.get("st") and len(state["tables"]) == 1:
+                        xml_pos = xml_seat_positions(_truth["st"])
+                    act = detect_action(img, bobs, xml_pos)
+                    if bobs:
+                        _record_obs("board", tuple(bobs))
+                    t["position"] = act and act["hero"]
+                    if act is not None and act == prev.get(title):
+                        t["action"] = act
+                    prev[title] = act
+                except Exception:
+                    pass
+            # Seat names (throttled — har 3 sec) villain auto-select ke liye
+            if USE_OCR and HAS_TESS and time.time() - t.get("names_time", 0) > 3:
+                try:
+                    raw_names = detect_names(img)
+                    btn = _button_seat(img)
+                    posmap = seat_positions(img, btn) if btn is not None else {}
+                    t["names"] = {posmap[i]: nm for i, nm in raw_names.items() if i in posmap and i != HERO_SEAT}
+                    t["names_time"] = time.time()
+                except Exception:
+                    pass
+        # Selected (ya pehli) table ke results flat state me sync karo — purane endpoints ke liye
+        sel = state["tables"].get(state.get("selected_title")) or next(iter(state["tables"].values()), None)
+        if sel is not None:
+            state["manual_hand"] = sel.get("manual_hand")
+            state["last_ocr"] = sel.get("last_ocr")
+            state["raw"] = sel.get("raw", "")
+            state["position"] = sel.get("position")
+            state["action"] = sel.get("action")
+            state["frame_jpeg"] = sel.get("frame_jpeg")
+            state["last_img"] = sel.get("last_img")
+            state["blocked"] = sel.get("blocked", False)
+        time.sleep(0.03)
 
 
 def loop():
-    """Background: capture frames + detect cards. Window dobara dhoondta rehta hai."""
+    """Background: SAARI table windows capture karo (har 0.1s) + detect action_loop se."""
     last_find = 0.0
     last_pin = 0.0
-    fail_count = 0
     while True:
         try:
             now = time.time()
-            # Har 2 sec (ya jab window nahi hai / capture fail ho raha hai) dobara dhoondo
-            if not state["window_hwnd"] or now - last_find > 2 or fail_count >= 3:
+            # Har 2 sec dobara dhoondo: nayi tables aayi, band hui hat jayen
+            if now - last_find > 2:
                 wins = find_windows(WINDOW_TITLE, PROCESS_NAMES)
                 state["windows"] = wins
-                hwnd = pick_window(wins)
-                state["window_hwnd"] = hwnd
-                state["window_title"] = win32gui.GetWindowText(hwnd) if hwnd else None
+                sel = state.get("selected_title")
+                ordered = sorted(wins, key=lambda wt: (0 if wt[1] == sel else 1, wt[1]))[:MAX_TABLES]
+                keep = {}
+                for hwnd, title in ordered:
+                    t = state["tables"].get(title)
+                    if t is None:
+                        t = {"hwnd": hwnd, "title": title, "frame_jpeg": None, "last_img": None,
+                             "blocked": False, "last_ocr": None, "raw": "", "position": None,
+                             "action": None, "manual_hand": None, "names": {}, "names_time": 0.0,
+                             "hero_hash": None}
+                    t["hwnd"] = hwnd
+                    keep[title] = t
+                state["tables"] = keep
+                sel_t = keep.get(sel) if sel and sel in keep else (next(iter(keep.values()), None) if keep else None)
+                state["window_hwnd"] = sel_t["hwnd"] if sel_t else None
+                state["window_title"] = sel_t["title"] if sel_t else None
                 last_find = now
-                fail_count = 0
 
-            # Pin on top — table ko hamesha aage rakho
+            # Pin on top — selected table ko aage rakho
             if state["pinned"] and state["window_hwnd"] and now - last_pin > 1.5:
                 pin_top(state["window_hwnd"], True)
                 last_pin = now
 
-            state["blocked"] = is_capture_blocked(state["window_hwnd"])
-            if state["blocked"]:
-                # Purana / galat frame mat dikhao
-                state["frame_jpeg"] = None
-                state["last_ocr"] = None
-                time.sleep(0.5)
-                continue
-
-            img = capture(state["window_hwnd"]) if state["window_hwnd"] else None
-            if img:
-                fail_count = 0
-                from io import BytesIO
-                buf = BytesIO()
-                img.save(buf, "JPEG", quality=80)
-                state["frame_jpeg"] = buf.getvalue()
-                state["last_img"] = img            # action_loop isse cards + bets padhta hai
-            else:
-                fail_count += 1
-                if fail_count >= 6:
-                    state["window_hwnd"] = None   # window band ho gayi — dobara dhoondo
+            # Saari tables capture karo
+            for t in state["tables"].values():
+                hwnd = t["hwnd"]
+                t["blocked"] = is_capture_blocked(hwnd)
+                if t["blocked"]:
+                    t["frame_jpeg"] = None
+                    t["last_ocr"] = None
+                    t["last_img"] = None
+                    continue
+                img = capture(hwnd)
+                if img:
+                    from io import BytesIO
+                    buf = BytesIO()
+                    img.save(buf, "JPEG", quality=80)
+                    t["frame_jpeg"] = buf.getvalue()
+                    t["last_img"] = img
+                else:
+                    t["last_img"] = None
         except Exception:
             pass
-        time.sleep(0.08)
+        time.sleep(0.1)
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -1061,6 +1472,15 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _qparam(self, name):
+        from urllib.parse import urlparse, parse_qs
+        v = parse_qs(urlparse(self.path).query).get(name)
+        return v[0] if v else None
+
+    def _table(self):
+        title = self._qparam("table")
+        return state["tables"].get(title) if title else None
+
     def do_OPTIONS(self):
         self.send_response(204)
         self.send_header("Access-Control-Allow-Origin", "*")
@@ -1074,26 +1494,65 @@ class Handler(BaseHTTPRequestHandler):
                 "ok": True,
                 "window": state["window_title"],
                 "ocr": bool(HAS_TESS and USE_OCR),
+                "redstar": HAS_REDSTAR,
+                "ranks_learned": "".join(r for r in RANKS if any(t[0] == r for t in RANK_TEMPLATES)),
                 "connected": bool(state["window_hwnd"]),
                 "table_count": len(state.get("windows", [])),
                 "pinned": state.get("pinned", False),
                 "blocked": state.get("blocked", False),
             })
+        elif self.path.startswith("/api/livecards"):
+            out = {"available": HAS_REDSTAR}
+            if HAS_REDSTAR:
+                try:
+                    h = redstar_hh.read_live_state()
+                    out["hand_id"] = h["hand_id"] if h else None
+                    out["hand"] = h["hero"] if h else []
+                    out["hand_str"] = "".join(h["hero"]) if h else None
+                    out["board"] = h["board"] if h else []
+                    out["street"] = h["street"] if h else None
+                    out["pos"] = h.get("pos") if h else None
+                    out["hero_to_act"] = h.get("hero_to_act") if h else None
+                    out["dealer"] = h.get("dealer") if h else None
+                    out["names"] = h.get("names", {}) if h else {}
+                except Exception as e:
+                    out["error"] = str(e)
+            self._send(200, out)
         elif self.path.startswith("/api/windows"):
             self._send(200, {
                 "windows": [{"title": t, "hwnd": int(h)} for h, t in state.get("windows", [])],
                 "selected": state.get("selected_title"),
             })
+        elif self.path.startswith("/api/tables"):
+            self._send(200, {
+                "max_tables": MAX_TABLES,
+                "selected": state.get("selected_title"),
+                "tables": [
+                    {"title": t["title"], "hwnd": int(t["hwnd"]),
+                     "hand": t.get("manual_hand") or t.get("last_ocr"),
+                     "raw": t.get("raw", ""),
+                     "pos": t.get("position"),
+                     "action": t.get("action"),
+                     "names": t.get("names", {}),
+                     "blocked": t.get("blocked", False),
+                     "has_frame": bool(t.get("frame_jpeg"))}
+                    for t in state["tables"].values()
+                ],
+            })
         elif self.path.startswith("/api/frame"):
-            if state["frame_jpeg"]:
-                self._send(200, state["frame_jpeg"], "image/jpeg")
+            t = self._table()
+            jpeg = (t and t.get("frame_jpeg")) or state.get("frame_jpeg")
+            if jpeg:
+                self._send(200, jpeg, "image/jpeg")
             else:
                 self._send(404, {"error": "no frame"})
         elif self.path.startswith("/api/region"):
             # Hero region ka crop (tuning ke liye)
             from io import BytesIO
-            if state["frame_jpeg"] and HAS_PIL:
-                img = Image.open(BytesIO(state["frame_jpeg"]))
+            t = self._table()
+            jpeg = (t and t.get("frame_jpeg")) or state.get("frame_jpeg")
+            if jpeg and HAS_PIL:
+                img = Image.open(BytesIO(jpeg))
                 crop, _ = crop_hero(img)
                 if crop:
                     buf = BytesIO()
@@ -1102,10 +1561,12 @@ class Handler(BaseHTTPRequestHandler):
                     return
             self._send(404, {"error": "no frame"})
         elif self.path.startswith("/api/detect"):
-            hand = state["manual_hand"] or state["last_ocr"]
-            self._send(200, {"hand": hand, "raw": state.get("raw", ""),
-                             "pos": state.get("position"),
-                             "action": state.get("action")})
+            t = self._table()
+            src = t if t else state
+            hand = src.get("manual_hand") or src.get("last_ocr")
+            self._send(200, {"hand": hand, "raw": src.get("raw", ""),
+                             "pos": src.get("position"),
+                             "action": src.get("action")})
         else:
             self._send(404, {"error": "not found"})
 
@@ -1130,19 +1591,24 @@ class Handler(BaseHTTPRequestHandler):
                 length = int(self.headers.get("Content-Length", 0))
                 data = json.loads(self.rfile.read(length) or b"{}")
                 state["selected_title"] = data.get("title")
-                state["window_hwnd"] = None   # force re-pick on next loop
+                t = state["tables"].get(state["selected_title"])
+                if t:
+                    state["window_hwnd"] = t["hwnd"]
+                    state["window_title"] = t["title"]
                 self._send(200, {"ok": True, "selected": state["selected_title"]})
             except Exception as e:
                 self._send(400, {"error": str(e)})
         elif self.path.startswith("/api/focus"):
-            bring_to_front(state["window_hwnd"])
+            t = self._table()
+            bring_to_front(t["hwnd"] if t else state["window_hwnd"])
             self._send(200, {"ok": True})
         elif self.path.startswith("/api/pin"):
             try:
                 length = int(self.headers.get("Content-Length", 0))
                 data = json.loads(self.rfile.read(length) or b"{}")
                 state["pinned"] = bool(data.get("on"))
-                pin_top(state["window_hwnd"], state["pinned"])
+                t = self._table()
+                pin_top(t["hwnd"] if t else state["window_hwnd"], state["pinned"])
                 self._send(200, {"ok": True, "pinned": state["pinned"]})
             except Exception as e:
                 self._send(400, {"error": str(e)})
@@ -1177,6 +1643,8 @@ def start_background():
     """Capture/detect threads + HTTP server — sab background me (desktop exe isse chalata hai)."""
     threading.Thread(target=loop, daemon=True).start()
     threading.Thread(target=action_loop, daemon=True).start()
+    if HAS_REDSTAR:
+        threading.Thread(target=truth_loop, daemon=True).start()
     srv = ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     return srv

@@ -2,7 +2,7 @@
 Builds a standalone PreflopTrainer.exe (PyQt6 + QWebEngineView wrapper around
 the app's own index.html) with PyInstaller.
 
-Requires: pip install PyQt6 PyQt6-WebEngine pyinstaller
+Requires: pip install PyQt6 PyQt6-WebEngine pyinstaller pywin32 opencv-python numpy Pillow pytesseract
 Run: python desktop/build.py
 Output: desktop/dist/PreflopTrainer.exe
 """
@@ -23,6 +23,13 @@ def main():
         "--add-data", f"{ROOT / 'index.html'};.",
         "--add-data", f"{ROOT / 'icons'};icons",
         "--add-data", f"{ROOT / 'manifest.webmanifest'};.",
+        # Mirror + GTO servers exe ke andar chalte hain (solver repo se)
+        "--paths", str(ROOT),
+        "--paths", str(ROOT / "tools" / "postflop"),
+        "--hidden-import", "mirror_server",
+        "--hidden-import", "gto_server",
+        "--hidden-import", "hh_review",           # /api/review (lazy import)
+        "--hidden-import", "rangeutil",
         "--distpath", str(DESKTOP / "dist"),
         "--workpath", str(DESKTOP / "build"),
         "--specpath", str(DESKTOP),

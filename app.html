@@ -218,13 +218,84 @@ button{font:inherit; color:inherit; cursor:pointer}
 
 /* ---------- postflop board ---------- */
 .pf-board{
-  position:absolute; left:50%; top:24%; transform:translate(-50%,-50%);
+  position:absolute; left:50%; top:31%; transform:translate(-50%,-50%);
   display:flex; gap:6px; z-index:3;
 }
 .pf-hero{
-  position:absolute; left:50%; top:70%; transform:translate(-50%,-50%);
+  position:absolute; left:50%; top:72%; transform:translate(-50%,-50%);
   text-align:center; z-index:4;
 }
+.pf-villain{
+  position:absolute; left:50%; top:6%; transform:translate(-50%,-50%);
+  text-align:center; z-index:4;
+}
+.pf-villain.slim{top:9%}
+.pf-villain .chipbar{margin-top:4px}
+.card.deal{animation:pfdeal .38s cubic-bezier(.2,.8,.3,1.15) both}
+@keyframes pfdeal{
+  from{opacity:0; transform:translateY(-16px) rotateY(80deg) scale(.9)}
+  to{opacity:1; transform:none}
+}
+.pf-bet{
+  position:absolute; left:50%; top:60%; transform:translate(-50%,-50%); z-index:5;
+  display:inline-flex; align-items:center; gap:5px; white-space:nowrap;
+  font-family:"IBM Plex Mono",monospace; font-size:clamp(10px,1.8vw,12px); font-weight:600;
+  padding:3px 9px; border-radius:100px; color:#f3efe2;
+  background:rgba(0,0,0,.5); border:1px solid rgba(201,162,39,.45);
+}
+.pf-bet .dot{width:9px; height:9px; border-radius:50%; box-shadow:0 0 0 1.5px rgba(0,0,0,.45), inset 0 0 0 2px rgba(255,255,255,.35)}
+.pf-bet.check{border-color:rgba(255,255,255,.18); color:#bfd0cb}
+.pf-bet.go{animation:pfbet .5s cubic-bezier(.3,.7,.3,1) both}
+@keyframes pfbet{
+  from{opacity:0; top:70%; transform:translate(-50%,-50%) scale(.6)}
+  to{opacity:1; top:52%; transform:translate(-50%,-50%) scale(1)}
+}
+.act{position:relative}
+.act .kbd{
+  position:absolute; top:4px; right:6px; font-family:"IBM Plex Mono",monospace;
+  font-size:9.5px; color:var(--muted); opacity:.7;
+}
+@media (hover:none){ .act .kbd{display:none} }
+.act.best{box-shadow:inset 0 0 0 2px var(--good)}
+.act.picked.best{box-shadow:inset 0 0 0 2px var(--good), 0 0 0 3px var(--good-bg)}
+.next kbd,.ghost kbd{margin-left:6px; opacity:.6; font-size:10px; background:transparent; color:inherit; border-color:currentColor}
+@media (hover:none){ .next kbd,.ghost kbd{display:none} }
+
+.pf-filters{display:flex; gap:6px; flex-wrap:wrap}
+.pf-chipbtn{
+  border:1px solid var(--line); background:var(--surface); color:var(--text-2);
+  border-radius:100px; padding:4px 11px; font-size:12.5px; font-weight:600;
+  transition:background .12s ease, border-color .12s ease;
+}
+.pf-chipbtn:hover{background:var(--surface-2)}
+.pf-chipbtn[aria-pressed="true"]{background:var(--text); color:var(--bg); border-color:var(--text)}
+.pf-chipbtn.warn[aria-pressed="false"]{border-color:var(--warn); color:var(--warn)}
+.pf-note{margin:8px 0 0; font-size:13px; color:var(--text-2)}
+.pf-subh{margin-top:6px; font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); font-weight:700}
+
+.pf-rangebox{margin-top:14px}
+/* single column: keep question + actions right under the table, range grid after them */
+@media (max-width:939.98px){
+  #view-postflop > section:first-child{display:contents}
+  #view-postflop .pf-rangebox{order:3; margin-top:0}
+}
+.pf-stack{display:flex; height:12px; border-radius:100px; overflow:hidden; background:var(--sunken)}
+.pf-stack span{display:block; height:100%}
+.pf-stack.mini{height:8px; flex:1}
+.pf-rangesum .legend{margin:7px 0 10px}
+.pf-rangesum .legend b{color:var(--text); font-family:"IBM Plex Mono",monospace; font-weight:600}
+.pf-cell{border:0; padding:0; cursor:pointer; text-shadow:0 1px 1px rgba(0,0,0,.35)}
+.pf-cell.out{background:var(--sunken); color:var(--muted); cursor:default; text-shadow:none; opacity:.55}
+.pf-cell:not(.out):hover{filter:brightness(1.12)}
+.pf-cell.sel{outline:2.5px solid var(--brass); outline-offset:-1px; z-index:3}
+.pf-cellinfo{margin-top:10px; min-height:40px}
+.pf-cellhead{font-size:13px; color:var(--text-2); margin-bottom:6px}
+.pf-cellhead b{color:var(--text); font-family:"IBM Plex Mono",monospace}
+.pf-combos{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:5px 12px}
+.pf-combo{display:flex; align-items:center; gap:8px; font-family:"IBM Plex Mono",monospace; font-size:12px}
+.pf-combo .cc{min-width:44px; font-weight:600}
+.pf-combo.you .cc{text-decoration:underline; text-decoration-color:var(--brass); text-decoration-thickness:2px; text-underline-offset:3px}
+.s-s{color:var(--text)} .s-h{color:var(--hr)} .s-d{color:var(--di)} .s-c{color:var(--cl)}
 
 /* ---------- side panel ---------- */
 .panel{display:flex; flex-direction:column; gap:12px}
@@ -334,7 +405,7 @@ button{font:inherit; color:inherit; cursor:pointer}
 .bar{display:grid; grid-template-columns:88px 1fr 56px; gap:9px; align-items:center; font-size:12.5px}
 .bar .nm{color:var(--text-2); font-weight:600}
 .bar .track{height:7px; background:var(--sunken); border-radius:100px; overflow:hidden}
-.bar .fill{height:100%; background:var(--c-raise); border-radius:100px}
+.bar .fill{display:block; height:100%; background:var(--c-raise); border-radius:100px}
 .bar .fill.low{background:var(--bad)} .bar .fill.mid{background:var(--warn)}
 .bar .pc{font-family:"IBM Plex Mono",monospace; font-size:11.5px; color:var(--muted); text-align:right; font-variant-numeric:tabular-nums}
 .emptynote{font-size:13px; color:var(--muted); font-style:italic}
@@ -466,6 +537,135 @@ kbd{
   font-family:"IBM Plex Mono",monospace; font-size:11px; background:var(--sunken);
   border:1px solid var(--line); border-bottom-width:2px; border-radius:4px; padding:0 4px;
 }
+
+/* ---------- GTO full-hand mode ---------- */
+.gto-status{
+  border:1px solid var(--line); border-radius:var(--r-md); background:var(--surface);
+  padding:8px 12px; font-size:12.5px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;
+}
+.gto-status.off{border-color:var(--bad); background:var(--bad-bg)}
+.gto-status .dot{width:8px; height:8px; border-radius:50%; background:var(--good); flex:none}
+.gto-status.off .dot{background:var(--bad)}
+.gto-status code{font-family:"IBM Plex Mono",monospace; font-size:11.5px; background:var(--sunken); padding:1px 5px; border-radius:3px; word-break:break-all}
+
+.gto-log{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:3px; font-family:"IBM Plex Mono",monospace; font-size:11.5px; color:var(--muted)}
+.gto-log li{display:flex; gap:8px; align-items:baseline; flex-wrap:wrap}
+.gto-log .st{color:var(--text-2); font-weight:600; min-width:40px; text-transform:capitalize}
+.gto-log .who{color:var(--text); font-weight:600; min-width:26px}
+.gto-log .ac{color:var(--muted)}
+
+.gto-villain{margin-top:10px; display:flex; align-items:center; gap:9px}
+.gto-villain .hole{display:flex; gap:4px; margin-bottom:0}
+.gto-villain .cap{font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); font-weight:700}
+
+.mix{display:flex; flex-direction:column; gap:5px; margin:10px 0 2px}
+.mix .row{display:grid; grid-template-columns:132px 1fr 42px; gap:8px; align-items:center; font-size:12.5px}
+.mix .row .nm{font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.mix .row .nm.me{color:var(--brass)}
+.mix .track{height:8px; background:var(--sunken); border-radius:100px; overflow:hidden}
+.mix .fill{display:block; height:100%; background:var(--c-raise); border-radius:100px}
+.mix .fill.good{background:var(--good)}
+.mix .fill.bad{background:var(--bad)}
+.mix .pc{font-family:"IBM Plex Mono",monospace; font-size:11.5px; color:var(--muted); text-align:right; font-variant-numeric:tabular-nums}
+
+.coachbox{border:1px solid var(--line); border-radius:var(--r-lg); background:var(--surface); padding:12px 14px}
+.coachbox h3{
+  font-family:Oswald,sans-serif; font-weight:500; font-size:14px; letter-spacing:.06em;
+  text-transform:uppercase; margin:0 0 8px; display:flex; gap:8px; align-items:center;
+}
+.coach-body{font-size:13.5px; line-height:1.62; color:var(--text-2)}
+.coach-body p{margin:0 0 8px}
+.coach-body h1,.coach-body h2,.coach-body h3,.coach-body h4{margin:12px 0 5px; font-size:14px; color:var(--text); font-family:Oswald,sans-serif}
+.coach-body strong{color:var(--text)}
+.coach-body ul,.coach-body ol{margin:0 0 8px; padding-left:20px}
+.coach-body li{margin-bottom:3px}
+.coach-body code{font-family:"IBM Plex Mono",monospace; font-size:12px; background:var(--sunken); padding:1px 4px; border-radius:3px}
+.spinner{
+  display:inline-block; width:13px; height:13px; border:2px solid var(--muted);
+  border-top-color:transparent; border-radius:50%; animation:gspin .7s linear infinite; vertical-align:-2px;
+}
+@keyframes gspin{to{transform:rotate(360deg)}}
+
+.resultbox{border:1px solid var(--line); border-left:5px solid var(--brass); border-radius:var(--r-md); background:var(--surface); padding:12px 14px; margin-top:10px}
+.resultbox .head{font-family:Oswald,sans-serif; font-weight:600; font-size:16px; text-transform:uppercase; letter-spacing:.05em}
+.resultbox .sub{margin-top:5px; font-size:13px; color:var(--text-2)}
+.resultbox.win{border-left-color:var(--good)}
+.resultbox.lose{border-left-color:var(--bad)}
+.resultbox.tie{border-left-color:var(--warn)}
+/* ---------- live mirror ---------- */
+.mirrorbox{position:relative;border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface);overflow:hidden;min-height:320px}
+.mirrorbox img{display:block;width:100%;height:auto;background:#000}
+.mirror-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;background:rgba(0,0,0,.55);font-size:14px;padding:16px;text-align:center}
+.mirror-controls{display:flex;flex-direction:column;gap:12px;margin:14px 0}
+.mirror-controls label{display:flex;flex-direction:column;gap:4px;font-size:12px;opacity:.85}
+.mirror-controls select{font:inherit;font-size:14px;background:var(--sunken);border:1px solid var(--line);border-radius:6px;padding:6px 8px;color:var(--text)}
+.mirror-cardsrow{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.mirror-cardsrow select{min-width:54px}
+.mirror-reco{margin:14px 0;border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface);padding:16px}
+.mirror-reco .big{font-size:26px;font-weight:700}
+.mirror-reco .sub{opacity:.8;margin-top:4px}
+.mirror-reco .mixrow{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+.mirror-reco .row{display:flex;align-items:center;gap:10px;font-size:13px}
+.mirror-reco .track{flex:1;height:8px;border-radius:4px;background:var(--sunken);overflow:hidden}
+.mirror-reco .fill{display:block;height:100%}
+.mirror-reco .pc{min-width:42px;text-align:right;font-family:"IBM Plex Mono",monospace}
+.mirror-actions{display:flex;gap:8px;margin:12px 0}
+.mirror-actions .act{flex:1}
+#mirror-detect-status, #mirror-action-status{font-size:12px;opacity:.7}
+/* Hand review */
+.rv-controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:8px}
+.rv-upload{cursor:pointer}
+.rv-pastebox{margin-top:10px}
+.rv-pastebox textarea{width:100%;box-sizing:border-box;margin:8px 0;font:12px/1.4 "IBM Plex Mono",monospace;background:var(--sunken);color:var(--text);border:1px solid var(--line);border-radius:var(--r-md);padding:8px}
+.rv-summary{margin-top:10px;font-size:13px;color:var(--text-2)}
+.rv-muted{color:var(--muted);font-size:12px}
+.rv-badtxt{color:var(--bad)}
+.rv-list{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+.rv-hand{border:1px solid var(--line);border-left:4px solid var(--line);border-radius:var(--r-md);background:var(--surface)}
+.rv-hand.rv-bad{border-left-color:var(--bad)}
+.rv-hand.rv-mixed{border-left-color:var(--warn)}
+.rv-hand.rv-good{border-left-color:var(--good)}
+.rv-row{all:unset;box-sizing:border-box;display:flex;gap:12px;align-items:center;width:100%;padding:8px 12px;cursor:pointer;flex-wrap:wrap}
+.rv-row:focus-visible{outline:2px solid var(--brass)}
+.rv-pos{font-family:Oswald,sans-serif;font-weight:600;min-width:34px}
+.rv-cards,.rv-board{display:inline-flex;gap:3px}
+.rv-board{flex:1;min-width:0}
+.rv-card{display:inline-block;min-width:22px;text-align:center;font:600 13px/1.5 "IBM Plex Mono",monospace;background:var(--card-face);border:1px solid var(--card-line);border-radius:4px;padding:0 2px}
+.rv-card.s-s{color:var(--sp)} .rv-card.s-h{color:var(--hr)} .rv-card.s-d{color:var(--di)} .rv-card.s-c{color:var(--cl)}
+.rv-tag{font-size:11px;padding:1px 8px;border-radius:10px;background:var(--surface-2)}
+.rv-bad .rv-tag{background:var(--bad-bg);color:var(--bad)}
+.rv-mixed .rv-tag{background:var(--warn-bg);color:var(--warn)}
+.rv-good .rv-tag{background:var(--good-bg);color:var(--good)}
+.rv-net{font:12px "IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+.rv-net.up{color:var(--good)} .rv-net.down{color:var(--bad)}
+.rv-detail{padding:4px 12px 12px;display:flex;flex-direction:column;gap:8px;font-size:13px}
+.rv-detail h4{margin:6px 0 0;font-family:Oswald,sans-serif;font-weight:500;letter-spacing:.05em;text-transform:uppercase;font-size:12px}
+.rv-dec{border-radius:var(--r-md);padding:8px 10px;background:var(--surface-2);display:flex;flex-direction:column;gap:2px}
+.rv-dec.rv-bad{background:var(--bad-bg)} .rv-dec.rv-mixed{background:var(--warn-bg)} .rv-dec.rv-good{background:var(--good-bg)}
+.rv-verdict{font-weight:600}
+.rv-dec.rv-bad .rv-verdict{color:var(--bad)} .rv-dec.rv-mixed .rv-verdict{color:var(--warn)} .rv-dec.rv-good .rv-verdict{color:var(--good)}
+.rv-street{line-height:1.8}
+.rv-st{font-weight:600;margin-right:4px}
+.rv-post{display:flex;flex-direction:column;gap:8px}
+.rv-tabs{display:flex;gap:8px;margin-top:10px}
+.rv-player{border:1px solid var(--line);border-left:4px solid var(--line);border-radius:var(--r-md);background:var(--surface)}
+.rv-player.rv-bad{border-left-color:var(--bad)} .rv-player.rv-mixed{border-left-color:var(--warn)} .rv-player.rv-good{border-left-color:var(--good)}
+.rv-player summary{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:8px 12px;cursor:pointer}
+.rv-pname{font-weight:600;min-width:120px}
+.rv-ai-out{white-space:pre-wrap;font-size:13px}
+.rv-ex{padding:4px 8px;border-left:3px solid var(--brass);background:var(--surface-2);border-radius:4px}
+.rv-new{background:var(--good-bg);color:var(--good);margin-left:6px}
+.rv-scroll{overflow-x:auto}
+.rv-dive{border-collapse:collapse;font-size:12px;width:100%;min-width:560px}
+.rv-dive th,.rv-dive td{border-bottom:1px solid var(--line-soft);padding:4px 6px;text-align:left;vertical-align:top}
+.rv-dive th{font-weight:600;color:var(--text-2)}
+.rv-mine{width:100%;box-sizing:border-box;font:13px system-ui,sans-serif;background:var(--sunken);color:var(--text);border:1px solid var(--line);border-radius:var(--r-md);padding:6px 8px}
+
+.mirror-btns{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:2px}
+.mirror-villainrow{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin:8px 0 4px}
+.mirror-villainrow select{max-width:240px}
+.mirror-villainrow .sub{color:var(--muted)}
+.mirror-controls label.mirror-pin{flex-direction:row;align-items:center;gap:6px;font-size:13px}
 </style>
 
 <div class="wrap">
@@ -560,15 +760,29 @@ kbd{
             <span class="street" id="pf-streetlabel">Flop</span>
           </div>
           <div class="pf-board" id="pf-board"></div>
+          <div class="pf-villain slim">
+            <div class="plaque"><div class="pos" id="pf-vpos">BB</div><div class="stack" id="pf-vstack">97bb</div></div>
+            <div class="chipbar act-fold">Check</div>
+          </div>
+          <div class="pf-bet" id="pf-bet" hidden></div>
           <div class="pf-hero">
             <div class="hole" id="pf-hole"></div>
             <div class="plaque"><div class="pos" id="pf-pos">BTN &middot; YOU</div><div class="stack" id="pf-stack">97bb eff</div></div>
           </div>
         </div>
       </div>
+
+      <div class="chartbox pf-rangebox" id="pf-rangebox" hidden>
+        <h3 id="pf-rangetitle">Range strategy</h3>
+        <div class="pf-rangesum" id="pf-rangesum"></div>
+        <div class="gridscroll"><div class="grid13" id="pf-grid"></div></div>
+        <div class="pf-cellinfo" id="pf-cellinfo"></div>
+      </div>
     </section>
 
     <section class="panel">
+      <div class="pf-filters" id="pf-filters" role="group" aria-label="Board filter"></div>
+
       <div class="prompt">
         <span class="eyebrow" id="pf-eyebrow">Postflop &middot; Flop C-Bet</span>
         <div class="q" id="pf-q">Loading&hellip;</div>
@@ -586,10 +800,164 @@ kbd{
     </section>
   </div>
 
+  <div class="stage" id="view-gto" hidden>
+    <section aria-label="GTO hand table">
+      <div class="felt-outer">
+        <div class="felt pf-felt" id="gto-felt">
+          <div class="pot">
+            <span class="plabel">Pot</span>
+            <span class="pval" id="gto-potval">6<span style="font-size:.55em">bb</span></span>
+            <span class="street" id="gto-streetlabel">Flop</span>
+          </div>
+          <div class="pf-board" id="gto-board"></div>
+          <div class="pf-villain" id="gto-villain-seat">
+            <div class="hole" id="gto-villain-hole"></div>
+            <div class="plaque"><div class="pos">BB &middot; VILLAIN</div><div class="stack">97bb eff</div></div>
+          </div>
+          <div class="pf-hero">
+            <div class="hole" id="gto-hole"></div>
+            <div class="plaque"><div class="pos" id="gto-pos">BTN &middot; YOU</div><div class="stack" id="gto-stack">97bb eff</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="statsbox" style="margin-top:14px">
+        <h3>Hand log</h3>
+        <ul class="gto-log" id="gto-log"><li><span class="st">Flop</span><span class="who">BB</span><span class="ac">Check</span></li></ul>
+        <div class="gto-villain" id="gto-villain" hidden></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="gto-status" id="gto-status"><span class="dot"></span><span id="gto-status-text">Connecting&hellip;</span></div>
+
+      <div class="prompt">
+        <span class="eyebrow" id="gto-eyebrow">Postflop &middot; Full Hand</span>
+        <div class="q" id="gto-q">What do you do?</div>
+        <div class="meta" id="gto-meta"></div>
+      </div>
+
+      <div class="actions" id="gto-actions"></div>
+
+      <div id="gto-verdict-slot"></div>
+
+      <div class="coachbox" id="gto-coach" hidden>
+        <h3><span>🤖 AI Coach</span><select id="gto-lang" style="margin-left:auto;font:inherit;font-size:12px;background:var(--sunken);border:1px solid var(--line);border-radius:5px;padding:2px 6px;color:var(--text)">
+          <option value="hinglish">Hinglish</option>
+          <option value="en">English</option>
+        </select></h3>
+        <div class="coach-body" id="gto-coach-body"></div>
+      </div>
+
+      <div class="statsbox">
+        <h3>GTO session</h3>
+        <div class="bars" id="gto-bars"></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="stage" id="view-mirror" hidden>
+    <section aria-label="Live mirror">
+      <div class="mirrorbox">
+        <img id="mirror-frame" alt="Live mirror feed">
+        <div class="mirror-overlay" id="mirror-overlay">Mirror server se connect ho raha hai&hellip;</div>
+      </div>
+      <div class="statsbox" style="margin-top:14px">
+        <h3>Live Mirror</h3>
+        <p class="lead">Ye aapke poker table (ya kisi bhi app) ka live mirror hai. Spot aur apne cards chuno &mdash; trainer GTO ke hisaab se jawab dega.</p>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="gto-status" id="mirror-status"><span class="dot"></span><span id="mirror-status-text">Connecting&hellip;</span></div>
+
+      <div class="prompt">
+        <span class="eyebrow">Live Mirror &middot; Preflop</span>
+        <div class="q">Apna spot chuno, cards detect karo (ya manually bharo) &mdash; trainer bataega kya karna hai.</div>
+      </div>
+
+      <div class="mirror-controls">
+        <div class="mirror-btns">
+          <button class="ghost" id="mirror-focus">&#128285; Table aage lao</button>
+          <label class="mirror-pin"><input type="checkbox" id="mirror-pin"> Hamesha aage rakho</label>
+          <label class="mirror-pin"><input type="checkbox" id="mirror-rnd" checked> &#127922; Randomize</label>
+        </div>
+        <label>Table
+          <select id="mirror-table"></select>
+        </label>
+        <label>Spot
+          <select id="mirror-spot"></select>
+          <span id="mirror-action-status"></span>
+        </label>
+        <label>Your cards
+          <span class="mirror-cardsrow">
+            <select id="mirror-c1r"></select><select id="mirror-c1s"></select>
+            <select id="mirror-c2r"></select><select id="mirror-c2s"></select>
+            <button class="ghost" id="mirror-detect">&#128269; Detect</button>
+          </span>
+          <span id="mirror-detect-status"></span>
+        </label>
+      </div>
+
+      <div class="mirror-actions" id="mirror-actions"></div>
+
+      <div class="mirror-reco" id="mirror-reco">
+        <div class="big">Cards select karo ya Detect dabao</div>
+      </div>
+
+      <div class="mirror-reco" id="mirror-postflop" hidden>
+        <span class="eyebrow" id="mirror-postflop-street">Postflop &middot; Flop</span>
+        <div class="pf-board" id="mirror-board" style="margin:6px 0"></div>
+        <div class="big" id="mirror-postflop-big">GTO solve ho raha hai&hellip;</div>
+        <div class="mixrow" id="mirror-postflop-mix"></div>
+        <div id="mirror-postflop-villain"></div>
+      </div>
+
+      <div class="mirror-reco" id="mirror-players" hidden>
+        <span class="eyebrow">Opponents &middot; session data + GTO exploits</span>
+        <div class="mirror-villainrow">
+          <label>Villain
+            <select id="mirror-villain"></select>
+          </label>
+          <span id="mirror-villain-tip" class="sub"></span>
+        </div>
+        <div class="rv-list" id="mirror-players-list"></div>
+      </div>
+    </section>
+  </div>
+
+  <div id="view-review" hidden>
+    <section class="statsbox rv-top">
+      <h3>Hand Review</h3>
+      <p class="lead">Session khatam karke hand history yahan daalo. Har decision check hota hai &mdash; aapne kya kiya, kya karna chahiye tha. Sirf NLHE hands (PLO skip).</p>
+      <p class="rv-muted"><b>Red Star / iPoker:</b> Folder chuno &rarr; <code>%LOCALAPPDATA%\Red Star Poker\data\&lt;aapka naam&gt;\History\Data\Tables</code><br><b>GG / Natural8:</b> PokerCraft se download ki .txt files</p>
+      <div class="rv-controls">
+        <label class="ghost rv-upload">&#128196; Files chuno<input type="file" id="rv-file" accept=".txt,.xml,text/plain,text/xml" multiple hidden></label>
+        <label class="ghost rv-upload">&#128193; Folder chuno<input type="file" id="rv-folder" webkitdirectory multiple hidden></label>
+        <label class="mirror-pin"><input type="checkbox" id="rv-mistakes"> Sirf galtiyan</label>
+        <button class="ghost" id="rv-refresh">&#8635; Dobara load</button>
+        <button class="ghost" id="rv-clear">Saaf karo</button>
+        <span id="rv-status" class="rv-muted"></span>
+      </div>
+      <details class="rv-pastebox">
+        <summary>Ya hand ka text paste karo</summary>
+        <textarea id="rv-paste" rows="6" placeholder="Poker Hand #RC...: Hold'em No Limit ($0.02/$0.05) ..."></textarea>
+        <button class="ghost" id="rv-paste-go">Review karo</button>
+      </details>
+      <div id="rv-summary" class="rv-summary"></div>
+      <div class="rv-tabs">
+        <button class="mode" id="rv-tab-hands" aria-pressed="true">Hands</button>
+        <button class="mode" id="rv-tab-players" aria-pressed="false">Players</button>
+      </div>
+    </section>
+    <section id="rv-list" class="rv-list" aria-label="Reviewed hands"></section>
+    <section id="rv-players" class="rv-list" aria-label="Opponent profiles" hidden></section>
+  </div>
+
   <footer>
     Ranges reconstructed to match published solver combo counts.
     Sizes, 3bet/4bet tables and the 3bet-or-fold policy follow standard GTO guidelines.
-    Keyboard: <kbd>1</kbd>–<kbd>4</kbd> to act, <kbd>Space</kbd> for next hand, <kbd>C</kbd> for the chart.
+    Keyboard: <kbd>1</kbd>–<kbd>4</kbd> to act, <kbd>Space</kbd> for next hand, <kbd>C</kbd> for the chart (works in the postflop modes too).
     Stuck on a range? Open <b>Study Ranges</b> — it breaks the chart into the shorthand you can actually hold in your head, then drills the thresholds.
     Everything is stored in this browser only. These are study defaults, not solver output — deviate against known opponents.
   </footer>
@@ -1751,7 +2119,10 @@ const MODES = [
   {key:"all",     label:"Mixed"},
   {key:"fix",     label:"Fix My Leaks", warn:true},
   {key:"study",   label:"Study Ranges"},
-  {key:"postflop",label:"Postflop"}
+  {key:"postflop",label:"C-Bet Drill"},
+  {key:"gto",     label:"Postflop GTO"},
+  {key:"mirror",  label:"Live Mirror"},
+  {key:"hhreview",label:"Hand Review"}
 ];
 const MODE_LABEL = {}; MODES.forEach(m => MODE_LABEL[m.key]=m.label);
 
@@ -2076,7 +2447,10 @@ let S = {
   leaks:{},       // bucketId   -> {n, w, l, t}          pattern tracking
   focus:null,     // {type:"spot"|"bound"|"leak", id}
   studySpot:null,
-  pf:{total:0, right:0, streak:0, best:0, hand:{}}   // postflop trainer stats
+  pf:{total:0, right:0, streak:0, best:0, hand:{}, tex:{}, freq:0},  // postflop trainer stats
+  pfFilter:"all", pfShowRange:true,
+  gto:{total:0, right:0, acceptable:0, wrong:0, streak:0, best:0},   // full-hand GTO stats
+  gtoLang:"hinglish"
 };
 try{
   const raw = localStorage.getItem(KEY);
@@ -2086,6 +2460,12 @@ if(!S.hand)  S.hand = {};
 if(!S.leaks) S.leaks = {};
 if(!S.pf)      S.pf = {total:0, right:0, streak:0, best:0, hand:{}};
 if(!S.pf.hand) S.pf.hand = {};
+if(!S.pf.tex)  S.pf.tex = {};
+if(S.pfShowRange == null) S.pfShowRange = true;
+if(!S.gto.acceptable) S.gto.acceptable = 0;
+if(!S.gto.wrong) S.gto.wrong = 0;
+if(!S.gto)     S.gto = {total:0, right:0, acceptable:0, wrong:0, streak:0, best:0};
+if(!S.gtoLang) S.gtoLang = "hinglish";
 if(S.mode === "review") S.mode = "fix";
 delete S.mistakes;
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
@@ -2527,35 +2907,150 @@ function drawChart(){
    ============================================================ */
 let pfCur = null;
 let pfAnswered = false;
+let pfCell = null;          // hand class selected in the range grid
+
+const PF_CLS_COLOR = {"k-call":"var(--c-call)", "k-raise":"var(--c-raise)", "k-3bet":"var(--c-3bet)", "k-allin":"var(--c-allin)", "k-fold":"var(--c-fold)"};
+const PF_FILTERS = [
+  {key:"all",      label:"All boards"},
+  {key:"dry",      label:"Dry"},
+  {key:"wet",      label:"Wet"},
+  {key:"paired",   label:"Paired"},
+  {key:"monotone", label:"Monotone"},
+  {key:"low",      label:"Low"},
+  {key:"miss",     label:"My mistakes"}
+];
+const pfTex = sp => sp.texture.split(",")[0].trim();
+const pfColor = (sp, key) => { const a = sp.acts.find(x => x.key===key); return a ? PF_CLS_COLOR[a.cls] : "var(--c-fold)"; };
+const pfName = (sp, key) => { const a = sp.acts.find(x => x.key===key); return a ? a.big+(a.sub?" "+a.sub:"") : key; };
 
 function pfParseCard(c){ return {r:c[0], s:c[1].toLowerCase()}; }
-function pfCardHTML(c){
-  return '<span class="card '+c.s+'"><span class="idx">'+c.r+'</span><span class="pip">'+PIP[c.s]+'</span></span>';
+function pfCardHTML(c, delay){
+  const d = delay == null ? "" : ' deal" style="animation-delay:'+delay+'ms';
+  return '<span class="card '+c.s+d+'"><span class="idx">'+c.r+'</span><span class="pip">'+PIP[c.s]+'</span></span>';
+}
+
+/** "AhKd" -> "AKo" (grid code, higher rank first). */
+function pfClassOf(combo){
+  const a = combo[0], b = combo[2];
+  if(a===b) return a+b;
+  const [hi, lo] = ri(a) < ri(b) ? [a, b] : [b, a];
+  return hi + lo + (combo[1]===combo[3] ? "s" : "o");
+}
+
+/** Plain-English made hand + draws for hero's two cards on the flop. */
+function pfHandClass(hole, board){
+  const V = r => 14 - ri(r);
+  const hv = hole.map(c => V(c.r)), bv = board.map(c => V(c.r)).sort((a,b) => b-a);
+  const all = hv.concat(bv), cnt = {};
+  all.forEach(v => cnt[v] = (cnt[v]||0) + 1);
+  const suitCnt = {}; hole.concat(board).forEach(c => suitCnt[c.s] = (suitCnt[c.s]||0) + 1);
+  const heroSuits = new Set(hole.map(c => c.s));
+  const flushSuit = Object.keys(suitCnt).find(s => suitCnt[s] >= 5);
+  const vals = new Set(all); if(vals.has(14)) vals.add(1);
+  let straight = false, draws = new Set();
+  for(let s=1; s<=10; s++){
+    const win = [s,s+1,s+2,s+3,s+4], have = win.filter(v => vals.has(v));
+    const heroIn = win.some(v => hv.includes(v) || (v===1 && hv.includes(14)));
+    if(have.length===5) straight = true;
+    else if(have.length===4 && heroIn) draws.add(win.find(v => !vals.has(v)));
+  }
+  const groups = Object.values(cnt).sort((a,b) => b-a);
+  let made;
+  if(straight && flushSuit) made = "Straight flush";
+  else if(groups[0]===4) made = "Quads";
+  else if(groups[0]===3 && groups[1]>=2) made = "Full house";
+  else if(flushSuit) made = "Flush";
+  else if(straight) made = "Straight";
+  else {
+    const pair = hv[0]===hv[1];
+    const hits = hv.filter(v => bv.includes(v));
+    const boardPaired = new Set(bv).size < 3;
+    if(pair && hits.length) made = "Set";
+    else if(hits.length && cnt[hits[0]]===3) made = "Trips";
+    else if(hits.length===2) made = "Two pair";
+    else if(pair) made = hv[0] > bv[0] ? "Overpair" : hv[0] > bv[bv.length-1] ? "Middle pocket pair" : "Underpair";
+    else if(hits.length===1){
+      const v = hits[0], kick = hv.find(x => x!==v);
+      if(v===bv[0]) made = "Top pair, " + (kick===14 || (v===14 && kick===13) ? "top kicker" : kick>=10 ? "good kicker" : "weak kicker");
+      else made = v===bv[1] ? "Second pair" : "Bottom pair";
+    }
+    else made = (boardPaired ? "Board pair, " : "") + (Math.max(...hv)===14 ? "ace high" : Math.max(...hv) > bv[0] ? "overcards" : "no pair");
+  }
+  const extra = [];
+  if(!flushSuit){
+    const fd = Object.keys(suitCnt).find(s => suitCnt[s]===4 && heroSuits.has(s));
+    const bdfd = !fd && hole[0].s===hole[1].s && suitCnt[hole[0].s]===3;
+    if(fd) extra.push("flush draw"); else if(bdfd) extra.push("backdoor flush draw");
+  }
+  if(!straight && draws.size) extra.push(draws.size>=2 ? "open-ender" : "gutshot");
+  made = made.charAt(0).toUpperCase() + made.slice(1);
+  return made + (extra.length ? " + " + extra.join(" + ") : "");
+}
+
+function pfPool(){
+  const f = S.pfFilter || "all";
+  if(f==="all" || f==="miss") return PF_SPOTS;
+  const p = PF_SPOTS.filter(sp => pfTex(sp)===f);
+  return p.length ? p : PF_SPOTS;
+}
+
+/** Hands you got wrong come back when they're due (Leitner boxes in S.pf.hand). */
+function pfDueHand(pool, onlyMissed){
+  const ids = new Set(pool.map(sp => sp.id));
+  const cand = Object.entries(S.pf.hand).filter(([k,h]) => {
+    const id = k.split("|")[0];
+    if(!ids.has(id) || !PF_STRAT[id] || !PF_STRAT[id][k.split("|")[1]]) return false;
+    return onlyMissed ? h.w>0 && h.box<2 : h.due<=S.pf.total && h.w>0;
+  });
+  if(!cand.length) return null;
+  const [k] = pick(cand), [id, combo] = k.split("|");
+  return {sp: PF_SPOTS.find(sp => sp.id===id), combo};
 }
 
 function pfDeal(){
   if(!PF_SPOTS.length) return;
-  pfAnswered = false;
-  const sp = pick(PF_SPOTS);
-  const combos = Object.keys(PF_STRAT[sp.id]);
-  const combo = combos[Math.floor(Math.random()*combos.length)];
-  const cards = [pfParseCard(combo.slice(0,2)), pfParseCard(combo.slice(2,4))];
-  pfCur = { sp, combo, cards };
+  pfAnswered = false; pfCell = null;
+  const pool = pfPool(), miss = S.pfFilter==="miss";
+  let d = (miss || Math.random() < .3) ? pfDueHand(pool, miss) : null;
+  if(!d){
+    const sp = pick(pool), combos = Object.keys(PF_STRAT[sp.id]);
+    d = {sp, combo: combos[Math.floor(Math.random()*combos.length)]};
+  }
+  const cards = [pfParseCard(d.combo.slice(0,2)), pfParseCard(d.combo.slice(2,4))];
+  pfCur = { sp:d.sp, combo:d.combo, cards, review: miss && !!S.pf.hand[d.sp.id+"|"+d.combo] };
   pfRender();
+}
+
+function pfRenderFilters(){
+  const box = el("pf-filters"); box.innerHTML = "";
+  const nMiss = Object.values(S.pf.hand).filter(h => h.w>0 && h.box<2).length;
+  PF_FILTERS.forEach(f => {
+    const b = document.createElement("button");
+    b.className = "pf-chipbtn" + (f.key==="miss" ? " warn" : "");
+    b.textContent = f.label + (f.key==="miss" && nMiss ? " ("+nMiss+")" : "");
+    b.setAttribute("aria-pressed", String((S.pfFilter||"all")===f.key));
+    b.addEventListener("click", () => { S.pfFilter = f.key; save(); pfDeal(); });
+    box.appendChild(b);
+  });
 }
 
 function pfRender(){
   const sp = pfCur.sp;
   el("pf-potval").innerHTML = sp.pot+'<span style="font-size:.55em">bb</span>';
   el("pf-streetlabel").textContent = "Flop";
-  el("pf-board").innerHTML = sp.board.map(c => pfCardHTML(pfParseCard(c))).join("");
-  el("pf-hole").innerHTML = pfCur.cards.map(pfCardHTML).join("");
+  el("pf-board").innerHTML = sp.board.map((c,i) => pfCardHTML(pfParseCard(c), 60+i*90)).join("");
+  el("pf-hole").innerHTML = pfCur.cards.map((c,i) => pfCardHTML(c, 360+i*90)).join("");
   el("pf-pos").textContent = sp.heroPos+" · YOU";
   el("pf-stack").textContent = sp.eff+"bb eff";
-  el("pf-eyebrow").textContent = "Postflop · Flop C-Bet";
+  el("pf-vpos").textContent = sp.villPos;
+  el("pf-vstack").textContent = sp.eff+"bb";
+  el("pf-bet").hidden = true;
+  el("pf-eyebrow").textContent = "Postflop · Flop C-Bet" + (pfCur.review ? " · Review" : "");
   el("pf-q").textContent = sp.heroPos+" opens, "+sp.villPos+" calls. "+sp.villPos+" checks the flop — what do you do?";
-  el("pf-meta").textContent = "Board texture: "+sp.texture;
+  el("pf-meta").innerHTML = '<span>Board <b>'+sp.texture+'</b></span><span>You have <b>'+pfHandClass(pfCur.cards, sp.board.map(pfParseCard))+'</b></span>';
   el("pf-verdict-slot").innerHTML = "";
+  el("pf-rangebox").hidden = true;
+  pfRenderFilters();
   pfRenderActions();
   pfRenderScore();
 }
@@ -2563,14 +3058,45 @@ function pfRender(){
 function pfRenderActions(){
   const sp = pfCur.sp, box = el("pf-actions");
   box.innerHTML = "";
-  sp.acts.forEach(a => {
+  sp.acts.forEach((a, i) => {
     const b = document.createElement("button");
     b.className = "act "+a.cls;
-    b.innerHTML = '<span class="big">'+a.big+'</span>'+(a.sub?'<span class="small">'+a.sub+'</span>':'<span class="small">&nbsp;</span>');
+    b.innerHTML = '<span class="big">'+a.big+'</span><span class="small">'+(a.sub || "&nbsp;")+'</span><span class="kbd">'+(i+1)+'</span>';
     b.dataset.key = a.key;
     b.addEventListener("click", () => pfAnswer(a.key));
     box.appendChild(b);
   });
+}
+
+/** Chip slides from hero towards the pot, pot counts up. */
+function pfAnimateBet(key){
+  const sp = pfCur.sp, a = sp.acts.find(x => x.key===key);
+  const chip = el("pf-bet");
+  const amt = key==="check" ? 0 : key==="allin" ? sp.eff : Math.round(sp.pot*parseInt(a.sub,10)/100);
+  chip.className = "pf-bet" + (amt ? "" : " check");
+  chip.innerHTML = amt ? '<span class="dot" style="background:'+PF_CLS_COLOR[a.cls]+'"></span>'+amt+'bb' : "Check";
+  chip.hidden = false;
+  void chip.offsetWidth;
+  chip.classList.add("go");
+  if(amt){
+    const pv = el("pf-potval"), from = sp.pot, to = sp.pot + amt, t0 = performance.now();
+    const step = t => {
+      const k = Math.min(1, (t - t0) / 450);
+      pv.innerHTML = Math.round(from + (to-from)*k) + '<span style="font-size:.55em">bb</span>';
+      if(k < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+    el("pf-stack").textContent = (sp.eff - amt) + "bb behind";
+  }
+}
+
+function pfMixHTML(sp, freqs, chosen, best){
+  return Object.entries(freqs).sort((a,b) => b[1]-a[1]).map(([k,f]) => {
+    const me = k===chosen, good = k===best;
+    return '<div class="row"><span class="nm'+(me?' me':'')+'">'+(me?'→ ':'')+pfName(sp,k)+'</span>'
+      + '<span class="track"><span class="fill" style="width:'+Math.round(f*100)+'%;background:'+(good?'var(--good)':me?'var(--bad)':pfColor(sp,k))+'"></span></span>'
+      + '<span class="pc">'+Math.round(f*100)+'%</span></div>';
+  }).join("");
 }
 
 function pfAnswer(chosen){
@@ -2580,17 +3106,23 @@ function pfAnswer(chosen){
   const freqs = PF_STRAT[sp.id][combo];
   const entries = Object.entries(freqs).sort((a,b) => b[1]-a[1]);
   const correct = entries[0][0];
-  const ok = chosen===correct || (freqs[chosen]||0) >= 0.2;
+  const f = freqs[chosen] || 0;
+  const ok = chosen===correct || f >= 0.2;
   const mid = ok && chosen!==correct;
 
   [...el("pf-actions").children].forEach(b => {
     b.disabled = true;
     if(b.dataset.key===chosen) b.classList.add("picked");
+    if(b.dataset.key===correct) b.classList.add("best");
   });
+  pfAnimateBet(chosen);
 
   S.pf.total++;
+  S.pf.freq = (S.pf.freq||0) + f / entries[0][1];
   if(ok){ S.pf.right++; S.pf.streak++; S.pf.best = Math.max(S.pf.best, S.pf.streak); }
   else S.pf.streak = 0;
+  const tx = pfTex(sp), t = S.pf.tex[tx] || (S.pf.tex[tx] = {n:0, r:0});
+  t.n++; if(ok) t.r++;
 
   const hkey = sp.id + "|" + combo;
   const h = S.pf.hand[hkey] || (S.pf.hand[hkey] = {n:0, w:0, box:0, due:0});
@@ -2599,30 +3131,1913 @@ function pfAnswer(chosen){
   else { h.w++; h.box = 0; h.due = S.pf.total + 2; }
   save();
 
-  const cname = a => { const f = sp.acts.find(x=>x.key===a); return f ? f.big+(f.sub?" "+f.sub:"") : a; };
-  const mixLine = entries.map(([a,f]) => cname(a)+" "+Math.round(f*100)+"%").join(" / ");
-
   const v = document.createElement("div");
   v.className = "verdict " + (ok ? (mid ? "mid" : "ok") : "no");
   v.innerHTML = '<div class="vhead">'
     + '<span class="tag">' + (ok ? (mid ? "Acceptable" : "Correct") : "Wrong") + '</span>'
-    + '<span class="line">' + pfCur.combo + ' &rarr; <b>' + cname(correct) + '</b>'
-    + ' <span style="font-weight:400">(solved mix &mdash; ' + mixLine + ')</span></span></div>'
-    + '<div class="nextrow"><button class="next" id="pf-btn-next">Next hand</button></div>';
+    + '<span class="line">' + combo + ' &rarr; <b>' + pfName(sp, correct) + '</b></span></div>'
+    + '<div class="mix">' + pfMixHTML(sp, freqs, chosen, correct) + '</div>'
+    + '<p class="pf-note">' + (chosen===correct
+        ? "That's the solver's most-used play with this exact hand."
+        : "The solver plays <b>" + pfName(sp, chosen) + "</b> " + Math.round(f*100) + "% of the time here"
+          + (ok ? " — a real part of the mix, just not the main line." : " — too rare to count as correct."))
+    + '</p>'
+    + '<div class="nextrow"><button class="next" id="pf-btn-next">Next hand <kbd>Space</kbd></button>'
+    + '<button class="ghost" id="pf-btn-range">' + (S.pfShowRange ? "Hide" : "Show") + ' range <kbd>C</kbd></button></div>';
   el("pf-verdict-slot").appendChild(v);
   el("pf-btn-next").addEventListener("click", pfDeal);
+  el("pf-btn-range").addEventListener("click", pfToggleRange);
   el("pf-btn-next").focus({preventScroll:true});
+  pfCell = pfClassOf(combo);
+  if(S.pfShowRange) pfRenderRange();
+  pfRenderFilters();
   pfRenderScore();
+}
+
+function pfToggleRange(){
+  if(!pfAnswered) return;
+  S.pfShowRange = !S.pfShowRange; save();
+  const b = el("pf-btn-range");
+  if(b) b.innerHTML = (S.pfShowRange ? "Hide" : "Show") + ' range <kbd>C</kbd>';
+  if(S.pfShowRange){ pfRenderRange(); el("pf-rangebox").scrollIntoView({behavior:"smooth", block:"nearest"}); }
+  else el("pf-rangebox").hidden = true;
+}
+
+/** Whole-range strategy for this board, one cell per hand class, split by action frequency. */
+function pfRenderRange(){
+  const sp = pfCur.sp, strat = PF_STRAT[sp.id], keys = sp.acts.map(a => a.key);
+  const agg = {}, tot = {}; let n = 0;
+  keys.forEach(k => tot[k] = 0);
+  Object.entries(strat).forEach(([combo, fr]) => {
+    const c = pfClassOf(combo), a = agg[c] || (agg[c] = {n:0, f:{}, combos:[]});
+    a.n++; a.combos.push(combo); n++;
+    keys.forEach(k => { a.f[k] = (a.f[k]||0) + (fr[k]||0); tot[k] += fr[k]||0; });
+  });
+  const gradient = f => {
+    let x = 0; const stops = [];
+    keys.forEach(k => { const w = f[k]*100; if(w <= 0) return; stops.push(pfColor(sp,k)+" "+x+"% "+(x+w)+"%"); x += w; });
+    return "linear-gradient(90deg,"+stops.join(",")+")";
+  };
+
+  el("pf-rangesum").innerHTML = '<div class="pf-stack">' + keys.map(k => {
+      const p = tot[k]/n*100;
+      return p < .5 ? "" : '<span style="width:'+p+'%;background:'+pfColor(sp,k)+'" title="'+pfName(sp,k)+' '+p.toFixed(1)+'%"></span>';
+    }).join("") + '</div><div class="legend">' + keys.map(k =>
+      '<span><i style="background:'+pfColor(sp,k)+'"></i>'+pfName(sp,k)+' <b>'+Math.round(tot[k]/n*100)+'%</b></span>').join("") + '</div>';
+
+  const me = pfClassOf(pfCur.combo), grid = el("pf-grid");
+  grid.innerHTML = "";
+  ALL169.forEach(code => {
+    const d = document.createElement("button");
+    const a = agg[code];
+    d.className = "cell pf-cell" + (a ? "" : " out") + (code===me ? " me" : "") + (code===pfCell ? " sel" : "");
+    d.textContent = code;
+    if(a){
+      const f = {}; keys.forEach(k => f[k] = a.f[k]/a.n);
+      d.style.background = gradient(f);
+      d.title = code + " — " + keys.filter(k => f[k] >= .005).map(k => pfName(sp,k)+" "+Math.round(f[k]*100)+"%").join(", ");
+      d.addEventListener("click", () => { pfCell = code; pfRenderRange(); });
+    } else d.disabled = true;
+    grid.appendChild(d);
+  });
+
+  const info = el("pf-cellinfo"), a = pfCell && agg[pfCell];
+  if(!a) info.innerHTML = '<p class="emptynote">Tap a hand to see its exact combos.</p>';
+  else {
+    const f = {}; keys.forEach(k => f[k] = a.f[k]/a.n);
+    info.innerHTML = '<div class="pf-cellhead"><b>'+pfCell+'</b> · '+a.n+' combo'+(a.n>1?'s':'')+' in range</div>'
+      + '<div class="pf-combos">' + a.combos.sort().map(c => {
+          const cf = strat[c], you = c===pfCur.combo;
+          return '<div class="pf-combo'+(you?' you':'')+'"><span class="cc">'
+            + [c.slice(0,2), c.slice(2,4)].map(x => '<span class="s-'+x[1]+'">'+x[0]+PIP[x[1]]+'</span>').join("")
+            + '</span><span class="pf-stack mini" title="'+keys.map(k => pfName(sp,k)+' '+Math.round((cf[k]||0)*100)+'%').join(', ')+'">'
+            + keys.map(k => (cf[k]||0) < .005 ? "" : '<span style="width:'+cf[k]*100+'%;background:'+pfColor(sp,k)+'"></span>').join("")
+            + '</span></div>';
+        }).join("") + '</div>';
+  }
+  el("pf-rangetitle").textContent = sp.heroPos + " strategy on " + sp.board.join(" ");
+  el("pf-rangebox").hidden = false;
 }
 
 function pfRenderScore(){
   const box = el("pf-bars");
   if(!S.pf.total){ box.innerHTML = '<p class="emptynote">Play a few hands and your accuracy shows up here.</p>'; return; }
+  const bar = (nm, p, right) => '<div class="bar"><span class="nm">'+nm+'</span>'
+    + '<span class="track"><span class="fill ' + (p<60?"low":p<80?"mid":"") + '" style="width:'+p+'%"></span></span>'
+    + '<span class="pc">'+right+'</span></div>';
   const p = Math.round(S.pf.right/S.pf.total*100);
+  const fq = Math.round((S.pf.freq||0)/S.pf.total*100);
+  let html = bar("Accuracy", p, p+"% · "+S.pf.total)
+    + bar("GTO match", fq, fq+"%")
+    + '<div class="bar"><span class="nm">Streak</span><span class="pc" style="margin-left:auto">'+S.pf.streak+' (best '+S.pf.best+')</span></div>';
+  const tex = PF_FILTERS.filter(f => S.pf.tex[f.key] && S.pf.tex[f.key].n);
+  if(tex.length){
+    html += '<div class="pf-subh">By board type</div>' + tex.map(f => {
+      const t = S.pf.tex[f.key], q = Math.round(t.r/t.n*100);
+      return bar(f.label, q, q+"% · "+t.n);
+    }).join("");
+  }
+  box.innerHTML = html;
+}
+
+/* ============================================================
+   9c. POSTFLOP FULL-HAND GTO (server-driven, GTO Wizard style)
+   ============================================================ */
+const GTO_URL = "http://127.0.0.1:8675";
+let gtoState = null, gtoBusy = false, gtoSpots = null, gtoAI = false, gtoCoachSeq = 0, gtoBoardShown = 0;
+
+async function gtoFetch(path, body){
+  const r = await fetch(GTO_URL + path, {
+    method: body ? "POST" : "GET",
+    headers: body ? {"Content-Type":"application/json"} : {},
+    body: body ? JSON.stringify(body) : undefined
+  });
+  return r.json();
+}
+
+function gtoStatus(text, off){
+  const s = el("gto-status"); if(!s) return;
+  s.classList.toggle("off", !!off);
+  el("gto-status-text").textContent = text;
+}
+
+function gtoSplit(label){
+  if(label==="Check"||label==="Call"||label==="Fold"||label==="All-in") return {big:label, sub:""};
+  const i = label.indexOf(" ");
+  return {big: label.slice(0,i), sub: label.slice(i+1)};
+}
+
+async function gtoEnsureSpots(){
+  if(gtoSpots) return;
+  try{
+    gtoSpots = await gtoFetch("/api/spots");
+    gtoFetch("/api/health").then(h => { gtoAI = !!(h && h.ai); }).catch(() => {});
+    const bar = el("gto-status");
+    if(bar){
+      const sel = document.createElement("select");
+      sel.id = "gto-spot-sel";
+      sel.style.cssText = "font:inherit;font-size:12px;background:var(--sunken);border:1px solid var(--line);border-radius:5px;padding:2px 6px;color:var(--text);max-width:100%";
+      sel.innerHTML = '<option value="-1">Random board</option>';
+      gtoSpots.forEach(sp => {
+        const o = document.createElement("option");
+        o.value = sp.id;
+        o.textContent = sp.board.join("") + " · " + sp.texture;
+        sel.appendChild(o);
+      });
+      sel.addEventListener("change", () => {
+        S.gtoSpot = sel.value === "-1" ? null : parseInt(sel.value, 10);
+        save();
+      });
+      if(S.gtoSpot != null) sel.value = String(S.gtoSpot);
+      bar.appendChild(sel);
+    }
+  }catch(e){}
+}
+
+async function gtoNew(){
+  if(gtoBusy) return;
+  gtoBusy = true;
+  el("gto-verdict-slot").innerHTML = "";
+  el("gto-coach").hidden = true;
+  gtoCoachSeq++;          // drop any coach reply still in flight for the previous hand
+  gtoBoardShown = 0;
+  el("gto-villain").hidden = true;
+  el("gto-actions").innerHTML = '<p class="emptynote" style="padding:6px">Dealing&hellip;</p>';
+  gtoStatus("Connecting to GTO server…");
+  await gtoEnsureSpots();
+  let res = null;
+  for(let attempt = 0; attempt < 10; attempt++){
+    try{
+      res = await gtoFetch("/api/new", {spotId: S.gtoSpot ?? undefined});
+      if(res && res.handId) break;
+      res = null;
+    }catch(e){ res = null; }
+    if(attempt < 9){
+      gtoStatus("Starting GTO server…");
+      await new Promise(r => setTimeout(r, 1500));
+    }
+  }
+  if(res && res.handId){
+    gtoState = res;
+    gtoRender(res, true);
+    gtoStatus("Server connected", false);
+  }else{
+    gtoStatus("GTO server offline — run:  python tools/postflop/gto_server.py", true);
+    el("gto-actions").innerHTML = "";
+  }
+  gtoBusy = false;
+}
+
+function gtoCard(c){ return '<span class="card '+c.s+'"><span class="idx">'+c.r+'</span><span class="pip">'+PIP[c.s]+'</span></span>'; }
+
+function gtoRender(state, withActions){
+  gtoState = state;
+  const street = state.street;
+  el("gto-potval").innerHTML = state.pot + '<span style="font-size:.55em">bb</span>';
+  el("gto-streetlabel").textContent = street.charAt(0).toUpperCase() + street.slice(1);
+  const fresh = gtoBoardShown === 0;
+  el("gto-board").innerHTML = state.board.map((c,i) => pfCardHTML(pfParseCard(c), i >= gtoBoardShown ? 60+(i-gtoBoardShown)*90 : null)).join("");
+  if(fresh) el("gto-hole").innerHTML = state.hero.map((c,i) => pfCardHTML(pfParseCard(c), 360+i*90)).join("");
+  gtoBoardShown = state.board.length;
+  if(state.stack != null) el("gto-stack").textContent = state.stack + "bb behind";
+  const vh = el("gto-villain-hole");
+  if(vh){
+    if(state.handOver && state.result && state.result.villain){
+      vh.innerHTML = state.result.villain.map(c => gtoCard(pfParseCard(c))).join("");
+    } else {
+      vh.innerHTML = '<span class="cardback"></span><span class="cardback"></span>';
+    }
+  }
+  el("gto-eyebrow").textContent = "Postflop · Full Hand · " + state.texture;
+  el("gto-meta").innerHTML = '<span>Street <b>'+street+'</b></span><span>Pot <b>'+state.pot+'bb</b></span>';
+  el("gto-q").textContent = state.handOver ? "Hand over" : (state.toAct === "hero" ? "What do you do?" : "Villain is acting…");
+
+  const log = el("gto-log"); log.innerHTML = "";
+  state.history.forEach(h => {
+    const li = document.createElement("li");
+    li.innerHTML = '<span class="st">'+h.street+'</span><span class="who">'+h.actor+'</span><span class="ac">'+h.label+'</span>';
+    log.appendChild(li);
+  });
+
+  if(state.handOver && state.result && state.result.villain){
+    el("gto-villain").hidden = false;
+    el("gto-villain").innerHTML = '<span class="cap">Villain held</span><div class="hole">'
+      + state.result.villain.map(c => gtoCard(pfParseCard(c))).join("") + '</div>';
+  } else {
+    el("gto-villain").hidden = true;
+  }
+
+  const box = el("gto-actions"); box.innerHTML = "";
+  if(!state.handOver && withActions && state.toAct === "hero"){
+    state.actions.forEach((a, i) => {
+      const sp = gtoSplit(a.label);
+      const b = document.createElement("button");
+      b.className = "act " + a.cls;
+      b.innerHTML = '<span class="big">'+sp.big+'</span><span class="small">'+(sp.sub || "&nbsp;")+'</span>'
+        + (i < 9 ? '<span class="kbd">'+(i+1)+'</span>' : '');
+      b.dataset.key = a.key;
+      b.addEventListener("click", () => gtoAnswer(a.key));
+      box.appendChild(b);
+    });
+  } else if(!state.handOver && state.toAct !== "hero"){
+    box.innerHTML = '<p class="emptynote" style="padding:6px"><span class="spinner"></span> Solving&hellip;</p>';
+  }
+  gtoRenderScore();
+}
+
+async function gtoAnswer(key){
+  if(gtoBusy) return;
+  gtoBusy = true;
+  el("gto-actions").innerHTML = '<p class="emptynote" style="padding:6px"><span class="spinner"></span> Solving&hellip;</p>';
+  try{
+    const res = await gtoFetch("/api/act", {handId: gtoState.handId, key: key});
+    if(res.error){
+      // e.g. "unknown hand" after the server restarted — offer a fresh deal instead of a dead end
+      gtoStatus(res.error, true);
+      el("gto-actions").innerHTML = '<button class="next" id="gto-btn-next">Deal a new hand</button>';
+      el("gto-btn-next").addEventListener("click", () => { gtoBusy = false; gtoNew(); });
+      return;
+    }
+    gtoRender(res.state, false);
+    gtoFeedback(res.lastDecision, res.state);
+  }catch(e){
+    gtoStatus("Server error — is the GTO server running?", true);
+  }finally{
+    gtoBusy = false;
+  }
+}
+
+function gtoFeedback(last, state){
+  const g = S.gto;
+  g.total++;
+  let cls, tag;
+  if(last.correct){ g.right++; g.streak++; tag = "Correct"; cls = "ok"; }
+  else if(last.acceptable){ g.acceptable++; g.streak++; tag = "Acceptable"; cls = "mid"; }
+  else { g.wrong++; g.streak = 0; tag = "Wrong"; cls = "no"; }
+  g.best = Math.max(g.best, g.streak);
+  save();
+
+  const rows = Object.entries(last.mix).sort((a,b) => b[1]-a[1]).map(([k,f]) => {
+    const sp = actionLabelToUI(k);
+    const me = k === last.key, good = k === last.correctKey;
+    const name = (last.labels && last.labels[k]) || (sp.big + (sp.sub ? " " + sp.sub : ""));
+    return '<div class="row"><span class="nm'+(me?' me':'')+'">'+(me?'→ ':'')+name+'</span>'
+      + '<span class="track"><span class="fill '+(good?'good':(me?'bad':''))+'" style="width:'+Math.round(f*100)+'%"></span></span>'
+      + '<span class="pc">'+Math.round(f*100)+'%</span></div>';
+  }).join("");
+
+  let resultHTML = "";
+  if(state.handOver && state.result){
+    const r = state.result;
+    const head = r.winner==="hero" ? "You win" : r.winner==="villain" ? "Villain wins" : "Tie";
+    const clsR = r.winner==="hero" ? "win" : r.winner==="villain" ? "lose" : "tie";
+    const detail = r.reason==="showdown"
+      ? "Showdown — you: " + r.heroHand + " · villain: " + r.villainHand
+      : r.reason==="fold" ? (r.winner==="hero" ? "Villain folded" : "You folded") : "Hand ended";
+    resultHTML = '<div class="resultbox '+clsR+'"><div class="head">'+head+'</div><div class="sub">'+detail+' · pot '+r.pot+'bb</div></div>';
+  }
+
+  const btn = state.handOver
+    ? '<button class="next" id="gto-btn-next">Next hand</button><button class="ghost" id="gto-btn-ai">🤖 AI review</button>'
+    : '<button class="next" id="gto-btn-next">Continue</button><button class="ghost" id="gto-btn-ai">🤖 Ask AI coach</button>';
+
+  const slot = el("gto-verdict-slot");
+  slot.innerHTML = '<div class="verdict '+cls+'">'
+    + '<div class="vhead"><span class="tag">'+tag+'</span>'
+    + '<span class="line">You chose <b>'+last.label+'</b> · GTO best <b>'+last.correctLabel+'</b></span></div>'
+    + '<div class="mix">'+rows+'</div>'
+    + '<div class="nextrow">'+btn+'</div>'
+    + resultHTML + '</div>';
+
+  el("gto-btn-next").addEventListener("click", () => {
+    if(state.handOver){ gtoNew(); }
+    else { el("gto-verdict-slot").innerHTML = ""; gtoRender(gtoState, true); }
+  });
+  el("gto-btn-ai").addEventListener("click", () => askCoach(null));
+  el("gto-btn-next").focus({preventScroll:true});
+  // Auto-invoke the AI coach only when the server has a key — otherwise every action would just print "offline"
+  if(gtoAI) askCoach(null);
+}
+
+// approximate UI label from a solver action key inside the mix (server labels are on state.actions only)
+function actionLabelToUI(key){
+  if(key==="CHECK") return {big:"Check", sub:""};
+  if(key==="CALL") return {big:"Call", sub:""};
+  if(key==="FOLD") return {big:"Fold", sub:""};
+  const m = key.match(/^(BET|RAISE) ([\d.]+)$/);
+  if(m){
+    const amt = parseFloat(m[2]);
+    if(amt >= 96) return {big:"All-in", sub:""};
+    const s = (amt % 1 === 0) ? String(amt) : amt.toFixed(1);
+    return m[1]==="BET" ? {big:"Bet", sub:s+"bb"} : {big:"Raise", sub:"to "+s+"bb"};
+  }
+  return {big:key, sub:""};
+}
+
+function markdownLite(txt){
+  const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  const lines = esc(txt).split("\n");
+  let html = "", open = null;
+  const close = () => { if(open){ html += "</"+open+">"; open = null; } };
+  lines.forEach(line => {
+    const t = line.trim();
+    let m;
+    if((m = t.match(/^###?\s+(.*)/))){ close(); html += "<h3>"+m[1]+"</h3>"; }
+    else if((m = t.match(/^[-*]\s+(.*)/))){ if(open!=="ul"){ close(); html += "<ul>"; open = "ul"; } html += "<li>"+m[1]+"</li>"; }
+    else if((m = t.match(/^\d+\.\s+(.*)/))){ if(open!=="ol"){ close(); html += "<ol>"; open = "ol"; } html += "<li>"+m[1]+"</li>"; }
+    else if(t === ""){ /* skip blank lines */ }
+    else { close(); html += "<p>"+t+"</p>"; }
+  });
+  close();
+  html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+  html = html.replace(/`([^`]+)`/g, "<code>$1</code>");
+  return html;
+}
+
+async function askCoach(focus){
+  if(!gtoState){ return; }
+  const box = el("gto-coach"), body = el("gto-coach-body");
+  box.hidden = false;
+  body.innerHTML = '<span class="spinner"></span> Thinking&hellip;';
+  const seq = ++gtoCoachSeq;
+  try{
+    const res = await gtoFetch("/api/coach", {handId: gtoState.handId, focus: focus || "", lang: S.gtoLang || "hinglish"});
+    if(seq !== gtoCoachSeq) return;   // a newer request (or a new hand) superseded this one
+    body.innerHTML = res.error ? ("<p>" + String(res.error).replace(/</g,"&lt;") + "</p>") : markdownLite(res.text);
+  }catch(e){
+    if(seq === gtoCoachSeq) body.textContent = "AI coach request failed. Is the GTO server running?";
+  }
+}
+
+function gtoRenderScore(){
+  const box = el("gto-bars");
+  if(!box) return;
+  const g = S.gto;
+  if(!g.total){ box.innerHTML = '<p class="emptynote">Play a few hands and your GTO accuracy shows up here.</p>'; return; }
+  const p = Math.round(g.right/g.total*100);
   box.innerHTML = '<div class="bar"><span class="nm">Accuracy</span>'
     + '<span class="track"><span class="fill ' + (p<60?"low":p<80?"mid":"") + '" style="width:'+p+'%"></span></span>'
-    + '<span class="pc">'+p+'% · '+S.pf.total+'</span></div>'
-    + '<div class="bar"><span class="nm">Streak</span><span class="pc" style="margin-left:auto">'+S.pf.streak+' (best '+S.pf.best+')</span></div>';
+    + '<span class="pc">'+p+'% · '+g.total+'</span></div>'
+    + '<div class="bar"><span class="nm">Correct</span><span class="pc" style="margin-left:auto">'+g.right+' / '+g.total+'</span></div>'
+    + '<div class="bar"><span class="nm">Acceptable</span><span class="pc" style="margin-left:auto">'+g.acceptable+'</span></div>'
+    + '<div class="bar"><span class="nm">Mistakes</span><span class="pc" style="margin-left:auto">'+g.wrong+'</span></div>'
+    + '<div class="bar"><span class="nm">Streak</span><span class="pc" style="margin-left:auto">'+g.streak+' (best '+g.best+')</span></div>';
+}
+
+// AI coach language toggle (English / Hinglish)
+const _gtoLangSel = el("gto-lang");
+if(_gtoLangSel){
+  _gtoLangSel.value = S.gtoLang || "hinglish";
+  _gtoLangSel.addEventListener("change", () => {
+    S.gtoLang = _gtoLangSel.value; save();
+    if(gtoState && !el("gto-coach").hidden) askCoach(null);
+  });
+}
+
+/* ============================================================
+   9c. LIVE MIRROR — real table padho, GTO preflop jawab pao
+   ============================================================ */
+const MIRROR_URL = "http://127.0.0.1:8676";
+let mirrorTimer = null, mirrorDetectTimer = null, mirrorWinTimer = null;
+let mirrorSpotManual = false;   // user ne spot khud choose kiya to auto-detect band (is hand ke liye)
+let mirrorLastPos = null;       // pichla detected position — badle to naya hand
+let mirrorLastHand = null;      // pichle detected cards — same ho to dobara render mat karo
+let mirrorPfKey = null;         // pichla postflop solve (board|hand) — dobara fetch na ho
+let mirrorRandomize = true;     // GTO mix me se ek action random pick karo
+let mirrorRnd = {};             // key -> picked action (per hand stable)
+let mirrorVillain = "";         // selected opponent (Hand Review players se) — GTO + exploit club
+let mirrorPlayers = [];         // cached rvPlayerStats(rvHands), hands desc
+let mirrorPlayersLoaded = false;
+
+async function mirrorFetch(path, body){
+  const r = await fetch(MIRROR_URL + path, {
+    method: body ? "POST" : "GET",
+    headers: body ? {"Content-Type":"application/json"} : {},
+    body: body ? JSON.stringify(body) : undefined
+  });
+  return r.json();
+}
+
+function mirrorStatus(text, off){
+  const s = el("mirror-status"); if(!s) return;
+  s.classList.toggle("off", !!off);
+  el("mirror-status-text").textContent = text;
+}
+
+function mirrorCardsToCode(a, b){
+  const hi = ri(a.r) <= ri(b.r) ? a : b;
+  const lo = hi === a ? b : a;
+  if(hi.r === lo.r) return hi.r + hi.r;
+  return hi.r + lo.r + (hi.s === lo.s ? "s" : "o");
+}
+
+function buildMirrorSpotPicker(){
+  const sel = el("mirror-spot");
+  if(sel.children.length) return;
+  const groups = {};
+  SPOTS.forEach(s => { (groups[s.mode] = groups[s.mode] || []).push(s); });
+  MODES.forEach(m => {
+    if(!groups[m.key]) return;
+    const og = document.createElement("optgroup");
+    og.label = m.label;
+    groups[m.key].forEach(s => {
+      const o = document.createElement("option");
+      o.value = s.id; o.textContent = s.title;
+      og.appendChild(o);
+    });
+    sel.appendChild(og);
+  });
+  sel.addEventListener("change", () => {
+    mirrorSpotManual = true;          // user ka khud ka selection — auto detect mat chalao
+    mirrorRecommend();
+  });
+}
+
+function mirrorHasSpot(id){
+  const sel = el("mirror-spot");
+  return !!sel && [...sel.options].some(o => o.value === id);
+}
+
+// Table ke bets padh ke spot nikalo: kisne open kiya, kisne 3-bet, kaun call kiya.
+// bets = {pos: bb} — sirf abhi saamne pade chips (fold wale ke bhi rehte hain).
+const MIRROR_MAX_OPEN = 4.5;   // isse bada pehla raise = 3-bet (opener ke chips chhup gaye)
+function mirrorSpotFromAction(a){
+  const hero = a.hero, amt = p => (a.bets && a.bets[p]) || 0;
+  const heroBet = amt(hero);
+  const sizes = [...new Set(POS_ORDER.map(amt).filter(x => x > 1))].sort((x, y) => x - y);
+  const firstWith = sz => POS_ORDER.find(p => p !== hero && amt(p) === sz);
+  const bb = x => x + "bb";
+  let cands = [], mode, text;
+
+  const opener = sizes.length ? POS_ORDER.find(p => amt(p) === sizes[0]) : null;
+
+  if(!sizes.length || (sizes.length === 1 && opener === hero)){
+    // koi raise nahi (ya hero ne hi open kiya, jawab ka wait)
+    mode = "open";
+    cands = ["rfi_" + hero];
+    text = sizes.length ? "Aapne open kiya " + bb(heroBet)
+         : hero === "BB" ? "Walk — sab fold" : "Sab fold — aapka open";
+  } else if(sizes.length === 1){
+    const callers = POS_ORDER.filter(p => p !== opener && p !== hero && amt(p) === sizes[0]);
+    text = opener + " open " + bb(sizes[0]) + (callers.length ? " · " + callers.join(", ") + " call" : "");
+    mode = callers.length ? "squeeze" : hero === "BB" ? "bbdef" : "3bet";
+    if(callers.length) cands.push("sq_" + hero + "_" + opener + "_" + callers[0]);
+    cands.push(hero === "BB" ? "bb_" + opener : "3b_" + hero + "_" + opener);
+  } else {
+    // 2+ raise sizes: pehla = open, agla = 3-bet, agla = 4-bet
+    const big = sizes[sizes.length - 1], villain = firstWith(big);
+    if(heroBet > 1 && heroBet < big){
+      if(heroBet <= MIRROR_MAX_OPEN){
+        mode = "4bet";                                   // hero ne open kiya, 3-bet aaya
+        text = "Aapka open " + bb(heroBet) + " · " + villain + " 3-bet " + bb(big);
+        // exact na mile to: blinds se 3-bet -> "_BB" wala, IP se -> "_BTN" wala
+        cands = ["4b_" + hero + "_" + villain,
+                 "4b_" + hero + "_" + (villain === "SB" || villain === "BB" ? "BB" : "BTN")];
+      } else {
+        mode = "5bet";                                   // hero ne 3-bet kiya, 4-bet aaya
+        text = "Aapka 3-bet " + bb(heroBet) + " · " + villain + " 4-bet " + bb(big);
+        cands = ["5b_" + hero + "_" + villain];
+      }
+    } else {
+      mode = "cold4";                                    // open + 3-bet, hero abhi tak bahar
+      text = opener + " open " + bb(sizes[0]) + " · " + villain + " 3-bet " + bb(big);
+      cands = ["c4_" + hero];
+    }
+  }
+  let id = cands.find(mirrorHasSpot);
+  if(!id){                                               // exact spot nahi — same type ka hero wala lo
+    const s = SPOTS.find(s => s.mode === mode && s.hero === hero && mirrorHasSpot(s.id));
+    id = s && s.id;
+  }
+  return {id, text};
+}
+
+function mirrorApplyAction(a){
+  if(!a || !a.hero) return;
+  mirrorNewHandCheck(a.hero);
+  const st = el("mirror-action-status");
+  if(a.street !== "preflop"){                            // flop ke baad preflop spot mat badlo
+    if(st) st.textContent = "Postflop — preflop spot wahi rakha";
+    return;
+  }
+  const r = mirrorSpotFromAction(a);
+  if(st) st.textContent = a.hero + " · " + r.text
+    + (!r.id ? " (is action ka spot nahi — dropdown se chuno)" : mirrorSpotManual ? " (manual spot)" : "");
+  if(r.id) mirrorSelectSpot(r.id);
+}
+
+function mirrorNewHandCheck(pos){
+  if(pos !== mirrorLastPos){          // button hila = naya hand — manual lock hatao
+    mirrorLastPos = pos;
+    mirrorSpotManual = false;
+  }
+}
+
+function mirrorSetPosition(pos){
+  if(!pos) return;
+  mirrorNewHandCheck(pos);
+  // BB ka rfi spot nahi hota — default BTN open ke khilaf defend
+  const id = mirrorHasSpot("rfi_" + pos) ? "rfi_" + pos
+           : pos === "BB" && mirrorHasSpot("bb_BTN") ? "bb_BTN"
+           : (SPOTS.find(s => s.hero === pos && mirrorHasSpot(s.id)) || {}).id;
+  if(id) mirrorSelectSpot(id);
+}
+
+function mirrorSelectSpot(id){
+  if(mirrorSpotManual) return;
+  const sel = el("mirror-spot");
+  if(!sel) return;
+  if(sel.value !== id){
+    sel.value = id;
+    mirrorRecommend();
+  }
+}
+
+function buildMirrorCardSelects(){
+  const fill = (id, items, val) => {
+    const sel = el(id);
+    if(sel.children.length) return;
+    items.forEach(x => {
+      const o = document.createElement("option");
+      o.value = x; o.textContent = x; if(x === val) o.selected = true;
+      sel.appendChild(o);
+    });
+  };
+  fill("mirror-c1r", R, "A");
+  fill("mirror-c2r", R, "K");
+  fill("mirror-c1s", SUITS, "s");
+  fill("mirror-c2s", SUITS, "d");
+  ["mirror-c1r","mirror-c1s","mirror-c2r","mirror-c2s"].forEach(id => {
+    el(id).addEventListener("change", () => {
+      mirrorRecommend();
+      mirrorLearn();          // user ne khud card sudhara -> glyph template bana lo
+    });
+  });
+  const d = el("mirror-detect");
+  if(d) d.addEventListener("click", () => {
+    el("mirror-detect-status").textContent = "Detecting&hellip;";
+    mirrorLastHand = null;            // manual Detect = dropdown ko dobara detected cards pe set karo
+    mirrorDetectTick();
+  });
+}
+
+function mirrorManualCode(){
+  const a = {r: el("mirror-c1r").value, s: el("mirror-c1s").value};
+  const b = {r: el("mirror-c2r").value, s: el("mirror-c2s").value};
+  return mirrorCardsToCode(a, b);
+}
+
+function mirrorLearn(){
+  const a = el("mirror-c1r").value + el("mirror-c1s").value;
+  const b = el("mirror-c2r").value + el("mirror-c2s").value;
+  if(a.length !== 2 || b.length !== 2) return;
+  mirrorFetch("/api/learn", {hand: a + b}).catch(()=>{});
+}
+
+function mirrorSetDetected(hand){
+  if(!hand || hand.length < 4) return;
+  const c1 = pfParseCard(hand.slice(0, 2));
+  const c2 = pfParseCard(hand.slice(2, 4));
+  if(!c1 || !c2 || !R.includes(c1.r) || !R.includes(c2.r)) return;
+  el("mirror-c1r").value = c1.r;
+  el("mirror-c1s").value = c1.s;
+  el("mirror-c2r").value = c2.r;
+  el("mirror-c2s").value = c2.s;
+}
+
+async function mirrorTick(){
+  try{
+    const res = await mirrorFetch("/api/health");
+    if(res && res.window && res.blocked){
+      el("mirror-overlay").hidden = false;
+      el("mirror-overlay").textContent = "Natural8 ne is table ka capture block kar diya hai — mirror nahi dikh sakta. Poker app restart karo, ya cards dropdown se manual chuno.";
+      mirrorStatus("Capture blocked: " + res.window, true);
+    } else if(res && res.window){
+      el("mirror-frame").src = MIRROR_URL + "/api/frame?t=" + Date.now();
+      el("mirror-overlay").hidden = true;
+      mirrorStatus("Mirroring: " + res.window + (res.ocr ? " · OCR on" : " · OCR off (manual)"), false);
+    } else {
+      el("mirror-overlay").hidden = false;
+      el("mirror-overlay").textContent = "Window nahi mili &mdash; mirror_server.py me WINDOW_TITLE sahi karo.";
+      mirrorStatus("Server on, window nahi mili", true);
+    }
+  }catch(e){
+    el("mirror-overlay").hidden = false;
+    el("mirror-overlay").textContent = "Mirror server se connect nahi ho paya.";
+    mirrorStatus("Mirror server offline &mdash; run:  python mirror_server.py", true);
+  }
+}
+
+async function mirrorDetectTick(){
+  try{
+    const res = await mirrorFetch("/api/detect");
+    if(res && res.action) mirrorApplyAction(res.action);
+    else if(res && res.pos) mirrorSetPosition(res.pos);   // purana server — sirf position
+    if(res && res.hand){
+      el("mirror-detect-status").textContent = "Detected: " + res.hand + (res.pos ? " · " + res.pos : "");
+      if(res.hand !== mirrorLastHand){      // naya hand — tabhi re-render (tez polling me flicker nahi)
+        mirrorLastHand = res.hand;
+        mirrorSetDetected(res.hand);
+        mirrorRecommend();
+      }
+      // postflop board aaya to GTO solve karo
+      const act = res.action;
+      if(act && act.street === "postflop" && Array.isArray(act.board) && act.board.length >= 3){
+        mirrorPostflop(act.board, res.hand, act.hero === "BB" ? "BB" : "BTN");
+      } else {
+        const box = el("mirror-postflop");
+        if(box && !box.hidden){ box.hidden = true; mirrorPfKey = null; }
+      }
+    } else {
+      el("mirror-detect-status").textContent = res && res.pos
+        ? ("Position: " + res.pos + " — cards dropdown se chuno")
+        : "Cards nahi mile — dropdown se manual chuno";
+    }
+  }catch(e){
+    el("mirror-detect-status").textContent = "Detect fail — server check karo";
+  }
+}
+
+async function mirrorPostflop(board, hand, heroPos){
+  const streetName = board.length === 3 ? "flop" : board.length === 4 ? "turn" : "river";
+  const key = board.join("") + "|" + hand + "|" + heroPos;
+  const box = el("mirror-postflop");
+  if(!box) return;
+  box.hidden = false;
+  el("mirror-postflop-street").textContent = "Postflop · " + (streetName[0].toUpperCase() + streetName.slice(1));
+  el("mirror-board").innerHTML = board.map((c, i) => pfCardHTML(pfParseCard(c), 60 + i * 90)).join("");
+  if(key === mirrorPfKey) return;                    // same board+hand — dobara solve mat karo
+  mirrorPfKey = key;
+  el("mirror-postflop-big").textContent = "GTO solve ho raha hai\u2026";
+  el("mirror-postflop-mix").innerHTML = "";
+  try{
+    const r = await fetch(GTO_URL + "/api/live", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({board, hero: hand, street: streetName, heroPos})
+    }).then(r => r.json());
+    if(!r || r.error){
+      el("mirror-postflop-big").textContent = (r && r.error) || "Solve fail";
+      return;
+    }
+    let pick = r.best, rnd = false;
+    if(mirrorRandomize && Object.keys(r.strategy).length > 1){
+      if(!(key in mirrorRnd)) mirrorRnd[key] = pickWeighted(r.strategy);
+      pick = mirrorRnd[key];
+      rnd = true;
+    }
+    el("mirror-postflop-big").textContent = (rnd ? "&#127922; " : "Best: ") + (r.labels[pick] || pick);
+    el("mirror-postflop-villain").innerHTML = mirrorVillainTipHTML("postflop");
+    el("mirror-postflop-mix").innerHTML = Object.entries(r.strategy)
+      .sort((a, b) => b[1] - a[1])
+      .map(([a, p]) => {
+        const lbl = r.labels[a] || a;
+        const pct = Math.round(p * 100);
+        return '<div class="row"><span>' + lbl + '</span><span class="track">'
+             + '<span class="fill" style="width:' + pct + '%;background:' + (a === pick ? "var(--good)" : "var(--accent)") + '"></span></span>'
+             + '<span class="pc">' + pct + '%</span></div>';
+      }).join("");
+  }catch(e){
+    el("mirror-postflop-big").textContent = "GTO server offline — run: python tools/postflop/gto_server.py";
+  }
+}
+
+async function mirrorWindowsTick(){
+  try{
+    const res = await mirrorFetch("/api/windows");
+    const sel = el("mirror-table");
+    if(!sel) return;
+    if(!res || !res.windows || !res.windows.length){ sel.innerHTML = ""; return; }
+    const manual = sel.dataset.manual;
+    sel.innerHTML = "";
+    res.windows.forEach(w => {
+      const o = document.createElement("option");
+      o.value = w.title; o.textContent = w.title;
+      sel.appendChild(o);
+    });
+    let target = null;
+    if(manual && res.windows.some(w => w.title === manual)) target = manual;
+    else if(res.selected && res.windows.some(w => w.title === res.selected)) target = res.selected;
+    else target = res.windows[0].title;
+    if(target) sel.value = target;
+  }catch(e){}
+}
+
+function mirrorStart(){
+  mirrorSpotManual = false;   // Live Mirror kholte hi auto-detect on
+  buildMirrorSpotPicker();
+  buildMirrorCardSelects();
+  const vs = el("mirror-villain");
+  if(vs && !vs._bound){
+    vs._bound = true;
+    vs.addEventListener("change", () => {
+      mirrorVillain = vs.value;
+      mirrorVillainTip();
+      mirrorRecommend();
+      const pv = el("mirror-postflop-villain");
+      if(pv) pv.innerHTML = mirrorVillainTipHTML("postflop");
+    });
+  }
+  mirrorPlayersRefresh();
+  const tsel = el("mirror-table");
+  if(tsel && !tsel._bound){
+    tsel._bound = true;
+    tsel.addEventListener("change", async () => {
+      tsel.dataset.manual = tsel.value;
+      try{ await mirrorFetch("/api/select", {title: tsel.value}); }catch(e){}
+    });
+  }
+  const fb = el("mirror-focus");
+  if(fb && !fb._bound){
+    fb._bound = true;
+    fb.addEventListener("click", () => { mirrorFetch("/api/focus", {}).catch(()=>{}); });
+  }
+  const pb = el("mirror-pin");
+  if(pb && !pb._bound){
+    pb._bound = true;
+    pb.addEventListener("change", () => { mirrorFetch("/api/pin", {on: pb.checked}).catch(()=>{}); });
+  }
+  const rb = el("mirror-rnd");
+  if(rb && !rb._bound){
+    rb._bound = true;
+    rb.addEventListener("change", () => {
+      mirrorRandomize = rb.checked;
+      mirrorRnd = {};             // toggle pe dobara random pick karo
+      mirrorRecommend();
+    });
+  }
+  clearInterval(mirrorTimer);
+  clearInterval(mirrorDetectTimer);
+  clearInterval(mirrorWinTimer);
+  mirrorRecommend();
+  mirrorTick();
+  mirrorDetectTick();
+  mirrorWindowsTick();
+  mirrorLastHand = null;
+  mirrorTimer = setInterval(mirrorTick, 300);
+  mirrorDetectTimer = setInterval(mirrorDetectTick, 250);   // server ab cache se turant padhta hai
+  mirrorWinTimer = setInterval(mirrorWindowsTick, 2000);
+}
+
+function mirrorStop(){
+  clearInterval(mirrorTimer);
+  clearInterval(mirrorDetectTimer);
+  clearInterval(mirrorWinTimer);
+}
+
+function pickWeighted(freqs){
+  const entries = Object.entries(freqs);
+  if(entries.length <= 1) return entries.length ? entries[0][0] : null;
+  let r = Math.random() * entries.reduce((s, [,f]) => s + f, 0);
+  for(const [k, f] of entries){ r -= f; if(r <= 0) return k; }
+  return entries[entries.length - 1][0];
+}
+
+/* --- Opponents (Hand Review players) ko Mirror me GTO ke saath club karo --- */
+function mirrorVillainProfile(){
+  return mirrorPlayers.find(x => x.name === mirrorVillain);
+}
+
+function mirrorVillainTipHTML(mode){
+  const p = mirrorVillainProfile();
+  if(!p) return "";
+  const pr = rvProfile(p);
+  const want = mode === "open" ? ["Blinds me wo"]
+             : (mode === "4bet" || mode === "5bet" || mode === "cold4") ? ["Uska 3-bet"]
+             : mode === "postflop" ? ["Uska flop c-bet", "Wo flop check kare", "Postflop"]
+             : ["Uska open"];
+  const hits = pr.ex.filter(e => want.includes(e[0]));
+  const note = hits.map(e => e[1]).join(" · ") || (pr.notes[0] || "");
+  const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+  return '<div class="rv-ex"><b>&#127919; vs ' + esc(mirrorVillain) + ' (' + esc(pr.cat) + '):</b> ' + esc(note || "Exploit data kam hai") + '</div>';
+}
+
+function mirrorVillainTip(){
+  const t = el("mirror-villain-tip");
+  if(!t) return;
+  const p = mirrorVillainProfile();
+  if(!p){ t.textContent = ""; return; }
+  const pr = rvProfile(p), f = v => v === null ? "–" : v;
+  t.textContent = pr.cat + " · VPIP " + f(pr.vpip) + " / PFR " + f(pr.pfr) + " / 3B " + f(pr.tb) + " · " + p.hands + " hands";
+}
+
+function mirrorPlayersHTML(){
+  const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+  const players = mirrorPlayers.slice(0, 40);
+  if(!players.length) return '<div class="rv-muted">Abhi koi opponent data nahi — Hand Review me hand history load karo (ya GTO server band hai).</div>';
+  const f = v => v === null ? "–" : v;
+  return players.map(p => {
+    const pr = rvProfile(p), saved = rvNotes[p.name] || {};
+    const ex = pr.ex.slice(0, 6).map(e => '<div class="rv-ex"><b>' + esc(e[0]) + ':</b> ' + esc(e[1]) + '</div>').join("");
+    const ai = saved.ai ? '<h4>AI note</h4><div class="rv-ai-out">' + esc(String(saved.ai).replace(/\*\*/g, "")) + '</div>' : "";
+    return '<details class="rv-player rv-' + pr.catCls + '"><summary>' +
+      '<span class="rv-pname">' + esc(p.name) + '</span><span class="rv-tag">' + esc(pr.cat) + '</span>' +
+      '<span class="rv-muted">' + p.hands + 'h · VPIP ' + f(pr.vpip) + '/PFR ' + f(pr.pfr) + '/3B ' + f(pr.tb) + ' · AF ' + f(pr.af) + '</span>' +
+      '</summary><div class="rv-detail">' +
+      '<div class="rv-muted">C-bet ' + f(pr.cb) + '% · F3B ' + f(pr.f3) + '% · WTSD ' + f(pr.wtsd) + '% · Showdowns ' + p.sd + '</div>' +
+      (pr.notes.length ? '<h4>Notes</h4>' + pr.notes.map(n => '<div>&bull; ' + esc(n) + '</div>').join("") : '<div class="rv-muted">15+ hands pe pakke notes milenge</div>') +
+      (ex ? '<h4>Exploit plan</h4>' + ex : "") +
+      '<h4>Preflop: raise ranges (showdown se)</h4>' + rvPreflopDiveHTML(p) +
+      '<h4>Street deep dive (data)</h4>' + rvDiveHTML(p.name).html +
+      ai +
+      '</div></details>';
+  }).join("");
+}
+
+function mirrorPlayersRender(){
+  const box = el("mirror-players");
+  if(!box) return;
+  mirrorPlayers = rvPlayerStats(rvHands).sort((a, b) => b.hands - a.hands);
+  if(!mirrorPlayers.length){ box.hidden = true; return; }
+  box.hidden = false;
+  const sel = el("mirror-villain");
+  if(sel){
+    sel.innerHTML = '<option value="">— koi nahi —</option>';
+    mirrorPlayers.slice(0, 40).forEach(p => {
+      const o = document.createElement("option");
+      o.value = p.name; o.textContent = p.name + " (" + p.hands + "h)";
+      if(p.name === mirrorVillain) o.selected = true;
+      sel.appendChild(o);
+    });
+  }
+  const list = el("mirror-players-list");
+  if(list) list.innerHTML = mirrorPlayersHTML();
+  mirrorVillainTip();
+}
+
+async function mirrorPlayersRefresh(){
+  if(mirrorPlayersLoaded){ mirrorPlayersRender(); return; }
+  mirrorPlayersLoaded = true;
+  try{
+    if(!rvHands.length){
+      const r = await fetch(GTO_URL + "/api/hh_files").then(x => x.json());
+      try{ rvNotes = await (await fetch(GTO_URL + "/api/player_notes")).json(); }catch(e){}
+      r.files.forEach(f => rvLoadText(f.text, true));   // quiet — review UI baar-baar render nahi karna
+    } else {
+      try{ rvNotes = await (await fetch(GTO_URL + "/api/player_notes")).json(); }catch(e){}
+    }
+    await rvSyncExploits();
+    mirrorPlayersRender();
+  }catch(e){
+    mirrorPlayersLoaded = false;    // agla attempt dobara ho sake
+  }
+}
+
+function mirrorRecommend(){
+  const sel = el("mirror-spot");
+  const sp = SPOTS.find(s => s.id === sel.value) || SPOTS[0];
+  const box = el("mirror-reco");
+  if(!sp){ return; }
+
+  const actsBox = el("mirror-actions");
+  actsBox.innerHTML = "";
+  sp.acts.forEach(a => {
+    const b = document.createElement("button");
+    b.className = "act " + a.cls;
+    b.innerHTML = '<span class="big">' + a.big + '</span><span class="small">' + (a.sub || "&nbsp;") + '</span>';
+    b.dataset.key = a.key;
+    actsBox.appendChild(b);
+  });
+
+  const code = mirrorManualCode();
+  if(!code){ box.innerHTML = '<div class="big">Cards select karo ya Detect dabao</div>'; return; }
+
+  const mix = mixActions(sp, code);
+  let rec, freqs, randomized = false;
+  if(mix){
+    freqs = mix;
+  } else {
+    freqs = {[correctFor(sp, code)]: 1};
+  }
+  if(mirrorRandomize && Object.keys(freqs).length > 1){
+    const rkey = sp.id + "|" + code;
+    if(!(rkey in mirrorRnd)) mirrorRnd[rkey] = pickWeighted(freqs);
+    rec = mirrorRnd[rkey];
+    randomized = true;
+  } else {
+    rec = Object.entries(freqs).sort((a, b) => b[1] - a[1])[0][0];
+  }
+
+  [...actsBox.children].forEach(b => {
+    if(b.dataset.key === rec) b.classList.add("best");
+  });
+
+  const nameOf = a => {
+    const f = sp.acts.find(x => x.key === a);
+    return f ? (f.big + (f.sub ? " " + f.sub : "")) : a;
+  };
+
+  let mixHTML = "";
+  const entries = Object.entries(freqs).sort((a, b) => b[1] - a[1]);
+  if(Object.keys(freqs).length > 1){
+    mixHTML = '<div class="mixrow">' + entries.map(([k, f]) =>
+      '<div class="row"><span class="nm">' + nameOf(k) + '</span>'
+      + '<span class="track"><span class="fill" style="width:' + Math.round(f * 100) + '%;background:' + (k === rec ? "var(--good)" : "var(--text)") + '"></span></span>'
+      + '<span class="pc">' + Math.round(f * 100) + '%</span></div>').join("") + '</div>';
+  }
+
+  const border = sp._border.has(code);
+  const borderNote = (border && rec === "fold")
+    ? '<div class="sub">Borderline &mdash; ' + (sp.borderAction === "call" ? "Call" : "Raise") + ' sirf loose opponents ke khilaf.</div>'
+    : "";
+
+  box.innerHTML = '<div class="big" style="color:var(--good)">&rarr; ' + nameOf(rec)
+    + (randomized ? ' <span style="opacity:.55;font-size:12px">&#127922; random</span>' : '') + '</div>'
+    + '<div class="sub">' + code + ' &middot; ' + sp.title + '</div>'
+    + borderNote + mixHTML
+    + mirrorVillainTipHTML(sp.mode);
+}
+
+/* ============================================================
+   9d. HAND REVIEW — session ke baad PokerCraft hand history upload karo,
+   har preflop decision ko ranges se check karo. Sirf khatam hue hands
+   (file se) padhta hai — live table se kuch nahi.
+   ============================================================ */
+let rvHands = [], rvOnlyMistakes = false, rvOpen = null;
+
+function rvCard(c){
+  const sym = {s:"&spades;", h:"&hearts;", d:"&diams;", c:"&clubs;"}[c[1]] || "";
+  return '<span class="rv-card s-' + c[1] + '">' + c[0] + sym + '</span>';
+}
+
+function rvSplit(text){
+  return text.split(/(?=^Poker Hand #)/m).filter(t => t.startsWith("Poker Hand #"));
+}
+
+// Seats se positions: SB/BB posts se, baaki ko button se peeche gino (kam players = UTG/MP pehle hat-te hain)
+function rvPositions(seats, btnSeat, sbName, bbName){
+  const s = seats.slice().sort((a, b) => a.seat - b.seat);
+  let bi = s.findIndex(x => x.seat === btnSeat);
+  if(bi < 0) bi = Math.max(0, s.findIndex(x => x.seat > btnSeat));      // dead button
+  const names = s.slice(bi).concat(s.slice(0, bi)).map(x => x.name);
+  const pos = {};
+  if(names[0] !== sbName) pos[names[0]] = "BTN";
+  if(sbName) pos[sbName] = "SB";
+  if(bbName) pos[bbName] = "BB";
+  const bbIdx = names.indexOf(bbName), rest = [];
+  if(bbIdx >= 0){
+    for(let k = 1; k < names.length; k++){
+      const nm = names[(bbIdx + k) % names.length];
+      if(nm === names[0]) break;
+      rest.push(nm);
+    }
+  }
+  if(rest.length) ["UTG","MP","CO"].slice(-rest.length).forEach((p, i) => { pos[rest[i]] = p; });
+  return pos;
+}
+
+function rvParseHand(txt){
+  const lines = txt.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  const head = lines[0].match(/^Poker Hand #(\S+): Hold'em No Limit \([^\d]*([\d.]+)\/[^\d]*([\d.]+)\) - (.+)$/);
+  if(!head) return null;                                  // PLO / dusre games skip
+  const id = head[1], bb = +head[3], date = head[4];
+  const btnSeat = +((lines[1] || "").match(/Seat #(\d+) is the button/) || [])[1];
+  const seats = [];
+  let hero = null, heroCards = null, sbName = null, bbName = null;
+  lines.forEach(l => {
+    let m = l.match(/^Seat (\d+): (.+?) \([^\d]*([\d.]+) in chips\)/);
+    if(m) seats.push({seat: +m[1], name: m[2], stack: +m[3] / bb});
+    m = l.match(/^Dealt to (.+?) \[(\S\S) (\S\S)\]$/);
+    if(m){ hero = m[1]; heroCards = [m[2], m[3]]; }
+    m = l.match(/^(.+?): posts small blind/); if(m) sbName = m[1];
+    m = l.match(/^(.+?): posts big blind/);   if(m) bbName = m[1];
+  });
+  if(!hero || !heroCards) return null;
+  const pos = rvPositions(seats, btnSeat, sbName, bbName);
+
+  const acts = [], board = [], shown = {}, invested = {}, won = {};
+  let street = "pre", streetPut = {};
+  const potNow = () => Object.values(invested).reduce((a, b) => a + b, 0);
+  const put = (nm, amt) => {
+    invested[nm] = (invested[nm] || 0) + amt;
+    streetPut[nm] = (streetPut[nm] || 0) + amt;
+  };
+  for(const l of lines){
+    let m;
+    if((m = l.match(/^\*\*\* (FLOP|TURN|RIVER) \*\*\* (.*)$/))){
+      street = m[1].toLowerCase(); streetPut = {};
+      board.length = 0; board.push(...(m[2].match(/\b[2-9TJQKA][shdc]\b/g) || []));
+      continue;
+    }
+    if(/^\*\*\* (SHOWDOWN|SUMMARY) \*\*\*/.test(l)) street = "done";
+    if((m = l.match(/^(.+?): posts (?:small|big) blind [^\d]*([\d.]+)/))){ put(m[1], +m[2] / bb); continue; }
+    if((m = l.match(/^Uncalled bet \([^\d]*([\d.]+)\) returned to (.+)$/))){ put(m[2], -m[1] / bb); continue; }
+    if((m = l.match(/^(.+?): shows \[(.+?)\]/))){ shown[m[1]] = m[2].split(" "); continue; }
+    if((m = l.match(/^(.+?) collected [^\d]*([\d.]+) from pot/))){ won[m[1]] = (won[m[1]] || 0) + m[2] / bb; continue; }
+    if(street === "done") continue;
+    m = l.match(/^(.+?): (folds|checks|calls|bets|raises)(?: [^\d]*([\d.]+))?(?: to [^\d]*([\d.]+))?/);
+    if(!m) continue;
+    const nm = m[1], verb = m[2];
+    const maxPut = Math.max(0, ...Object.values(streetPut));
+    const a = {street, name: nm, pos: pos[nm] || "?", verb, allin: /all-in/.test(l),
+               potBefore: potNow(), toCall: Math.max(0, maxPut - (streetPut[nm] || 0))};
+    if(verb === "calls" || verb === "bets"){ a.amt = +m[3] / bb; put(nm, a.amt); }
+    else if(verb === "raises"){ a.to = +m[4] / bb; a.amt = a.to; put(nm, a.to - (streetPut[nm] || 0)); }
+    acts.push(a);
+  }
+  const net = (won[hero] || 0) - (invested[hero] || 0);
+  return {id, date, bb, hero, heroCards, heroPos: pos[hero] || "?", pos, seats, acts,
+          board: board.slice(), shown, net, decisions: []};
+}
+
+const rvSpotExists = id => SPOTS.some(s => s.id === id);
+
+// Preflop decision ke waqt ka exact sequence -> spot (raises ka order file me pata hai, sizes pe andaza nahi)
+function rvSpotFor(hand, raises, callers, limpers){
+  const hp = hand.heroPos, n = raises.length, me = hand.hero;
+  let mode, cands = [], text;
+  const sz = r => (r.to % 1 ? r.to.toFixed(1) : r.to.toFixed(0)) + "bb";
+  if(limpers.length) return {why: "Limp pot — iske ranges nahi hain"};
+  if(n === 0){
+    if(hp === "BB") return {why: "BB option (sab ne call/fold kiya)"};
+    mode = "open"; cands = ["rfi_" + hp]; text = "Sab fold — aapka open";
+  } else if(n === 1){
+    const o = raises[0].pos;
+    text = o + " open " + sz(raises[0]) + (callers.length ? " · " + callers.map(c => c.pos).join(", ") + " call" : "");
+    mode = callers.length ? "squeeze" : hp === "BB" ? "bbdef" : "3bet";
+    if(callers.length) cands.push("sq_" + hp + "_" + o + "_" + callers[0].pos);
+    cands.push(hp === "BB" ? "bb_" + o : "3b_" + hp + "_" + o);
+  } else if(n === 2){
+    const t = raises[1].pos;
+    text = raises[0].pos + " open " + sz(raises[0]) + " · " + t + " 3-bet " + sz(raises[1]);
+    if(raises[0].name === me){
+      mode = "4bet";
+      cands = ["4b_" + hp + "_" + t, "4b_" + hp + "_" + (t === "SB" || t === "BB" ? "BB" : "BTN")];
+    } else if(!callers.some(c => c.name === me)){
+      mode = "cold4"; cands = ["c4_" + hp];
+    } else return {text, why: "Open call karne ke baad 3-bet — is line ke ranges nahi hain"};
+  } else if(n === 3 && raises[1].name === me){
+    mode = "5bet";
+    text = "Aapka 3-bet " + sz(raises[1]) + " · " + raises[2].pos + " 4-bet " + sz(raises[2]);
+    cands = ["5b_" + hp + "_" + raises[2].pos];
+  } else {
+    return {why: n + " raises ke baad — 5-bet+ pot ke ranges nahi hain"};
+  }
+  let id = cands.find(rvSpotExists), approx = id !== cands[0];
+  if(!id){
+    const s = SPOTS.find(s => s.mode === mode && s.hero === hp);
+    if(s){ id = s.id; approx = true; }
+  }
+  // spot ka opener/3-bettor table se alag ho (jaise c4_BB sirf BTN vs SB hai) to bata do
+  const sp = id && SPOTS.find(s => s.id === id), o = raises[0] && raises[0].pos;
+  if(sp && ((sp.opener && o && sp.opener !== o && mode !== "4bet") || (mode === "cold4" && raises[1] && sp.title.indexOf(raises[1].pos + " 3-bet") < 0))) approx = true;
+  return id ? {id, text, approx} : {text, why: "Is matchup ka spot data mein nahi hai"};
+}
+
+function rvJudge(sp, code, act){
+  const freqs = mixActions(sp, code) || {[correctFor(sp, code)]: 1};
+  const f = freqs[act] || 0;
+  const best = Object.entries(freqs).sort((a, b) => b[1] - a[1])[0][0];
+  return {freqs, best, f, verdict: f >= 0.5 ? "good" : f >= 0.15 ? "mixed" : "bad"};
+}
+
+function rvReviewPreflop(hand){
+  const code = mirrorCardsToCode(pfParseCard(hand.heroCards[0]), pfParseCard(hand.heroCards[1]));
+  hand.code = code;
+  const raises = [], callers = [], limpers = [];
+  for(const a of hand.acts){
+    if(a.street !== "pre") break;
+    if(a.name === hand.hero && a.verb !== "checks"){
+      const act = a.verb === "folds" ? "fold" : a.verb === "calls" ? "call" : "raise";
+      const spot = rvSpotFor(hand, raises.slice(), callers.slice(), limpers.slice());
+      const d = Object.assign({act, amt: a.to || a.amt, allin: a.allin}, spot);
+      if(spot.id){
+        const sp = SPOTS.find(s => s.id === spot.id);
+        d.title = sp.title;
+        Object.assign(d, rvJudge(sp, code, act));
+        if(!sp.acts.some(x => x.key === act)) d.verdict = "bad";   // jaise 3-bet-or-fold spot me call
+      }
+      hand.decisions.push(d);
+    }
+    if(a.verb === "raises" || a.verb === "bets"){ raises.push(a); callers.length = 0; }
+    else if(a.verb === "calls"){ (raises.length ? callers : limpers).push(a); }
+  }
+  const judged = hand.decisions.filter(d => d.verdict);
+  hand.worst = judged.some(d => d.verdict === "bad") ? "bad"
+             : judged.some(d => d.verdict === "mixed") ? "mixed"
+             : judged.length ? "good" : "none";
+  return hand;
+}
+
+
+/* --- iPoker (Red Star) XML -> GG jaisa text, taaki wahi parser + solver review chale ---
+   Files: %LOCALAPPDATA%\Red Star Poker\data\<nick>\History\Data\Tables\*.xml
+   Action types: 0 fold, 1 SB, 2 BB, 3 call, 4 check, 5 bet, 7 all-in (jitna daala), 23 raise (street total "to") */
+function rvIpCard(c){
+  const r = c.slice(1);
+  return (r === "10" ? "T" : r) + c[0].toLowerCase();
+}
+
+function rvIpokerToGG(xml){
+  const doc = new DOMParser().parseFromString(xml, "text/xml");
+  const gen = doc.querySelector("session > general");
+  const games = [...doc.querySelectorAll("game")];
+  const txt = (el, sel) => { const n = el && el.querySelector(sel); return n ? n.textContent : ""; };
+  if(!/Holdem NL/i.test(txt(gen, "gametype"))) return {hands: [], skipped: games.length};
+  const num = s => parseFloat(String(s || "").replace(/[^\d.]/g, "")) || 0;
+  const eur = x => "€" + (+x.toFixed(2));
+  const hero = txt(gen, "nickname"), table = txt(gen, "tablename");
+  const blinds = "€" + num(txt(gen, "smallblind")) + "/€" + num(txt(gen, "bigblind"));
+  const hands = [];
+  games.forEach(g => {
+    const players = [...g.querySelectorAll("general players player")];
+    const pocket = [...g.querySelectorAll("cards[type=Pocket]")];
+    const heroCards = pocket.find(c => c.getAttribute("player") === hero);
+    if(!heroCards || /X/.test(heroCards.textContent)) return;            // hero is hand me nahi tha
+    const dealer = players.find(p => p.getAttribute("dealer") === "1");
+    const L = [
+      "Poker Hand #IP" + g.getAttribute("gamecode") + ": Hold'em No Limit (" + blinds + ") - " + txt(g, "general startdate").replace(/-/g, "/"),
+      "Table '" + table + "' 6-max Seat #" + (dealer ? dealer.getAttribute("seat") : 0) + " is the button"
+    ];
+    players.forEach(p => L.push("Seat " + p.getAttribute("seat") + ": " + p.getAttribute("name") + " (" + eur(num(p.getAttribute("chips"))) + " in chips)"));
+    const folded = new Set(), board = [];
+    let put = {}, maxPut = 0, lastAgg = null;
+    [...g.querySelectorAll("round")].forEach(r => {
+      const no = +r.getAttribute("no");
+      if(no === 1){
+        L.push("*** HOLE CARDS ***");
+        L.push("Dealt to " + hero + " [" + heroCards.textContent.trim().split(/\s+/).map(rvIpCard).join(" ") + "]");
+      }
+      const bc = r.querySelector("cards[type=Flop], cards[type=Turn], cards[type=River]");
+      if(bc){                                          // XML me board actions ke baad aata hai — marker pehle likho
+        const prev = board.slice();
+        board.push(...bc.textContent.trim().split(/\s+/).map(rvIpCard));
+        const t = bc.getAttribute("type").toUpperCase();
+        L.push("*** " + t + " *** " + (t === "FLOP" ? "[" + board.join(" ") + "]" : "[" + prev.join(" ") + "] [" + board[board.length - 1] + "]"));
+        put = {}; maxPut = 0; lastAgg = null;
+      }
+      r.querySelectorAll("action").forEach(a => {
+        const nm = a.getAttribute("player"), sum = num(a.getAttribute("sum")), type = a.getAttribute("type");
+        const mine = put[nm] || 0;
+        if(type === "1" || type === "2"){
+          L.push(nm + ": posts " + (type === "1" ? "small" : "big") + " blind " + eur(sum));
+          put[nm] = mine + sum; maxPut = Math.max(maxPut, put[nm]);
+        } else if(type === "0"){ L.push(nm + ": folds"); folded.add(nm); }
+        else if(type === "4"){ L.push(nm + ": checks"); }
+        else if(type === "3"){ L.push(nm + ": calls " + eur(sum)); put[nm] = mine + sum; }
+        else if(type === "5"){ L.push(nm + ": bets " + eur(sum)); put[nm] = mine + sum; maxPut = put[nm]; lastAgg = nm; }
+        else if(type === "23"){ L.push(nm + ": raises " + eur(sum - maxPut) + " to " + eur(sum)); put[nm] = sum; maxPut = sum; lastAgg = nm; }
+        else if(type === "7"){
+          const tot = mine + sum;
+          if(maxPut === 0){ L.push(nm + ": bets " + eur(sum) + " and is all-in"); maxPut = tot; lastAgg = nm; }
+          else if(tot > maxPut){ L.push(nm + ": raises " + eur(tot - maxPut) + " to " + eur(tot) + " and is all-in"); maxPut = tot; lastAgg = nm; }
+          else L.push(nm + ": calls " + eur(sum) + " and is all-in");
+          put[nm] = tot;
+        }
+      });
+    });
+    if(lastAgg){                                        // win me uncalled bet shamil nahi hota
+      const others = Math.max(0, ...Object.entries(put).filter(([n]) => n !== lastAgg).map(([, v]) => v));
+      if(put[lastAgg] > others + 1e-9) L.push("Uncalled bet (" + eur(put[lastAgg] - others) + ") returned to " + lastAgg);
+    }
+    L.push("*** SHOWDOWN ***");
+    pocket.forEach(c => {
+      const nm = c.getAttribute("player");
+      if(nm !== hero && !folded.has(nm) && !/X/.test(c.textContent))
+        L.push(nm + ": shows [" + c.textContent.trim().split(/\s+/).map(rvIpCard).join(" ") + "]");
+    });
+    players.forEach(p => { const w = num(p.getAttribute("win")); if(w > 0) L.push(p.getAttribute("name") + " collected " + eur(w) + " from pot"); });
+    L.push("*** SUMMARY ***");
+    hands.push(L.join("\n"));
+  });
+  return {hands, skipped: 0};
+}
+
+function rvLoadText(text, quiet){
+  const seen = new Set(rvHands.map(h => h.id));
+  let added = 0, skipped = 0, chunks;
+  if(/<session[\s>]/.test(text)){                       // Red Star / iPoker XML
+    const r = rvIpokerToGG(text);
+    chunks = r.hands; skipped += r.skipped;
+  } else chunks = rvSplit(text);
+  chunks.forEach(t => {
+    const h = rvParseHand(t);
+    if(!h){ skipped++; return; }
+    if(seen.has(h.id)) return;
+    seen.add(h.id);
+    h.raw = t;                                    // solver review ke liye poora text
+    rvHands.push(rvReviewPreflop(h));
+    added++;
+  });
+  rvHands.sort((a, b) => b.date.localeCompare(a.date));
+  if(!quiet){
+    el("rv-status").textContent = (rvHands.length) + " NLHE hands" + (added ? " (" + added + " naye)" : "") + (skipped ? " · " + skipped + " PLO/dusre games skip" : "");
+    rvRender();
+  }
+}
+
+const RV_ACT_NAME = {fold: "Fold", call: "Call", raise: "Raise"};
+const RV_VERDICT = {good: "Sahi", mixed: "Mixed — chalega", bad: "Galti"};
+
+function rvDecisionHTML(d){
+  let h = '<div class="rv-dec rv-' + (d.verdict || "none") + '">';
+  h += '<div class="rv-dec-head"><b>' + (d.text || "") + '</b></div>';
+  h += '<div>Aapne: <b>' + RV_ACT_NAME[d.act] + (d.act === "raise" && d.amt ? " " + d.amt.toFixed(1) + "bb" : "") + (d.allin ? " (all-in)" : "") + '</b></div>';
+  if(d.why){
+    h += '<div class="rv-muted">' + d.why + '</div>';
+  } else {
+    const fr = Object.entries(d.freqs).sort((a, b) => b[1] - a[1])
+      .map(([k, f]) => RV_ACT_NAME[k] + " " + Math.round(f * 100) + "%").join(" · ");
+    h += '<div>Karna chahiye tha: <b>' + RV_ACT_NAME[d.best] + '</b> <span class="rv-muted">(' + fr + ')</span></div>';
+    h += '<div class="rv-verdict">' + RV_VERDICT[d.verdict] + '</div>';
+    h += '<div class="rv-muted">Spot: ' + d.title + (d.approx ? " — exact matchup ka data nahi, sabse kareebi spot" : "") + '</div>';
+  }
+  return h + '</div>';
+}
+
+function rvStreetsHTML(hand){
+  const names = {pre: "Preflop", flop: "Flop", turn: "Turn", river: "River"};
+  const upto = {flop: 3, turn: 4, river: 5};
+  let h = "";
+  ["pre", "flop", "turn", "river"].forEach(st => {
+    const acts = hand.acts.filter(a => a.street === st);
+    if(!acts.length) return;
+    const cards = st === "pre" ? "" : " " + hand.board.slice(0, upto[st]).map(rvCard).join("");
+    h += '<div class="rv-street"><span class="rv-st">' + names[st] + cards + '</span> ';
+    h += acts.map(a => {
+      const who = a.name === hand.hero ? "<b>Aap (" + a.pos + ")</b>" : a.pos;
+      const v = {folds: "fold", checks: "check", calls: "call " + (a.amt || 0).toFixed(1),
+                 bets: "bet " + (a.amt || 0).toFixed(1), raises: "raise to " + (a.to || 0).toFixed(1)}[a.verb];
+      return who + " " + v + (a.allin ? " all-in" : "");
+    }).join(" · ") + '</div>';
+  });
+  const shownN = ["flop", "turn", "river"].filter(st => hand.acts.some(a => a.street === st)).map(st => upto[st]).pop() || 0;
+  if(hand.board.length > shownN)                                 // all-in ke baad khule cards
+    h += '<div class="rv-street"><span class="rv-st">Runout</span> ' + hand.board.map(rvCard).join("") + '</div>';
+  const sd = Object.entries(hand.shown).filter(([n]) => n !== hand.hero);
+  if(sd.length) h += '<div class="rv-street"><span class="rv-st">Showdown</span> ' +
+    sd.map(([n, c]) => (hand.pos[n] || n) + " " + c.map(rvCard).join("")).join(" · ") + '</div>';
+  return h;
+}
+
+function rvRender(){
+  const list = el("rv-list");
+  const hands = rvOnlyMistakes ? rvHands.filter(h => h.worst === "bad") : rvHands;
+  const dec = rvHands.flatMap(h => h.decisions).filter(d => d.verdict);
+  const bad = dec.filter(d => d.verdict === "bad").length;
+  const net = rvHands.reduce((a, h) => a + h.net, 0);
+  el("rv-summary").innerHTML = rvHands.length
+    ? "<b>" + rvHands.length + "</b> hands · <b>" + dec.length + "</b> preflop decisions · <b class='rv-badtxt'>" + bad + "</b> galtiyan · Net <b>" + net.toFixed(1) + "bb</b>"
+    : "Abhi koi hand nahi — upar se hand history file chuno.";
+  list.innerHTML = "";
+  hands.slice(0, 400).forEach(hand => {
+    const row = document.createElement("div");
+    row.className = "rv-hand rv-" + hand.worst + (rvOpen === hand.id ? " open" : "");
+    const tag = hand.worst === "none" ? "" : '<span class="rv-tag">' + RV_VERDICT[hand.worst] + '</span>';
+    row.innerHTML = '<button class="rv-row">' +
+      '<span class="rv-pos">' + hand.heroPos + '</span>' +
+      '<span class="rv-cards">' + hand.heroCards.map(rvCard).join("") + '</span>' +
+      '<span class="rv-board">' + hand.board.map(rvCard).join("") + '</span>' +
+      tag + '<span class="rv-net ' + (hand.net >= 0 ? "up" : "down") + '">' + (hand.net >= 0 ? "+" : "") + hand.net.toFixed(1) + 'bb</span>' +
+      '</button>';
+    if(rvOpen === hand.id){
+      const det = document.createElement("div");
+      det.className = "rv-detail";
+      det.innerHTML = '<div class="rv-muted">' + hand.date + ' · #' + hand.id + '</div>' +
+        (hand.decisions.map(rvDecisionHTML).join("") || '<div class="rv-muted">Preflop me aapka koi decision nahi (BB walk).</div>') +
+        '<h4>Poora hand</h4>' + rvStreetsHTML(hand);
+      if(hand.acts.some(a => a.street === "flop" && a.name === hand.hero)){
+        const post = document.createElement("div");
+        post.className = "rv-post";
+        if(hand.post){
+          post.innerHTML = '<h4>Postflop solver</h4>' + rvPostHTML(hand.post) +
+            (hand.post.notes && hand.post.notes.length ? '<div class="rv-muted">' + hand.post.notes.join(" · ") + '</div>' : "") +
+            '<div class="rv-muted">Ranges app ke preflop spots se; villain ko GTO khelta maana gaya.</div>';
+        } else {
+          post.innerHTML = '<h4>Postflop solver</h4><button class="ghost">&#129504; Solver se flop/turn/river review karo</button>';
+          post.querySelector("button").addEventListener("click", () => rvSolve(hand, post));
+        }
+        det.appendChild(post);
+      }
+      row.appendChild(det);
+    }
+    row.querySelector(".rv-row").addEventListener("click", () => {
+      rvOpen = rvOpen === hand.id ? null : hand.id;
+      rvRender();
+    });
+    list.appendChild(row);
+  });
+}
+
+
+/* --- Postflop: solver review (GTO server /api/review, sirf poora hand) --- */
+const rvSpot = id => SPOTS.find(s => s.id === id);
+const rvSetStr = set => set && set.size ? [...set].join(",") : null;
+
+// Preflop line se dono postflop players ki ranges (app ke spots se). {ranges, note} ya {why}
+function rvRangesFor(hand){
+  const pre = hand.acts.filter(a => a.street === "pre");
+  const post = hand.acts.filter(a => a.street !== "pre");
+  const players = [...new Set(post.map(a => a.name))];
+  if(players.length !== 2 || !players.includes(hand.hero)) return {why: "Solver sirf heads-up pot review karta hai"};
+  const raises = pre.filter(a => a.verb === "raises");
+  const pos = n => hand.pos[n];
+  const pick = (ids, set) => { for(const id of ids){ const sp = rvSpot(id); const s = sp && rvSetStr(sp._sets[set]); if(s) return s; } return null; };
+  let notes = [];
+  if(raises.length === 0) return {why: "Limped pot — iske ranges nahi hain"};
+  if(raises.length === 1){
+    const O = pos(raises[0].name), C = pos(players.find(n => n !== raises[0].name));
+    const oR = pick(["rfi_" + O], "raise");
+    let cR = pick([C === "BB" ? "bb_" + O : "3b_" + C + "_" + O], "call");
+    if(!cR){ cR = pick(["bb_" + O], "call"); if(cR) notes.push(C + " ki flat range data mein nahi — BB defend range se andaza"); }
+    if(!oR || !cR) return {why: "Is line ki preflop ranges data mein nahi hain"};
+    return {ranges: {[O]: oR, [C]: cR}, notes};
+  }
+  if(raises.length === 2){
+    const O = pos(raises[0].name), T = pos(raises[1].name);
+    if(!players.includes(raises[0].name) || !players.includes(raises[1].name)) return {why: "3-bet cold-call pot — iske ranges nahi hain"};
+    const tR = pick([T === "BB" ? "bb_" + O : "3b_" + T + "_" + O], "raise");
+    const oR = pick(["4b_" + O + "_" + T, "4b_" + O + "_" + (T === "SB" || T === "BB" ? "BB" : "BTN")], "call");
+    if(!tR || !oR) return {why: "Is 3-bet line ki ranges data mein nahi hain"};
+    return {ranges: {[O]: oR, [T]: tR}, notes};
+  }
+  return {why: "4-bet+ pot — solver review abhi 3-bet pot tak hai"};
+}
+
+const RV_KIND = {value: "Value", medium: "Medium", draw: "Draw", bluff: "Bluff"};
+
+function rvPostHTML(res){
+  if(res.error) return '<div class="rv-muted">' + res.error + '</div>';
+  let h = "";
+  res.streets.forEach(st => {
+    h += '<div class="rv-street"><span class="rv-st">' + st.street[0].toUpperCase() + st.street.slice(1) + '</span> ' +
+         st.board.map(rvCard).join("") + (st.pot ? ' <span class="rv-muted">pot ' + st.pot + 'bb</span>' : "") + '</div>';
+    if(st.error){ h += '<div class="rv-muted">' + st.error + '</div>'; return; }
+    st.steps.forEach(s => {
+      if(s.who === "hero"){
+        h += '<div class="rv-dec rv-' + (s.verdict || "none") + '"><div>Aapne: <b>' + (s.did || "?") + '</b></div>';
+        if(s.mix){
+          const fr = Object.entries(s.mix).filter(([, f]) => f > 0).sort((a, b) => b[1] - a[1]).map(([k, f]) => k + " " + f + "%").join(" · ");
+          h += '<div>Solver: <b>' + s.best + '</b> <span class="rv-muted">(' + fr + ')</span></div>';
+          h += '<div class="rv-verdict">' + RV_VERDICT[s.verdict] + '</div>';
+        }
+        if(s.note) h += '<div class="rv-muted">' + s.note + '</div>';
+        h += '</div>';
+      } else if(s.range){
+        const p = s.range.pct;
+        const split = ["value", "medium", "draw", "bluff"].filter(k => p[k]).map(k => RV_KIND[k] + " " + p[k] + "%").join(" · ");
+        h += '<div class="rv-dec rv-none"><div>Villain: <b>' + s.did + '</b></div>' +
+             '<div>Uski range: <b>' + split + '</b></div>' +
+             (s.needEq ? '<div class="rv-muted">Call ke liye ~' + s.needEq + '% equity chahiye</div>' : "") +
+             '<div class="rv-muted">Top hands: ' + s.range.top.map(t => t.hand + " (" + RV_KIND[t.kind].toLowerCase() + ")").join(", ") + '</div></div>';
+      } else {
+        h += '<div class="rv-street rv-muted">Villain: ' + (s.did || s.note || "") + '</div>';
+      }
+    });
+  });
+  return h;
+}
+
+async function rvSolve(hand, box){
+  const rg = rvRangesFor(hand);
+  if(rg.why){ box.innerHTML = '<div class="rv-muted">' + rg.why + '</div>'; return; }
+  box.innerHTML = '<div class="rv-muted">Solver chal raha hai&hellip; har street ~20 sec se 3 min</div>';
+  try{
+    const r = await fetch(GTO_URL + "/api/review", {method: "POST", headers: {"Content-Type": "application/json"},
+                                                   body: JSON.stringify({hh: hand.raw, ranges: rg.ranges})});
+    hand.post = await r.json();
+    hand.post.notes = (hand.post.notes || []).concat(rg.notes);
+  }catch(e){
+    hand.post = {error: "GTO server se connect nahi hua — app/exe se server chalu hai?"};
+  }
+  if(rvOpen === hand.id) rvRender();
+}
+
+
+/* --- Players: session ke baad har opponent ka profile (stats + category + auto notes) --- */
+const RV_RANKS = "23456789TJQKA";
+
+// 7 cards (ya kam) ka hand category: showdown pe villain ne kya dikhaya
+function rvMadeHand(hole, board){
+  const cards = hole.concat(board);
+  const rs = cards.map(c => RV_RANKS.indexOf(c[0])), hr = hole.map(c => RV_RANKS.indexOf(c[0]));
+  const br = board.map(c => RV_RANKS.indexOf(c[0]));
+  const cnt = {}; rs.forEach(r => cnt[r] = (cnt[r] || 0) + 1);
+  const suits = {};
+  cards.forEach(c => (suits[c[1]] = suits[c[1]] || []).push(RV_RANKS.indexOf(c[0])));
+  const straightIn = list => {
+    const u = new Set(list); if(u.has(12)) u.add(-1);
+    for(let hi = 12; hi >= 3; hi--){ let ok = true; for(let k = 0; k < 5; k++) if(!u.has(hi - k)) { ok = false; break; } if(ok) return true; }
+    return false;
+  };
+  const flushSuit = Object.keys(suits).find(s => suits[s].length >= 5);
+  const holeUsed = () => hole.some(c => c[1] === flushSuit);
+  if(flushSuit && straightIn(suits[flushSuit]) && holeUsed()) return "straight flush";
+  const groups = Object.entries(cnt).map(([r, n]) => [+r, n]).sort((a, b) => b[1] - a[1] || b[0] - a[0]);
+  const uses = r => hr.includes(r);
+  if(groups[0][1] === 4 && uses(groups[0][0])) return "quads";
+  if(groups[0][1] === 3 && groups[1] && groups[1][1] >= 2 && (uses(groups[0][0]) || uses(groups[1][0]))) return "full house";
+  if(flushSuit && holeUsed()) return "flush";
+  if(straightIn(rs) && !straightIn(br)) return "straight";
+  if(groups[0][1] === 3 && uses(groups[0][0])) return hr[0] === hr[1] ? "set" : "trips";
+  const pairs = groups.filter(([r, n]) => n === 2 && uses(r)).map(([r]) => r);
+  if(pairs.length >= 2) return "two pair";                // dono pair me hole cards (board pair + mera pair = sirf pair)
+  if(pairs.length === 1){
+    const p = pairs[0], top = Math.max(...br);
+    if(hr[0] === hr[1]) return p > top ? "overpair" : "underpair";
+    return p === top ? "top pair" : "weak pair";
+  }
+  return "high card";
+}
+
+function rvPlayerStats(hands){
+  const P = {};
+  const get = n => P[n] = P[n] || {name: n, hands: 0, vpip: 0, pfr: 0, tbOpp: 0, tb: 0, f3Opp: 0, f3: 0,
+    cbOpp: 0, cb: 0, flops: 0, sd: 0, sdWon: 0, bets: 0, raises: 0, calls: 0, net: 0, shows: [], fb: 0, preShows: []};
+  hands.forEach(hand => {
+    const names = hand.seats.map(s => s.name);
+    names.forEach(n => { if(n !== hand.hero) get(n).hands++; });
+    const pre = hand.acts.filter(a => a.street === "pre");
+    const seen = new Set(), raised = new Set();
+    let raises = 0, opener = null, threeBettor = null;
+    const lvl = {};                                   // player ka sabse bada preflop raise: 1 open, 2 3-bet, 3 4-bet, 4 5-bet
+    pre.forEach(a => {
+      if(a.name === hand.hero) { if(a.verb === "raises"){ raises++; if(raises === 1) opener = a.name; } return; }
+      const p = get(a.name);
+      if(raises === 1 && a.name !== opener){ p.tbOpp++; if(a.verb === "raises") p.tb++; }
+      if(raises === 2 && a.name === opener && threeBettor !== a.name){ p.f3Opp++; if(a.verb === "folds") p.f3++; if(a.verb === "raises") p.fb++; }
+      if((a.verb === "calls" || a.verb === "raises") && !seen.has(a.name)){ p.vpip++; seen.add(a.name); }
+      if(a.verb === "raises"){
+        if(!raised.has(a.name)){ p.pfr++; raised.add(a.name); }
+        raises++;
+        if(raises === 1) opener = a.name;
+        if(raises === 2) threeBettor = a.name;
+        lvl[a.name] = raises;
+      }
+    });
+    const lastPreRaiser = [...pre].reverse().find(a => a.verb === "raises");
+    const flopActs = hand.acts.filter(a => a.street === "flop");
+    const sawFlop = new Set(hand.acts.filter(a => a.street !== "pre").map(a => a.name));
+    sawFlop.forEach(n => { if(n !== hand.hero) get(n).flops++; });
+    if(lastPreRaiser && lastPreRaiser.name !== hand.hero && sawFlop.has(lastPreRaiser.name)){
+      const p = get(lastPreRaiser.name);
+      const firstBetBefore = flopActs.findIndex(a => a.verb === "bets");
+      const myFirst = flopActs.findIndex(a => a.name === lastPreRaiser.name);
+      if(myFirst >= 0 && (firstBetBefore < 0 || firstBetBefore >= myFirst)){
+        p.cbOpp++; if(flopActs[myFirst].verb === "bets") p.cb++;
+      }
+    }
+    hand.acts.filter(a => a.street !== "pre" && a.name !== hand.hero).forEach(a => {
+      const p = get(a.name);
+      if(a.verb === "bets") p.bets++; else if(a.verb === "raises") p.raises++; else if(a.verb === "calls") p.calls++;
+    });
+    Object.entries(hand.shown).forEach(([n, cards]) => {
+      if(n === hand.hero || cards.length !== 2) return;
+      const p = get(n);
+      p.sd++;
+      if(lvl[n]) p.preShows.push({level: Math.min(lvl[n], 4), code: mirrorCardsToCode(pfParseCard(cards[0]), pfParseCard(cards[1]))});
+      const mine = hand.acts.filter(a => a.name === n && a.street !== "pre");
+      const lastAgg = [...mine].reverse().find(a => a.verb === "bets" || a.verb === "raises");
+      const line = lastAgg ? lastAgg.street + " " + (lastAgg.verb === "bets" ? "bet" : "raise") : "sirf call/check";
+      p.shows.push({line, made: rvMadeHand(cards, hand.board), cards, board: hand.board.slice(), id: hand.id});
+    });
+  });
+  return Object.values(P).filter(p => p.hands > 0);
+}
+
+const rvPct = (a, b) => b ? Math.round(a / b * 100) : null;
+
+function rvProfile(p){
+  const vpip = rvPct(p.vpip, p.hands), pfr = rvPct(p.pfr, p.hands), tb = rvPct(p.tb, p.tbOpp);
+  const af = p.calls ? +((p.bets + p.raises) / p.calls).toFixed(1) : (p.bets + p.raises ? 9 : null);
+  const cb = rvPct(p.cb, p.cbOpp), f3 = rvPct(p.f3, p.f3Opp), wtsd = rvPct(p.sd, p.flops);
+  let cat = "Kam data", catCls = "none";
+  if(p.hands >= 15){
+    if(vpip >= 40 && pfr < vpip * 0.45){ cat = "Fish (calling station)"; catCls = "bad"; }
+    else if(vpip >= 32 && pfr >= 22){ cat = "LAG / aggro"; catCls = "mixed"; }
+    else if(vpip <= 16){ cat = "Nit"; catCls = "none"; }
+    else if(vpip >= 30){ cat = "Loose passive"; catCls = "bad"; }
+    else if(pfr >= vpip * 0.7){ cat = "Reg (TAG)"; catCls = "good"; }
+    else { cat = "Semi-reg / passive"; catCls = "mixed"; }
+  }
+  const notes = [];
+  if(p.hands >= 15){
+    if(vpip >= 40) notes.push("Bahut hands khelta hai (VPIP " + vpip + "%) — thin value bet karo, bluff kam, isolate karo");
+    if(vpip <= 16) notes.push("Bahut tight (VPIP " + vpip + "%) — iske open/3-bet ko respect karo, blinds steal karo");
+    if(pfr !== null && vpip >= 25 && pfr < vpip * 0.4) notes.push("Limp/call zyada, raise kam — passive; iska raise = strong");
+    if(tb !== null && p.tbOpp >= 8 && tb <= 3) notes.push("3-bet bahut kam (" + tb + "%) — iska 3-bet mostly QQ+/AK");
+    if(tb !== null && p.tbOpp >= 8 && tb >= 11) notes.push("3-bet zyada (" + tb + "%) — light 3-bet karta hai, 4-bet bluff / call wide");
+    if(f3 !== null && p.f3Opp >= 5 && f3 >= 65) notes.push("3-bet pe fold " + f3 + "% — iske open ko light 3-bet karo");
+    if(cb !== null && p.cbOpp >= 5 && cb >= 75) notes.push("C-bet " + cb + "% — flop pe float / check-raise karo");
+    if(cb !== null && p.cbOpp >= 5 && cb <= 40) notes.push("C-bet sirf " + cb + "% — check kare to aksar weak, bet karo");
+    if(af !== null && af >= 3) notes.push("Postflop aggressive (AF " + af + ") — bluff catch zyada, bluff kam");
+    if(af !== null && p.calls >= 6 && af <= 1) notes.push("Postflop passive (AF " + af + ") — bet/raise kare to strong; calling station, value bet thick");
+    if(wtsd !== null && p.flops >= 8 && wtsd >= 35) notes.push("Showdown tak bahut jaata hai (WTSD " + wtsd + "%) — bluff mat karo, value max karo");
+  }
+  // showdown: kis line pe kya dikhaya (kitna set, kitna two pair...)
+  const byLine = {};
+  p.shows.forEach(s => { (byLine[s.line] = byLine[s.line] || {})[s.made] = ((byLine[s.line] || {})[s.made] || 0) + 1; });
+  // Exploit plan: situation -> kya karna hai (stats + showdown lines se)
+  const ex = [], n = (k, need) => k !== null && need;
+  if(p.hands >= 15){
+    if(n(f3, p.f3Opp >= 5) && f3 >= 60) ex.push(["Uska open", "Light 3-bet karo (A5s, K9s, 76s) — " + f3 + "% fold karta hai"]);
+    if(n(f3, p.f3Opp >= 5) && f3 <= 40) ex.push(["Uska open", "3-bet sirf value se (QQ+, AK) — " + (100 - f3) + "% continue karta hai, bluff 3-bet mat karo"]);
+    if(n(tb, p.tbOpp >= 8) && tb >= 11) ex.push(["Uska 3-bet", "Wide hai (" + tb + "%) — IP me call wider, A5s/A4s se 4-bet bluff"]);
+    if(n(tb, p.tbOpp >= 8) && tb <= 4) ex.push(["Uska 3-bet", "Bahut tight (" + tb + "%) — QQ+/AK ke alawa fold, JJ/AQ bhi mushkil"]);
+    if(vpip !== null && pfr !== null && vpip - pfr >= 15) ex.push(["Uska limp / call", "Iso-raise bada (4-5bb + 1bb per limper) value-heavy range se; postflop thin value"]);
+    if(vpip !== null && vpip <= 16) ex.push(["Blinds me wo", "Uske blinds pe steal zyada; uska raise/bet = strong, medium hands se fold"]);
+    if(n(cb, p.cbOpp >= 5) && cb >= 70) ex.push(["Uska flop c-bet", cb + "% c-bet — IP float karo, OOP check-raise draws/air se"]);
+    if(n(cb, p.cbOpp >= 5) && cb <= 40) ex.push(["Wo flop check kare", "Aksar give-up — bet karke le lo; uska c-bet = strong range"]);
+    if((wtsd !== null && p.flops >= 8 && wtsd >= 33) || (af !== null && p.calls >= 6 && af <= 1.2 && vpip >= 28))
+      ex.push(["Postflop", "Calling station — bluff band, 3 street thin value, bada sizing (75%+)"]);
+    if(af !== null && p.calls + p.bets + p.raises >= 10 && af >= 3.5)
+      ex.push(["Postflop", "Bahut aggressive (AF " + af + ") — medium hands se check-call, usko bluff karne do, river bluff-catch"]);
+  }
+  const STRONG = ["set", "trips", "two pair", "straight", "flush", "full house", "quads", "straight flush", "overpair", "top pair"];
+  Object.entries(byLine).forEach(([line, m]) => {
+    const tot = Object.values(m).reduce((a, b) => a + b, 0);
+    if(tot < 3 || line === "sirf call/check") return;     // 3+ showdowns pe hi line ka read
+    const strong = Object.entries(m).filter(([k]) => STRONG.includes(k)).reduce((a, [, v]) => a + v, 0);
+    if(strong / tot >= 0.75) ex.push(["Jab wo " + line + " kare", "Value heavy (" + strong + "/" + tot + " strong dikhaye) — marginal hands fold"]);
+    else if((tot - strong) / tot >= 0.4) ex.push(["Jab wo " + line + " kare", "Bluff bhi dikhaye (" + (tot - strong) + "/" + tot + ") — bluff-catch karo"]);
+  });
+  return {vpip, pfr, tb, af, cb, f3, wtsd, cat, catCls, notes, byLine, ex};
+}
+
+let rvNotes = {};                 // server pe saved: {name: {ai, hands, stats, category, updated, mine}}
+const RV_AUTO_MIN_HANDS = 30;     // isse kam hands pe AI note auto nahi banta
+const RV_AUTO_PER_LOAD = 5;       // ek load me itne players ka AI note auto update (API kharcha)
+
+// Note purana hai? — pehli baar, ya 25%+ aur 20+ naye hands aaye
+function rvNoteStale(p){
+  const n = rvNotes[p.name];
+  if(!n || !n.ai) return p.hands >= RV_AUTO_MIN_HANDS;
+  return p.hands >= n.hands * 1.25 && p.hands - n.hands >= 20;
+}
+
+function rvStatDelta(now, then){
+  if(!then) return "";
+  const names = {vpip: "VPIP", pfr: "PFR", threebet: "3B", af: "AF", cbet: "C-bet", fold_to_3bet: "F3B", wtsd: "WTSD"};
+  const parts = Object.keys(names).filter(k => now[k] !== null && then[k] !== null && then[k] !== undefined &&
+    Math.abs(now[k] - then[k]) >= (k === "af" ? 1 : 4)).map(k => names[k] + " " + then[k] + "&rarr;" + now[k]);
+  return parts.length ? '<div class="rv-muted">Pichle note se badla: ' + parts.join(" · ") + '</div>' : "";
+}
+
+function rvStatsOf(pr){
+  return {vpip: pr.vpip, pfr: pr.pfr, threebet: pr.tb, af: pr.af, cbet: pr.cb, fold_to_3bet: pr.f3, wtsd: pr.wtsd};
+}
+
+
+/* --- Street deep dive: har street pe uske bets ka value/bluff split (showdowns se) + mera action (maths se) --- */
+const RV_VALUE = ["straight flush", "quads", "full house", "flush", "straight", "set", "trips", "two pair", "overpair", "top pair"];
+
+function rvHasDraw(hole, board){
+  const cards = hole.concat(board), suits = {};
+  cards.forEach(c => suits[c[1]] = (suits[c[1]] || 0) + 1);
+  if(hole.some(c => suits[c[1]] === 4)) return true;                       // flush draw (hole card se)
+  const rs = new Set(cards.map(c => RV_RANKS.indexOf(c[0]))); if(rs.has(12)) rs.add(-1);
+  const hr = hole.map(c => RV_RANKS.indexOf(c[0]));
+  for(let lo = -1; lo <= 8; lo++){
+    let n = 0; for(let k = lo; k < lo + 5; k++) if(rs.has(k)) n++;
+    if(n === 4 && hr.some(r => r >= lo && r < lo + 5)) return true;         // OESD / gutshot
+  }
+  return false;
+}
+
+// value / medium / draw / bluff — us street ke board pe (river pe draw = bluff)
+function rvStrength(hole, board){
+  const m = rvMadeHand(hole, board);
+  if(RV_VALUE.includes(m)) return "value";
+  if(m === "weak pair" || m === "underpair") return "medium";
+  if(board.length < 5 && rvHasDraw(hole, board)) return "draw";
+  return "bluff";
+}
+
+function rvStreetDive(name){
+  const N = {flop: 3, turn: 4, river: 5};
+  const S = {};
+  ["flop", "turn", "river"].forEach(st => S[st] = {acts: 0, agg: 0, sizes: [], faced: 0, fold: 0, call: 0, raise: 0,
+                                                  sd: {value: 0, medium: 0, draw: 0, bluff: 0}, sdN: 0, examples: []});
+  rvHands.forEach(hand => {
+    const shown = hand.shown[name];
+    ["flop", "turn", "river"].forEach(st => {
+      const s = S[st];
+      const mine = hand.acts.filter(a => a.street === st && a.name === name);
+      if(!mine.length) return;
+      let aggHere = false;
+      mine.forEach(a => {
+        s.acts++;
+        if(a.toCall > 0){                                   // us pe bet tha
+          s.faced++;
+          if(a.verb === "folds") s.fold++; else if(a.verb === "calls") s.call++; else if(a.verb === "raises") s.raise++;
+        }
+        if(a.verb === "bets" || a.verb === "raises"){
+          s.agg++; aggHere = true;
+          if(a.verb === "bets" && a.potBefore > 0) s.sizes.push(a.amt / a.potBefore);
+        }
+      });
+      if(aggHere && shown && shown.length === 2 && hand.board.length >= N[st]){
+        const k = rvStrength(shown, hand.board.slice(0, N[st]));
+        s.sd[k]++; s.sdN++;
+        if(s.examples.length < 8) s.examples.push(shown.map(rvCard).join("") + " " + rvMadeHand(shown, hand.board.slice(0, N[st])));
+      }
+    });
+  });
+  return S;
+}
+
+function rvDiveHTML(name){
+  const S = rvStreetDive(name);
+  const p100 = (a, b) => b ? Math.round(a / b * 100) : null;
+  let h = '<table class="rv-dive"><thead><tr><th>Street</th><th>Bet/raise</th><th>Avg size</th><th>Bet karke dikhaya (showdown)</th><th>Us pe bet: fold / call / raise</th></tr></thead><tbody>';
+  const plans = [];
+  ["flop", "turn", "river"].forEach(st => {
+    const s = S[st];
+    const agg = p100(s.agg, s.acts);
+    const size = s.sizes.length ? s.sizes.reduce((a, b) => a + b, 0) / s.sizes.length : null;
+    const sd = s.sdN ? ["value", "medium", "draw", "bluff"].filter(k => s.sd[k]).map(k => RV_KIND[k] + " " + p100(s.sd[k], s.sdN) + "%").join(" · ") + " <span class='rv-muted'>(n=" + s.sdN + ")</span>" : "<span class='rv-muted'>koi showdown nahi</span>";
+    const fold = p100(s.fold, s.faced);
+    h += '<tr><td><b>' + st[0].toUpperCase() + st.slice(1) + '</b></td><td>' + (agg === null ? "–" : agg + "% <span class='rv-muted'>(" + s.agg + "/" + s.acts + ")</span>") +
+         '</td><td>' + (size === null ? "–" : Math.round(size * 100) + "% pot") + '</td><td>' + sd + '</td><td>' +
+         (s.faced ? fold + "% / " + p100(s.call, s.faced) + "% / " + p100(s.raise, s.faced) + "% <span class='rv-muted'>(n=" + s.faced + ")</span>" : "–") + '</td></tr>';
+
+    // --- Mera action (maths) ---
+    const lines = [];
+    const sz = size || 0.66;
+    const need = sz / (1 + 2 * sz);                                  // call ke liye equity
+    if(s.sdN >= 4){
+      const nonValue = (st === "river" ? s.sd.draw + s.sd.bluff : s.sd.bluff) / s.sdN;
+      const drawSh = s.sd.draw / s.sdN, valueSh = s.sd.value / s.sdN;
+      if(st === "river"){
+        const diff = nonValue - need;
+        lines.push("Uske ~" + Math.round(sz * 100) + "% bet pe call ke liye " + Math.round(need * 100) + "% chahiye; uske bets me bluff " + Math.round(nonValue * 100) + "%" +
+          (diff > 0.05 ? " → <b>bluff-catch karo</b> (top pair / achha medium hand se call)"
+           : diff < -0.05 ? " → <b>bluff-catchers fold karo</b>, sirf value-range se call"
+           : " → close; blockers dekh ke mix"));
+      } else {
+        lines.push("Uske bet me value " + Math.round(valueSh * 100) + "% · draw " + Math.round(drawSh * 100) + "% · bluff " + Math.round(nonValue * 100) + "%" +
+          (valueSh >= 0.7 ? " → <b>tight continue</b>: medium hands fold, sirf strong/strong draws"
+           : valueSh <= 0.3 ? " → uske bet me strong kam → <b>call wider</b> (second pair / achhe draws), top pair+ se <b>raise for value</b>"
+           : nonValue + drawSh >= 0.45 ? " → <b>call wider / raise</b> strong hands se (draws ko charge karo)"
+           : " → standard defence"));
+      }
+      if(s.sdN < 10) lines.push("<span class='rv-muted'>n=" + s.sdN + " — trend hai, pakka nahi</span>");
+    } else lines.push("<span class='rv-muted'>Showdown data kam (n=" + s.sdN + ") — uske bet pe default GTO khelo</span>");
+    if(s.faced >= 5){
+      const f = s.fold / s.faced;
+      const good = [0.33, 0.5, 0.75].filter(b => f > b / (1 + b) + 0.03);   // bluff breakeven = b/(1+b)
+      lines.push("Aapke bet pe wo " + Math.round(f * 100) + "% fold karta hai → " +
+        (good.length ? "<b>bluff profitable</b> " + Math.round(good[good.length - 1] * 100) + "% pot tak (breakeven " + Math.round(good[good.length - 1] / (1 + good[good.length - 1]) * 100) + "%)"
+                     : "<b>bluff mat karo</b> (33% bet ka breakeven bhi 25%) — value bet thinner aur bada") +
+        (s.faced < 10 ? " <span class='rv-muted'>(n=" + s.faced + " — trend hai, pakka nahi)</span>" : ""));
+    } else lines.push("<span class='rv-muted'>Us pe bet ka data kam (n=" + s.faced + ")</span>");
+    plans.push('<div class="rv-ex"><b>' + st[0].toUpperCase() + st.slice(1) + ' — mera action:</b><br>' + lines.join("<br>") + '</div>');
+  });
+  h += '</tbody></table>';
+  const ex = ["flop", "turn", "river"].map(st => S[st].examples.length ? '<div class="rv-muted"><b>' + st + ' bet ke showdowns:</b> ' + S[st].examples.join(" · ") + '</div>' : "").join("");
+  return {html: '<div class="rv-scroll">' + h + '</div>' + plans.join("") + ex, data: S};
+}
+
+
+/* --- Preflop raise ranges: open / 3-bet / 4-bet me showdown pe kya dikhaya (premium vs garbage) --- */
+const RV_PREMIUM = new Set(["AA","KK","QQ","AKs","AKo"]);
+const RV_STRONG  = new Set(["JJ","TT","AQs","AQo","AJs","KQs"]);
+function rvPreBucket(code){
+  if(RV_PREMIUM.has(code)) return "premium";
+  if(RV_STRONG.has(code)) return "strong";
+  const pair = code.length === 2, suited = code[2] === "s";
+  const hi = RV_RANKS.indexOf(code[0]), lo = RV_RANKS.indexOf(code[1]);
+  if(pair) return "spec";                                             // 22-99
+  if(suited && (code[0] === "A" || hi - lo <= 2 || lo >= 8)) return "spec";  // suited aces, connectors, broadways
+  if(!suited && lo >= 9) return "spec";                              // KJo, QJo jaise broadways
+  return "garbage";
+}
+const RV_BUCKET = {premium: "Premium (AA/KK/QQ/AK)", strong: "Strong (JJ/TT/AQ/AJs/KQs)", spec: "Speculative (A5s, 76s, 22-99)", garbage: "Garbage (offsuit kachra)"};
+
+function rvPreflopDiveHTML(p){
+  const names = {1: "Open raise", 2: "3-bet", 3: "4-bet", 4: "5-bet / jam"};
+  const tb = p.tbOpp ? Math.round(p.tb / p.tbOpp * 100) : null, fb = p.f3Opp ? Math.round(p.fb / p.f3Opp * 100) : null;
+  let h = '<div class="rv-muted">3-bet ' + (tb === null ? "–" : tb + "% (" + p.tb + "/" + p.tbOpp + ")") +
+          ' · 3-bet face karke 4-bet ' + (fb === null ? "–" : fb + "% (" + p.fb + "/" + p.f3Opp + ")") + '</div>';
+  const plans = [];
+  [1, 2, 3, 4].forEach(lv => {
+    const shows = p.preShows.filter(s => s.level === lv);
+    if(!shows.length) return;
+    const c = {premium: 0, strong: 0, spec: 0, garbage: 0};
+    shows.forEach(s => c[rvPreBucket(s.code)]++);
+    const n = shows.length, pc = k => Math.round(c[k] / n * 100);
+    h += '<div class="rv-ex"><b>' + names[lv] + ' (showdown n=' + n + '):</b> ' +
+         Object.keys(c).filter(k => c[k]).map(k => RV_BUCKET[k] + " " + pc(k) + "%").join(" · ") +
+         '<br><span class="rv-muted">' + shows.map(s => s.code).join(", ") + '</span></div>';
+    if(lv >= 2){
+      const value = (c.premium + c.strong) / n, bluff = (c.spec + c.garbage) / n;
+      let line;
+      if(n < 4) line = "n=" + n + " — data kam, default ranges khelo";
+      else if(value >= 0.8) line = "Value heavy (" + Math.round(value * 100) + "%) → uske " + names[lv] + " ke khilaf sirf " + (lv === 2 ? "QQ+/AK continue, JJ/AQ fold ya call IP" : "KK+ continue, QQ/AK bhi mushkil");
+      else if(bluff >= 0.4) line = "Bluff/light " + Math.round(bluff * 100) + "% → " + (lv === 2 ? "4-bet value lighter (JJ+, AQ) aur A5s se 4-bet bluff; IP me call wider" : "5-bet jam QQ+/AK, JJ/AQs bhi consider");
+      else line = "Mixed (value " + Math.round(value * 100) + "% / light " + Math.round(bluff * 100) + "%) → standard GTO defence";
+      plans.push('<div class="rv-ex"><b>Mera action vs uska ' + names[lv] + ':</b> ' + line + '</div>');
+    }
+  });
+  if(!p.preShows.length) h += '<div class="rv-muted">Preflop raise ke saath koi showdown nahi — range ka data nahi</div>';
+  return h + plans.join("");
+}
+
+// Exploit plan + history: pichle snapshot se kya naya aaya, kya ab lagu nahi
+function rvExploitHTML(p, pr, saved){
+  if(!pr.ex.length && !(saved.ex_prev || []).length) return "";
+  const key = e => e[0] + "|" + e[1].split(" (")[0].split(" — ")[0];
+  const prev = new Set((saved.ex_prev || []).map(key));
+  const nowKeys = new Set(pr.ex.map(key));
+  const gone = (saved.ex_prev || []).filter(e => !nowKeys.has(key(e)));
+  let h = '<h4>Exploit plan (' + p.hands + ' hands' + (saved.ex_updated ? ' · update ' + saved.ex_updated : "") + ')</h4>';
+  h += pr.ex.map(e => '<div class="rv-ex"><b>' + e[0] + ':</b> ' + e[1] +
+       (saved.ex_prev && !prev.has(key(e)) ? ' <span class="rv-tag rv-new">Naya</span>' : "") + '</div>').join("");
+  if(gone.length) h += '<div class="rv-muted">Ab lagu nahi: ' + gone.map(e => e[0] + " — " + e[1].split(" — ")[0]).join(" · ") + '</div>';
+  if(p.hands < 50) h += '<div class="rv-muted">Sample chhota hai — jaise hands badhenge, plan update hota rahega</div>';
+  return h;
+}
+
+// Har load pe: jinke exploits badle unka snapshot server pe save (time ke saath history)
+async function rvSyncExploits(){
+  const changed = {};
+  rvPlayerStats(rvHands).forEach(p => {
+    if(p.hands < 15) return;
+    const ex = rvProfile(p).ex, saved = rvNotes[p.name] || {};
+    if(JSON.stringify(ex) !== JSON.stringify(saved.ex || [])) changed[p.name] = {ex, hands: p.hands};
+  });
+  if(!Object.keys(changed).length) return;
+  try{
+    rvNotes = await (await fetch(GTO_URL + "/api/player_exploits", {method: "POST", headers: {"Content-Type": "application/json"},
+                                                                   body: JSON.stringify({players: changed})})).json();
+  }catch(e){}
+}
+
+function rvPlayersHTML(){
+  const players = rvPlayerStats(rvHands).sort((a, b) => b.hands - a.hands).slice(0, 60);
+  if(!players.length) return '<div class="rv-muted">Koi opponent data nahi.</div>';
+  const f = v => v === null ? "–" : v;
+  const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+  return players.map(p => {
+    const pr = rvProfile(p), saved = rvNotes[p.name] || {};
+    const lines = Object.entries(pr.byLine).map(([line, m]) =>
+      '<div><b>' + line + '</b> &rarr; ' + Object.entries(m).sort((a, b) => b[1] - a[1]).map(([k, n]) => k + " " + n + "x").join(", ") + '</div>').join("");
+    const stale = rvNoteStale(p);
+    const ai = saved.ai
+      ? '<div class="rv-muted">AI note: ' + saved.hands + ' hands pe · ' + (saved.updated || "") + (stale ? ' · <b>naya data aaya — update hoga</b>' : "") + '</div>' +
+        rvStatDelta(rvStatsOf(pr), saved.stats) + '<div class="rv-ai-out">' + esc(saved.ai.replace(/\*\*/g, "")) + '</div>'
+      : '<div class="rv-ai-out"></div>';
+    return '<details class="rv-player rv-' + pr.catCls + '" data-name="' + esc(p.name) + '"><summary>' +
+      '<span class="rv-pname">' + esc(p.name) + '</span><span class="rv-tag">' + pr.cat + '</span>' +
+      '<span class="rv-muted">' + p.hands + ' hands · VPIP ' + f(pr.vpip) + ' / PFR ' + f(pr.pfr) + ' / 3B ' + f(pr.tb) + ' · AF ' + f(pr.af) + '</span>' +
+      (saved.mine ? '<span class="rv-tag">&#9998; note</span>' : "") + '</summary>' +
+      '<div class="rv-detail">' +
+      '<div class="rv-muted">C-bet ' + f(pr.cb) + '% · Fold to 3-bet ' + f(pr.f3) + '% · WTSD ' + f(pr.wtsd) + '% · Showdowns ' + p.sd + '</div>' +
+      (pr.notes.length ? '<h4>Notes (stats se, har load pe naye)</h4>' + pr.notes.map(n => '<div>&bull; ' + n + '</div>').join("") : (p.hands < 15 ? '<div class="rv-muted">15+ hands chahiye pakke notes ke liye</div>' : "")) +
+      rvExploitHTML(p, pr, saved) +
+      '<h4>Preflop: raise ranges (showdown se)</h4>' + rvPreflopDiveHTML(p) +
+      '<h4>Street deep dive (data)</h4>' + rvDiveHTML(p.name).html +
+      (lines ? '<h4>Showdown pe kya dikhaya (line &rarr; hand)</h4>' + lines : "") +
+      (p.shows.length ? '<div class="rv-muted">' + p.shows.slice(-6).map(s => s.cards.map(rvCard).join("") + " " + s.made).join(" · ") + '</div>' : "") +
+      '<h4>AI deep dive</h4>' + ai +
+      '<button class="ghost rv-ai">&#129302; ' + (saved.ai ? "Abhi update karo" : "AI note banao") + '</button>' +
+      '<h4>Mera note</h4><textarea class="rv-mine" rows="2" placeholder="Apna note likho — save ho jaata hai">' + esc(saved.mine || "") + '</textarea>' +
+      '</div></details>';
+  }).join("");
+}
+
+async function rvAiNote(name){
+  const p = rvPlayerStats(rvHands).find(x => x.name === name);
+  if(!p) return;
+  const pr = rvProfile(p);
+  const box = document.querySelector('.rv-player[data-name="' + CSS.escape(name) + '"] .rv-ai-out');
+  if(box) box.textContent = "AI likh raha hai…";
+  try{
+    const r = await fetch(GTO_URL + "/api/player_note", {method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({name, hands: p.hands, stats: rvStatsOf(pr), category: pr.cat, exploits_from_stats: pr.ex,
+                            streets: Object.fromEntries(Object.entries(rvStreetDive(name)).map(([st, d]) => [st, {
+                              bet_or_raise: d.agg, actions: d.acts,
+                              avg_bet_pct_pot: d.sizes.length ? Math.round(d.sizes.reduce((a, b) => a + b, 0) / d.sizes.length * 100) : null,
+                              showdown_when_betting: d.sd, showdown_n: d.sdN, faced_bet: d.faced, fold: d.fold, call: d.call, raise: d.raise}])),
+                            preflop_showdowns_by_raise_level: {open: p.preShows.filter(s => s.level === 1).map(s => s.code),
+                              threebet: p.preShows.filter(s => s.level === 2).map(s => s.code), fourbet_plus: p.preShows.filter(s => s.level >= 3).map(s => s.code)},
+                            fourbet_vs_3bet: {fourbets: p.fb, faced_3bet: p.f3Opp},
+                            showdowns: p.shows.map(s => ({line: s.line, made: s.made, cards: s.cards.join(""), board: s.board.join("")}))})});
+    const j = await r.json();
+    if(j.saved) rvNotes[name] = j.saved;
+    else if(box) box.textContent = j.error || "Kuch nahi aaya";
+  }catch(e){ if(box) box.textContent = "GTO server se connect nahi hua"; return; }
+  if(rvTab === "players") rvRenderPlayers();
+}
+
+let rvAutoBusy = false;
+// Naye data pe notes khud update: jinka note nahi / purana hai, top players pehle
+async function rvAutoNotes(){
+  if(rvAutoBusy) return;
+  rvAutoBusy = true;
+  const due = rvPlayerStats(rvHands).filter(rvNoteStale).sort((a, b) => b.hands - a.hands).slice(0, RV_AUTO_PER_LOAD);
+  for(const p of due) await rvAiNote(p.name);
+  rvAutoBusy = false;
+}
+
+async function rvSaveMine(name, text){
+  try{
+    const r = await fetch(GTO_URL + "/api/player_note_mine", {method: "POST", headers: {"Content-Type": "application/json"},
+                                                           body: JSON.stringify({name, text})});
+    rvNotes[name] = await r.json();
+  }catch(e){}
+}
+
+let rvTab = "hands";
+function rvShowTab(t){
+  rvTab = t;
+  el("rv-list").hidden = t !== "hands";
+  el("rv-players").hidden = t !== "players";
+  el("rv-tab-hands").setAttribute("aria-pressed", String(t === "hands"));
+  el("rv-tab-players").setAttribute("aria-pressed", String(t === "players"));
+  if(t === "players"){ rvRenderPlayers(); rvAutoNotes(); }
+}
+function rvRenderPlayers(){
+  const box = el("rv-players");
+  const open = new Set([...box.querySelectorAll(".rv-player[open]")].map(d => d.dataset.name));   // re-render pe khule rahe
+  box.innerHTML = rvPlayersHTML();
+  box.querySelectorAll(".rv-player").forEach(d => {
+    const name = d.dataset.name;
+    if(open.has(name)) d.open = true;
+    d.querySelector(".rv-ai").addEventListener("click", () => rvAiNote(name));
+    d.querySelector(".rv-mine").addEventListener("change", e => rvSaveMine(name, e.target.value));
+  });
+}
+
+// App/exe khulte hi: GTO server se khatam hue sessions ki files lo (Red Star Data/Tables + GG import folder)
+async function rvAutoLoad(){
+  el("rv-status").textContent = "Hand history dhoondh raha hai…";
+  try{
+    const r = await fetch(GTO_URL + "/api/hh_files");
+    const j = await r.json();
+    try{ rvNotes = await (await fetch(GTO_URL + "/api/player_notes")).json(); }catch(e){}
+    j.files.forEach(f => rvLoadText(f.text));
+    await rvSyncExploits();
+    el("rv-status").textContent = rvHands.length + " NLHE hands · " + j.files.length + " files (" + j.dirs.length + " folders)";
+    if(rvTab === "players"){ rvRenderPlayers(); rvAutoNotes(); }
+  }catch(e){
+    el("rv-status").textContent = "Auto-load nahi hua (GTO server band?) — Files/Folder chuno se daalo";
+  }
+}
+
+function rvInit(){
+  const f = el("rv-file");
+  if(f._bound) return;
+  f._bound = true;
+  const load = async input => {
+    for(const file of input.files){
+      if(/\.(txt|xml)$/i.test(file.name)) rvLoadText(await file.text());
+    }
+    input.value = "";
+  };
+  f.addEventListener("change", () => load(f));
+  el("rv-folder").addEventListener("change", () => load(el("rv-folder")));
+  el("rv-paste-go").addEventListener("click", () => {
+    rvLoadText(el("rv-paste").value);
+    el("rv-paste").value = "";
+  });
+  el("rv-mistakes").addEventListener("change", e => { rvOnlyMistakes = e.target.checked; rvRender(); });
+  el("rv-clear").addEventListener("click", () => { rvHands = []; rvOpen = null; el("rv-status").textContent = ""; rvRender(); if(rvTab === "players") rvRenderPlayers(); });
+  el("rv-refresh").addEventListener("click", rvAutoLoad);
+  el("rv-tab-hands").addEventListener("click", () => rvShowTab("hands"));
+  el("rv-tab-players").addEventListener("click", () => rvShowTab("players"));
+  rvRender();
+  rvAutoLoad();
 }
 
 /* ============================================================
@@ -2632,6 +5047,10 @@ function showView(v){
   el("view-play").hidden     = v !== "play";
   el("view-study").hidden    = v !== "study";
   el("view-postflop").hidden = v !== "postflop";
+  el("view-gto").hidden      = v !== "gto";
+  el("view-mirror").hidden   = v !== "mirror";
+  el("view-review").hidden   = v !== "review";
+  if(v !== "mirror") mirrorStop();
 }
 
 function buildStudyPicker(){
@@ -2772,6 +5191,9 @@ function buildModes(){
       save();
       if(m.key === "study"){ showView("study"); buildModes(); renderStudy(); }
       else if(m.key === "postflop"){ showView("postflop"); buildModes(); pfDeal(); }
+      else if(m.key === "gto"){ showView("gto"); buildModes(); gtoNew(); }
+      else if(m.key === "mirror"){ showView("mirror"); buildModes(); mirrorStart(); }
+      else if(m.key === "hhreview"){ showView("review"); buildModes(); rvInit(); }
       else { showView("play"); buildModes(); deal(); }
     });
     nav.appendChild(b);
@@ -2803,15 +5225,31 @@ el("btn-theme").addEventListener("click", () => {
 el("btn-reset").addEventListener("click", () => {
   if(!confirm("Clear all stats, the leak report and the repetition schedule?")) return;
   S.total=0; S.right=0; S.streak=0; S.best=0; S.by={}; S.hand={}; S.leaks={}; S.focus=null;
-  S.pf = {total:0, right:0, streak:0, best:0, hand:{}};
+  S.pf = {total:0, right:0, streak:0, best:0, hand:{}, tex:{}, freq:0};
+  S.gto = {total:0, right:0, acceptable:0, wrong:0, streak:0, best:0};
   save(); buildModes(); renderScore(); renderBars(); renderLeaks();
-  if(!el("view-postflop").hidden) pfRenderScore();
+  if(!el("view-postflop").hidden){ pfRenderScore(); pfRenderFilters(); }
+  if(!el("view-gto").hidden) gtoRenderScore();
 });
 
 document.addEventListener("keydown", e => {
   if(e.target.tagName==="INPUT" || e.target.tagName==="SELECT") return;
-  if(el("view-play").hidden) return;
+  if(e.ctrlKey || e.metaKey || e.altKey) return;
   const k = e.key.toLowerCase();
+  if(!el("view-postflop").hidden){
+    if(k===" " || k==="enter"){ if(pfAnswered){ e.preventDefault(); pfDeal(); } return; }
+    if(k==="c"){ pfToggleRange(); return; }
+    const n = parseInt(k,10);
+    if(n>=1 && n<=4 && !pfAnswered){ const b = el("pf-actions").children[n-1]; if(b) b.click(); }
+    return;
+  }
+  if(!el("view-gto").hidden){
+    if(k===" " || k==="enter"){ const b = el("gto-btn-next"); if(b){ e.preventDefault(); b.click(); } return; }
+    const n = parseInt(k,10), b = n>=1 && n<=9 && el("gto-actions").children[n-1];
+    if(b && b.tagName==="BUTTON") b.click();
+    return;
+  }
+  if(el("view-play").hidden) return;
   if(k===" " || k==="enter"){ if(answered){ e.preventDefault(); deal(); } return; }
   if(k==="c"){ if(answered) toggleChart(); return; }
   const n = parseInt(k,10);
@@ -2825,6 +5263,9 @@ applyTheme();
 buildModes();
 if(S.mode === "study"){ showView("study"); renderStudy(); deal(); }
 else if(S.mode === "postflop"){ showView("postflop"); pfDeal(); }
+else if(S.mode === "gto"){ showView("gto"); gtoNew(); }
+else if(S.mode === "mirror"){ showView("mirror"); mirrorStart(); }
+else if(S.mode === "hhreview"){ showView("review"); rvInit(); }
 else { showView("play"); deal(); }
 
 })();

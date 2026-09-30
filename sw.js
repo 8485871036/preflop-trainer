@@ -1,6 +1,6 @@
 /* Preflop Bible Trainer — offline shell.
    Bump CACHE whenever index.html changes so clients pick the new build up. */
-const CACHE = "preflop-trainer-v2";
+const CACHE = "preflop-trainer-v3";
 
 const SHELL = [
   "./",

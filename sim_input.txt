@@ -1,0 +1,20 @@
+set_pot 6
+set_effective_stack 97
+set_board Td,7h,3s
+set_range_ip 22,33,43s,44,53s,54s,55,63s,64s,65s,66,74s,75s,76s,77,84s,85s,86s,87s,88,95s,96s,97s,98s,99,A2o,A2s,A3o,A3s,A4o,A4s,A5o,A5s,A6o,A6s,A7o,A7s,A8o,A8s,A9o,A9s,AA,AJo,AJs,AKo,AKs,AQo,AQs,ATo,ATs,J4s,J5s,J6s,J7s,J8s,J9s,JJ,JTo,JTs,K2s,K3s,K4s,K5s,K6s,K7s,K8s,K9o,K9s,KJo,KJs,KK,KQo,KQs,KTo,KTs,Q2s,Q3s,Q4s,Q5s,Q6s,Q7s,Q8s,Q9s,QJo,QJs,QQ,QTo,QTs,T6s,T7s,T8s,T9s,TT,32s:0.5,42s:0.5,52s:0.5,62s:0.5,73s:0.5,83s:0.5,87o:0.5,94s:0.5,98o:0.5,J2s:0.5,J3s:0.5,J8o:0.5,J9o:0.5,K7o:0.5,K8o:0.5,Q8o:0.5,Q9o:0.5,T5s:0.5,T8o:0.5,T9o:0.5
+set_range_oop 22,33,44,53s,55,63s,64s,66,74s,75s,84s,85s,86s,95s,96s,97s,A2o,A3o,A4o,A5o,A6o,A6s,A7o,A7s,A8o,A8s,A9o,J2s,J3s,J4s,J5s,J6s,J7s,J8s,JTo,K2s,K3s,K4s,K5s,K6s,K7s,K8s,K9o,K9s,KJo,KQo,KTo,Q2s,Q3s,Q4s,Q5s,Q6s,Q7s,Q8s,Q9s,QJo,QTo,T6s,T7s,T8s,43s:0.5,52s:0.5,62s:0.5,73s:0.5,83s:0.5,94s:0.5,98o:0.5,J9o:0.5,K7o:0.5,K8o:0.5,Q9o:0.5,T5s:0.5,T9o:0.5
+set_bet_sizes oop,flop,bet,33
+set_bet_sizes oop,flop,allin
+set_bet_sizes ip,flop,bet,33,75
+set_bet_sizes ip,flop,raise,75
+set_bet_sizes ip,flop,allin
+set_allin_threshold 0.67
+build_tree
+set_thread_num 12
+set_accuracy 0.01
+set_max_iteration 40
+set_print_interval 20
+set_use_isomorphism 1
+start_solve
+set_dump_rounds 1
+dump_result sim_test.json

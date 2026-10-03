@@ -1,0 +1,101 @@
+120 INFO: PyInstaller: 6.22.3, contrib hooks: 2026.7
+120 INFO: Python: 3.13.0
+146 INFO: Platform: Windows-11-10.0.26200-SP0
+146 INFO: Python environment: C:\Users\rohit\AppData\Local\Programs\Python\Python313
+147 INFO: wrote C:\Users\rohit\PREFLOP TRAINER\preflop-trainer\desktop\build_fix\PreflopTrainer.spec
+150 INFO: Module search paths (PYTHONPATH):
+['C:\\Users\\rohit\\PREFLOP TRAINER\\preflop-trainer',
+ 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\python313.zip',
+ 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\DLLs',
+ 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib',
+ 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313',
+ 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages',
+ 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\win32',
+ 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\win32\\lib',
+ 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\pythonwin',
+ 'C:\\Users\\rohit\\PREFLOP TRAINER\\preflop-trainer\\desktop',
+ 'C:\\Users\\rohit\\PREFLOP TRAINER\\preflop-trainer',
+ 'C:\\Users\\rohit\\PREFLOP TRAINER\\preflop-trainer\\tools',
+ 'C:\\Users\\rohit\\PREFLOP TRAINER\\preflop-trainer\\tools\\postflop']
+455 INFO: Appending 'datas' from .spec
+456 INFO: checking Analysis
+485 INFO: Building because C:\Users\rohit\PREFLOP TRAINER\preflop-trainer\index.html changed
+485 INFO: Looking for Python shared library...
+485 INFO: Using Python shared library: C:\Users\rohit\AppData\Local\Programs\Python\Python313\python313.dll
+485 INFO: Running Analysis Analysis-00.toc
+485 INFO: Target bytecode optimization level: 0
+485 INFO: Initializing module dependency graph...
+487 INFO: Initializing module graph hook caches...
+497 INFO: Analyzing modules for base_library.zip ...
+1086 INFO: Processing standard module hook 'hook-encodings.py' from 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PyInstaller\\hooks'
+1619 INFO: Processing standard module hook 'hook-math.py' from 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PyInstaller\\hooks'
+2417 INFO: Processing standard module hook 'hook-pickle.py' from 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PyInstaller\\hooks'
+3077 INFO: Processing standard module hook 'hook-heapq.py' from 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PyInstaller\\hooks'
+3392 INFO: Caching module dependency graph...
+3413 INFO: Analyzing C:\Users\rohit\PREFLOP TRAINER\preflop-trainer\desktop\main.py
+3418 INFO: Processing standard module hook 'hook-PyQt6.py' from 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PyInstaller\\hooks'
+3820 INFO: Processing standard module hook 'hook-PyQt6.QtCore.py' from 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PyInstaller\\hooks'
+4741 INFO: Processing standard module hook 'hook-PyQt6.QtGui.py' from 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PyInstaller\\hooks'
+7476 INFO: Processing standard module hook 'hook-PyQt6.QtWebEngineCore.py' from 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PyInstaller\\hooks'
+8016 INFO: Processing standard module hook 'hook-PyQt6.QtNetwork.py' from 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PyInstaller\\hooks'
+8636 INFO: Processing standard module hook 'hook-PyQt6.QtWebChannel.py' from 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PyInstaller\\hooks'
+8751 INFO: Processing standard module hook 'hook-PyQt6.QtWebEngineWidgets.py' from 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PyInstaller\\hooks'
+9283 INFO: Processing standard module hook 'hook-PyQt6.QtWidgets.py' from 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PyInstaller\\hooks'
+10229 INFO: Processing standard module hook 'hook-PyQt6.QtPrintSupport.py' from 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PyInstaller\\hooks'
+10366 INFO: Analyzing hidden import 'mirror_server'
+10504 INFO: Processing standard module hook 'hook-_ctypes.py' from 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PyInstaller\\hooks'
+10648 INFO: Processing standard module hook 'hook-PIL.py' from 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PyInstaller\\hooks'
+10738 INFO: Processing standard module hook 'hook-PIL.Image.py' from 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PyInstaller\\hooks'
+10970 INFO: Processing standard module hook 'hook-numpy.py' from 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PyInstaller\\hooks'
+11240 INFO: Processing pre-safe-import-module hook 'hook-typing_extensions.py' from 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+11241 INFO: SetuptoolsInfo: initializing cached setuptools info...
+11819 INFO: Processing standard module hook 'hook-platform.py' from 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PyInstaller\\hooks'
+11976 INFO: Processing standard module hook 'hook-sysconfig.py' from 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PyInstaller\\hooks'
+12066 INFO: Processing standard module hook 'hook-webbrowser.py' from 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PyInstaller\\hooks'
+12870 INFO: Processing standard module hook 'hook-difflib.py' from 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PyInstaller\\hooks'
+13030 INFO: Processing standard module hook 'hook-multiprocessing.util.py' from 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PyInstaller\\hooks'
+13087 INFO: Processing standard module hook 'hook-xml.py' from 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PyInstaller\\hooks'
+14078 INFO: Processing standard module hook 'hook-xml.etree.cElementTree.py' from 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PyInstaller\\hooks'
+14193 INFO: Processing standard module hook 'hook-PIL.ImageFilter.py' from 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PyInstaller\\hooks'
+14399 INFO: Processing pre-safe-import-module hook 'hook-packaging.py' from 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PyInstaller\\hooks\\pre_safe_import_module'
+14500 INFO: Processing standard module hook 'hook-cv2.py' from 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\stdhooks'
+14823 INFO: Analyzing hidden import 'gto_server'
+14901 INFO: Processing module hooks (post-graph stage)...
+15091 INFO: Processing standard module hook 'hook-PIL.SpiderImagePlugin.py' from 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PyInstaller\\hooks'
+15166 INFO: Processing standard module hook 'hook-PyQt6.QtQuick.py' from 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PyInstaller\\hooks'
+15505 INFO: Processing standard module hook 'hook-PyQt6.QtQml.py' from 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PyInstaller\\hooks'
+20009 INFO: Processing standard module hook 'hook-PyQt6.QtOpenGL.py' from 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PyInstaller\\hooks'
+20306 INFO: Processing standard module hook 'hook-PyQt6.QtPositioning.py' from 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PyInstaller\\hooks'
+20590 INFO: Processing standard module hook 'hook-PyQt6.QtQuickWidgets.py' from 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PyInstaller\\hooks'
+20784 INFO: Performing binary vs. data reclassification (1609 entries)
+20935 INFO: Looking for ctypes DLLs
+20981 INFO: Analyzing run-time hooks ...
+20983 INFO: Including run-time hook 'pyi_rth_inspect.py' from 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+20985 INFO: Including run-time hook 'pyi_rth_pkgutil.py' from 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+20987 INFO: Including run-time hook 'pyi_rth_multiprocessing.py' from 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+20988 INFO: Including run-time hook 'pyi_rth_pyqt6.py' from 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks'
+20989 INFO: Processing pre-find-module-path hook 'hook-_pyi_rth_utils.py' from 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PyInstaller\\hooks\\pre_find_module_path'
+20991 INFO: Processing standard module hook 'hook-_pyi_rth_utils.py' from 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PyInstaller\\hooks'
+21020 INFO: Creating base_library.zip...
+21032 INFO: Looking for dynamic libraries
+21330 INFO: Extra DLL search directories (AddDllDirectory): ['C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PyQt6\\Qt6\\bin', 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\numpy.libs', 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\cv2\\../../x64/vc17/bin']
+21330 INFO: Extra DLL search directories (PATH): ['C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\cv2\\../../x64/vc17/bin', 'C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\PyQt6\\Qt6\\bin']
+23098 INFO: Warnings written to C:\Users\rohit\PREFLOP TRAINER\preflop-trainer\desktop\build_fix\PreflopTrainer\warn-PreflopTrainer.txt
+23122 INFO: Graph cross-reference written to C:\Users\rohit\PREFLOP TRAINER\preflop-trainer\desktop\build_fix\PreflopTrainer\xref-PreflopTrainer.html
+23155 INFO: checking PYZ
+23184 INFO: checking PKG
+23207 INFO: Building because toc changed
+23207 INFO: Building PKG (CArchive) PreflopTrainer.pkg
+66045 INFO: Building PKG (CArchive) PreflopTrainer.pkg completed successfully.
+66065 INFO: Bootloader C:\Users\rohit\AppData\Local\Programs\Python\Python313\Lib\site-packages\PyInstaller\bootloader\Windows-64bit-intel\runw.exe
+66065 INFO: checking EXE
+66091 INFO: Building because toc changed
+66091 INFO: Building EXE from EXE-00.toc
+66107 INFO: Copying bootloader EXE to C:\Users\rohit\PREFLOP TRAINER\preflop-trainer\desktop\dist_fix\PreflopTrainer.exe
+66148 INFO: Copying icon to EXE
+66177 INFO: Copying 0 resources to EXE
+66177 INFO: Embedding manifest in EXE
+66204 INFO: Appending PKG archive to EXE
+66339 INFO: Fixing EXE headers
+67166 INFO: Building EXE from EXE-00.toc completed successfully.
+67188 INFO: Build complete! The results are available in: C:\Users\rohit\PREFLOP TRAINER\preflop-trainer\desktop\dist_fix

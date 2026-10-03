@@ -1,0 +1,22 @@
+{
+ "accuracy": {
+  "total": 1941,
+  "ok": 1621
+ },
+ "card_accuracy": {
+  "total": 1615,
+  "ok": 1605
+ },
+ "line_ok_accuracy": {
+  "total": 1165,
+  "ok": 1011
+ },
+ "pos_ok_accuracy": {
+  "total": 1163,
+  "ok": 1160
+ },
+ "pot_ok_accuracy": {
+  "total": 1169,
+  "ok": 999
+ }
+}

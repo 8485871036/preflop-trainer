@@ -18,3 +18,5 @@ desktop/*.spec
 desktop_build.log
 .playwright-mcp/
 desktop/dist_new/
+desktop/build_fix/
+desktop/dist_fix/

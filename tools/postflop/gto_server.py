@@ -37,6 +37,13 @@ import rangeutil
 ROOT = Path(os.environ.get("PREFLOP_ROOT") or Path(__file__).resolve().parent.parent.parent)
 SOLVER_DIR = ROOT / "tools" / "postflop" / "solver" / "extracted" / "TexasSolver-v0.2.0-Windows"
 SOLVER_EXE = SOLVER_DIR / "console_solver.exe"
+# SOLVER_OFF marker file hone pe console_solver.exe bilkul spawn nahi hota (memory overload
+# se bachne ke liye). File hatao to solver wapas on. Env PREFLOP_SOLVER_OFF=1 bhi kaam karta hai.
+SOLVER_OFF_MARKER = SOLVER_DIR / "SOLVER_OFF"
+
+
+def solver_off():
+    return SOLVER_OFF_MARKER.exists() or os.environ.get("PREFLOP_SOLVER_OFF") == "1"
 WORK_DIR = ROOT / "tools" / "postflop" / "work"
 CACHE_DIR = WORK_DIR / "gto_cache"
 
@@ -47,8 +54,8 @@ DEEPSEEK_KEY = os.environ.get("DEEPSEEK_API_KEY", "").strip()
 DEEPSEEK_MODEL = os.environ.get("DEEPSEEK_MODEL", "deepseek-chat")
 DEEPSEEK_URL = "https://api.deepseek.com/chat/completions"
 
-TURN_ITER = int(os.environ.get("GTO_TURN_ITER", "100"))
-RIVER_ITER = int(os.environ.get("GTO_RIVER_ITER", "100"))
+TURN_ITER = int(os.environ.get("GTO_TURN_ITER", "50"))
+RIVER_ITER = int(os.environ.get("GTO_RIVER_ITER", "50"))
 THREADS = int(os.environ.get("GTO_THREADS", "6"))
 BG_THREADS = int(os.environ.get("GTO_BG_THREADS", "4"))   # background solve (gentle) ke liye kam threads
 
@@ -244,6 +251,8 @@ HAND_NAMES = {8: "Straight Flush", 7: "Quads", 6: "Full House", 5: "Flush",
 def solve(board_str, pot, stack, ip_range, oop_range, out_name, max_iter, template=None, threads=None,
           low_priority=False, lock=True):
     """Run console_solver.exe. Returns parsed JSON (dump_rounds=1)."""
+    if solver_off():
+        raise RuntimeError("solver OFF (SOLVER_OFF marker present)")
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     in_path = CACHE_DIR / f"{out_name}_input.txt"
     out_path = SOLVER_DIR / f"{out_name}.json"
@@ -590,6 +599,60 @@ def resolve_spot(hero_pos, villain_pos, pot_type):
     return sid, hero_ip, exact
 
 
+def villain_range(hero_pos, villain_pos, pot_type="srp", board=None, action=None):
+    """Villain ki range; board+action diya ho to postflop narrow (flop library se)."""
+    if not hero_pos or not villain_pos:
+        return {"error": "heroPos/villainPos chahiye"}
+    sid, _hero_ip, exact = resolve_spot(hero_pos, villain_pos, pot_type)
+    sp = spotlib.spots().get(sid)
+    if not sp:
+        return {"error": "spot nahi mila: " + sid}
+    vill_ip = sp["ip"] == villain_pos
+    rng = sp["ip_range"] if vill_ip else sp["oop_range"]
+    out = {"spot": sid, "villain": villain_pos, "range": rng.get("main", ""),
+           "border": rng.get("border", ""), "ip": vill_ip, "exact": bool(exact)}
+    # postflop narrowing: sirf flop (3 cards) + villain ka action (check/bet) — turn/river ke liye
+    # poora line track karna padta hai (reach-weighted), abhi flop hi reliable hai.
+    if not (board and action and len(board) == 3):
+        return out
+    try:
+        canon, _m = spotlib.canonical(board[:3])
+        rep = canon if spotlib.lib_path(sid, canon).exists() else spotlib.representative(canon)
+        nodes = spotlib.load(sid, rep)
+        if not nodes:
+            out["narrowed"] = "flop library nahi bani (build_library.py chalao) — sirf preflop range"
+            return out
+        node = nodes.get("c" if vill_ip else "r")
+        if not node:
+            return out
+        acts = node.get("a", [])
+        probs = node.get("s", {})
+        bet_idxs = [i for i, a in enumerate(acts) if a.startswith("BET") or a.startswith("RAISE")]
+        check_idx = acts.index("CHECK") if "CHECK" in acts else -1
+        agg = {}
+        for combo, ps in probs.items():
+            if action in ("check", "call"):
+                if check_idx < 0 or check_idx >= len(ps):
+                    continue
+                w = float(ps[check_idx]) / 1000.0
+            else:
+                if not bet_idxs:
+                    break
+                w = sum(float(ps[i]) for i in bet_idxs if i < len(ps)) / 1000.0
+            if w >= 0.5:
+                cls = combo_to_class(combo)
+                agg[cls] = max(agg.get(cls, 0.0), w)
+        if not agg:
+            out["narrowed"] = ("flop " + ("check" if action in ("check", "call") else "bet") + " → koi strong combo nahi (thin/bluff)")
+            return out
+        top = sorted(agg.items(), key=lambda x: (-x[1], x[0]))[:18]
+        out["narrowed"] = ("flop " + ("check" if action in ("check", "call") else "bet") + " → "
+                           + ", ".join(f"{c}({int(round(w * 100))}%)" for c, w in top))
+    except Exception as e:
+        out["narrowed"] = "narrow fail: " + str(e)
+    return out
+
+
 def _spot_ranges(spot):
     sp = spotlib.spots()[spot]
     ip = rangeutil.weighted_range_string(sp["ip_range"]["main"], sp["ip_range"].get("border", ""))
@@ -697,6 +760,62 @@ def _solve_spot_turn(spot, board4):
     return tree
 
 
+def _spot_full_flop_tree(spot, canon):
+    """Spot ka POORA flop tree (canon board pe, disk cached) — asli line ke reach weights
+    ke liye. Library sirf 2-level nodes rakhti hai (check-check / check-bet), isliye bet-call /
+    bet-raise jaisi lines ke liye poora tree chahiye (reach_weights walk karta hai)."""
+    canon = list(canon)
+    key = hashlib.md5(f"ftree|{spot}|{''.join(canon)}".encode()).hexdigest()[:16]
+    path = _live_cache_path(key)
+    if path.exists():
+        return json.loads(path.read_text(encoding="utf-8"))
+    sp, ip, oop = _spot_ranges(spot)
+    name = f"live_ftree_{spot}_{''.join(canon)}"
+    tree = solve(",".join(canon), sp["pot"], sp["eff"], ip, oop, name, LIB_ITER)
+    path.write_text(json.dumps(tree), encoding="utf-8")
+    (SOLVER_DIR / f"{name}.json").unlink(missing_ok=True)
+    return tree
+
+
+def _match_tree_action(node, kind, amt=0.0):
+    """Real action (check/call/fold/bet/raise + bb) -> is node ke tree ka nearest action string."""
+    if node is None or node.get("node_type") != "action_node":
+        return None
+    acts = node.get("actions", [])
+    if kind == "check":
+        return "CHECK" if "CHECK" in acts else None
+    if kind == "call":
+        return "CALL" if "CALL" in acts else None
+    if kind == "fold":
+        return "FOLD" if "FOLD" in acts else None
+    if kind in ("bet", "raise", "open", "3bet", "4bet", "5bet", "6bet"):
+        best, best_key = 1e18, None
+        for a in acts:
+            m = re.match(r"(BET|RAISE) ([\d.]+)", a)
+            if m:
+                d = abs(float(m.group(2)) - amt)
+                if d < best:
+                    best, best_key = d, a
+        return best_key
+    return None
+
+
+def _walk_line(events, tree):
+    """Client ke events [{pos, act, amt}] (chronological, hero+villain) -> actual tree action
+    strings. Har step pe child node me jaate hue real amount ko nearest tree size se match karo."""
+    out = []
+    node = tree
+    for e in events:
+        if node is None or node.get("node_type") != "action_node":
+            break
+        a = _match_tree_action(node, e.get("act"), float(e.get("amt", 0.0) or 0.0))
+        if a is None:
+            break
+        out.append(a)
+        node = node.get("childrens", {}).get(a) if node.get("childrens") else None
+    return out
+
+
 def _similar_mix(strat_by_combo, actions, hero, board, k=5):
     """Hero ka hand range me nahi (chart se alag khela) -> board pe usi taaqat ke range hands
     (made-hand rank + flush draw) me se k sabse kareeb ki average strategy."""
@@ -747,7 +866,7 @@ def spot_label(key, pot, stack, facing=0.0):
     return action_label(key, pot, stack)["label"]
 
 
-def spot_recommend(board, hero, street, facing, hero_pos, villain_pos, pot_type, bg=True):
+def spot_recommend(board, hero, street, facing, hero_pos, villain_pos, pot_type, bg=True, line=None):
     if not board or len(board) < 3 or len(board) > 5:
         return {"error": "invalid board"}
     if isinstance(hero, str):
@@ -778,20 +897,26 @@ def spot_recommend(board, hero, street, facing, hero_pos, villain_pos, pot_type,
             mix, lvl = spotlib.mapped_strategy(nkey, node, rep, chero, canon)
             similar = rep == canon and mix is not None
     else:
-        # turn/river: flop check-check maan ke (flop pe bet-call line abhi track nahi) -> approx
+        # turn/river — asli LINE se reach weights (pehle flop+turn check-check maana jaata tha,
+        # isliye bet/raise wali lines ka jawab galat hota tha). line = {"flop":[events], "turn":[events]}
+        # events chronological hero+villain actions: {pos, act: check/call/fold/bet/raise, amt}.
         approx, source = True, "solved"
+        line = line or {}
+        flop_events = line.get("flop") or []
+        turn_events = line.get("turn") or []
         b4 = tuple(cboard[:4])
-        tp = _spot_turn_path(spot, b4)
-        if tp.exists():
-            tree = json.loads(tp.read_text(encoding="utf-8"))
-        elif bg:
-            _enqueue_live(_solve_spot_turn, spot, b4)
-            return {"queued": True, "spot": spot}
-        else:
-            tree = _solve_spot_turn(spot, b4)
-        if street == "river":
+        if not flop_events or all((e.get("act") == "check") for e in flop_events):
+            # check-check flop — library nodes se turant (pehle wala fast path)
             ip_w, oop_w = _checkcheck_reach(spot, canon, nodes, rep)
-            ip_w, oop_w = reach_weights(["CHECK", "CHECK"], tree, (ip_w, oop_w))
+        else:
+            # flop pe bet/raise hua — poora tree chahiye (reach_weights walk)
+            flop_tree = _spot_full_flop_tree(spot, canon)
+            flop_actual = _walk_line(flop_events, flop_tree)
+            ip_w, oop_w = reach_weights(flop_actual, flop_tree)
+        tree = solve_street_tree(b4, sp["pot"], sp["eff"], ip_w, oop_w, TURN_ITER)
+        if street == "river":
+            turn_actual = _walk_line(turn_events, tree) if turn_events else ["CHECK", "CHECK"]
+            ip_w, oop_w = reach_weights(turn_actual, tree, (ip_w, oop_w))
             tree = solve_street_tree(cboard, sp["pot"], sp["eff"], ip_w, oop_w, RIVER_ITER)
         node = _hero_node(tree, facing, "BTN" if hero_ip else "BB")
         if not node or node.get("node_type") != "action_node":
@@ -1274,11 +1399,21 @@ class Handler(BaseHTTPRequestHandler):
                 import hh_review
                 self._send(hh_review.player_note(self._body()))
             elif self.path == "/api/spot":
+                if solver_off():
+                    self._send({"error": "solver off (memory saver)", "off": True})
+                    return
                 b = self._body()
                 self._send(spot_recommend(b.get("board"), b.get("hero"), b.get("street", "flop"),
                                           float(b.get("facing", 0.0)), b.get("heroPos"), b.get("villainPos"),
-                                          b.get("potType", "srp"), bool(b.get("bg", True))))
+                                          b.get("potType", "srp"), bool(b.get("bg", True)), b.get("line")))
+            elif self.path == "/api/villain_range":
+                b = self._body()
+                self._send(villain_range(b.get("heroPos"), b.get("villainPos"), b.get("potType", "srp"),
+                                         b.get("board"), b.get("action")))
             elif self.path == "/api/live":
+                if solver_off():
+                    self._send({"error": "solver off (memory saver)", "off": True})
+                    return
                 b = self._body()
                 board = b.get("board")
                 hero = b.get("hero")

@@ -7,5 +7,4 @@ $root = "C:\Users\rohit\PREFLOP TRAINER\preflop-trainer"
 if (Get-Process PreflopTrainer -ErrorAction SilentlyContinue) { exit }
 
 Start-Process -FilePath "$root\desktop\dist\PreflopTrainer.exe" `
-    -ArgumentList "--hud" `
     -WorkingDirectory "$root\desktop\dist"

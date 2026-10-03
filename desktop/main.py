@@ -7,8 +7,8 @@ of re-implementing the trainer's HTML/CSS/JS logic in PyQt6 widgets.
 """
 import sys
 
-from common import resource_path, start_servers
-from PyQt6.QtCore import QUrl
+from common import remote_gto, resource_path, start_servers
+from PyQt6.QtCore import QUrl, QUrlQuery
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWebEngineCore import QWebEngineSettings
 from PyQt6.QtWebEngineWidgets import QWebEngineView
@@ -19,7 +19,8 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Preflop Trainer")
-        self.resize(1280, 900)
+        self.resize(920, 600)
+        self.setMinimumSize(420, 320)
 
         icon_path = resource_path("icons/icon-192.png")
         if icon_path.exists():
@@ -31,7 +32,12 @@ class MainWindow(QMainWindow):
         settings = self.view.settings()
         settings.setAttribute(QWebEngineSettings.WebAttribute.LocalContentCanAccessRemoteUrls, True)
         settings.setAttribute(QWebEngineSettings.WebAttribute.LocalContentCanAccessFileUrls, True)
-        self.view.load(QUrl.fromLocalFile(str(resource_path("index.html"))))
+        url = QUrl.fromLocalFile(str(resource_path("index.html")))
+        if remote_gto():                 # solver remote pe hai to app ko wahi point karo
+            q = QUrlQuery()
+            q.addQueryItem("gto", remote_gto())
+            url.setQuery(q)
+        self.view.load(url)
         self.setCentralWidget(self.view)
 
 
@@ -41,9 +47,10 @@ def main():
     start_servers()          # QApplication ke baad — Qt ka DPI mode pehle set ho
     window = MainWindow()
     window.show()
-    if "--hud" in sys.argv:  # chhota always-on-top overlay (poker client ke upar)
+    if "--no-hud" not in sys.argv:  # har table pe chhota always-on-top overlay — default on (double-click se bhi)
         import hud
-        hud.make_hud().show()
+        hud_win = hud.make_hud()   # reference rakho — warna window turant garbage-collect ho jaati hai
+        hud_win.show()
     sys.exit(app.exec())
 
 

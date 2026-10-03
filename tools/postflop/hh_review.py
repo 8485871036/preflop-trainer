@@ -391,8 +391,9 @@ def load_hh_files(max_mb=40):
                 text = f.read_text(encoding="utf-8", errors="replace")
             except OSError:
                 continue
-            if "Holdem NL" not in text and "Hold'em No Limit" not in text:
-                continue                                  # PLO wagairah — review nahi hota
+            head = text[:600]
+            if not any(k in head for k in ("Holdem NL", "Hold'em No Limit", "Omaha", "<gametype>PL ", "PLO")):
+                continue                                  # sirf Hold'em NL aur Omaha PL (4/5/6 card)
             out.append({"name": f.name, "dir": str(d), "text": text})
     return {"dirs": [str(d) for d in hh_dirs()], "files": out}
 

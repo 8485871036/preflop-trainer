@@ -1,0 +1,11 @@
+{
+  // pywin32 (win32gui, win32ui, win32con, win32process) sirf Python 3.13 me installed hai
+  "python.defaultInterpreterPath": "C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+  // pywin32 ke modules in folders me hain; Python unhe runtime pe pywin32.pth se dhoondhta hai,
+  // Pylance ko alag se batana padta hai (win32ui -> pythonwin\, win32con -> win32\lib\)
+  "python.analysis.extraPaths": [
+    "C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\win32",
+    "C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\win32\\lib",
+    "C:\\Users\\rohit\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages\\pythonwin"
+  ]
+}

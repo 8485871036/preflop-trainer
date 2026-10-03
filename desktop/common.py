@@ -33,14 +33,24 @@ def port_busy(port: int) -> bool:
         return s.connect_ex(("127.0.0.1", port)) == 0
 
 
+def remote_gto() -> str:
+    """PREFLOP_GTO_URL env — remote solver ka base URL (jaise http://192.168.1.5:8675), ya "".
+    Set ho to local gto_server nahi chalta (stealth: solver dusri machine pe)."""
+    return os.environ.get("PREFLOP_GTO_URL", "").strip()
+
+
 def start_servers():
     """Mirror (8676) + GTO (8675) server isi process me background threads me chalao.
-    Koi pehle se chal raha ho to use hi use karo. Fail ho to app phir bhi khule."""
+    Koi pehle se chal raha ho to use hi use karo. Fail ho to app phir bhi khule.
+    PREFLOP_GTO_URL set ho to local GTO server skip (solver remote pe chal raha hai)."""
     root = repo_root()
     os.environ.setdefault("PREFLOP_ROOT", str(root))
     sys.path[:0] = [str(root), str(root / "tools"), str(root / "tools" / "postflop")]
+    servers = ["mirror_server"]
+    if not remote_gto():
+        servers.append("gto_server")
     started = []
-    for name in ("mirror_server", "gto_server"):
+    for name in servers:
         try:
             mod = __import__(name)
             if port_busy(mod.PORT):

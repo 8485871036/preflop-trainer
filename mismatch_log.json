@@ -1,0 +1,964 @@
+[
+ {
+  "t": 1790966373.6,
+  "gc": "12548914652",
+  "kind": "line",
+  "ocr": {
+   "preflop": [
+    {
+     "pos": "SB",
+     "act": "sb",
+     "amt": 0.5
+    },
+    {
+     "pos": "BB",
+     "act": "bb",
+     "amt": 1.0
+    },
+    {
+     "pos": "CO",
+     "act": "post",
+     "amt": 1.5
+    },
+    {
+     "pos": "MP",
+     "act": "open",
+     "amt": 3.0
+    },
+    {
+     "pos": "CO",
+     "act": "3bet",
+     "amt": 9.5
+    },
+    {
+     "pos": "BTN",
+     "act": "fold"
+    },
+    {
+     "pos": "SB",
+     "act": "fold"
+    },
+    {
+     "pos": "BB",
+     "act": "fold"
+    },
+    {
+     "pos": "MP",
+     "act": "call",
+     "amt": 8.0
+    }
+   ],
+   "flop": [
+    {
+     "pos": "MP",
+     "act": "check"
+    },
+    {
+     "pos": "CO",
+     "act": "check"
+    },
+    {
+     "pos": "CO",
+     "act": "bet",
+     "amt": 7.9
+    },
+    {
+     "pos": "MP",
+     "act": "fold"
+    }
+   ]
+  },
+  "truth": {
+   "preflop": [
+    {
+     "pos": "SB",
+     "act": "sb",
+     "amt": 0.5
+    },
+    {
+     "pos": "BB",
+     "act": "bb",
+     "amt": 1.0
+    },
+    {
+     "pos": "CO",
+     "act": "post",
+     "amt": 1.5
+    },
+    {
+     "pos": "MP",
+     "act": "open",
+     "amt": 3.0
+    },
+    {
+     "pos": "CO",
+     "act": "3bet",
+     "amt": 9.5
+    },
+    {
+     "pos": "BTN",
+     "act": "fold"
+    },
+    {
+     "pos": "SB",
+     "act": "fold"
+    },
+    {
+     "pos": "BB",
+     "act": "fold"
+    },
+    {
+     "pos": "MP",
+     "act": "call",
+     "amt": 8.0
+    }
+   ],
+   "flop": [
+    {
+     "pos": "MP",
+     "act": "check"
+    },
+    {
+     "pos": "CO",
+     "act": "bet",
+     "amt": 7.9
+    },
+    {
+     "pos": "MP",
+     "act": "fold"
+    }
+   ],
+   "turn": [],
+   "river": []
+  }
+ },
+ {
+  "t": 1790966468.1,
+  "gc": "12548919013",
+  "kind": "pot",
+  "ocr": 14.8,
+  "truth": 11.5
+ },
+ {
+  "t": 1790966505.1,
+  "gc": "12548917439",
+  "kind": "pot",
+  "ocr": 57.5,
+  "truth": 29.7
+ },
+ {
+  "t": 1790966512.9,
+  "gc": "12548923083",
+  "kind": "line",
+  "ocr": {
+   "preflop": [
+    {
+     "pos": "SB",
+     "act": "sb",
+     "amt": 0.5
+    },
+    {
+     "pos": "BB",
+     "act": "bb",
+     "amt": 1.0
+    },
+    {
+     "pos": "MP",
+     "act": "fold"
+    },
+    {
+     "pos": "CO",
+     "act": "fold"
+    },
+    {
+     "pos": "BTN",
+     "act": "open",
+     "amt": 4.0
+    },
+    {
+     "pos": "SB",
+     "act": "fold"
+    },
+    {
+     "pos": "BB",
+     "act": "3bet",
+     "amt": 6.0
+    }
+   ],
+   "flop": [
+    {
+     "pos": "BB",
+     "act": "check"
+    },
+    {
+     "pos": "BTN",
+     "act": "bet",
+     "amt": 7.2
+    },
+    {
+     "pos": "BB",
+     "act": "raise",
+     "amt": 37.1
+    },
+    {
+     "pos": "BTN",
+     "act": "fold"
+    }
+   ]
+  },
+  "truth": {
+   "preflop": [
+    {
+     "pos": "SB",
+     "act": "sb",
+     "amt": 0.5
+    },
+    {
+     "pos": "BB",
+     "act": "bb",
+     "amt": 1.0
+    },
+    {
+     "pos": "MP",
+     "act": "fold"
+    },
+    {
+     "pos": "CO",
+     "act": "fold"
+    },
+    {
+     "pos": "BTN",
+     "act": "open",
+     "amt": 4.0
+    },
+    {
+     "pos": "SB",
+     "act": "fold"
+    },
+    {
+     "pos": "BB",
+     "act": "3bet",
+     "amt": 6.0
+    },
+    {
+     "pos": "BTN",
+     "act": "call",
+     "amt": 3.0
+    }
+   ],
+   "flop": [
+    {
+     "pos": "BB",
+     "act": "check"
+    },
+    {
+     "pos": "BTN",
+     "act": "bet",
+     "amt": 7.2
+    },
+    {
+     "pos": "BB",
+     "act": "raise",
+     "amt": 37.1
+    },
+    {
+     "pos": "BTN",
+     "act": "fold"
+    }
+   ],
+   "turn": [],
+   "river": []
+  }
+ },
+ {
+  "t": 1790966552.0,
+  "gc": "12548926110",
+  "kind": "line",
+  "ocr": {
+   "preflop": [
+    {
+     "pos": "SB",
+     "act": "sb",
+     "amt": 0.5
+    },
+    {
+     "pos": "BB",
+     "act": "bb",
+     "amt": 1.0
+    },
+    {
+     "pos": "MP",
+     "act": "open",
+     "amt": 3.0
+    },
+    {
+     "pos": "CO",
+     "act": "fold"
+    },
+    {
+     "pos": "BTN",
+     "act": "fold"
+    },
+    {
+     "pos": "SB",
+     "act": "call",
+     "amt": 2.5
+    },
+    {
+     "pos": "BB",
+     "act": "fold"
+    }
+   ],
+   "flop": [
+    {
+     "pos": "SB",
+     "act": "check"
+    },
+    {
+     "pos": "MP",
+     "act": "check"
+    },
+    {
+     "pos": "MP",
+     "act": "bet",
+     "amt": 5.2
+    },
+    {
+     "pos": "SB",
+     "act": "call",
+     "amt": 5.2
+    }
+   ],
+   "turn": [
+    {
+     "pos": "SB",
+     "act": "check"
+    },
+    {
+     "pos": "MP",
+     "act": "bet",
+     "amt": 13.0
+    },
+    {
+     "pos": "SB",
+     "act": "fold"
+    }
+   ]
+  },
+  "truth": {
+   "preflop": [
+    {
+     "pos": "SB",
+     "act": "sb",
+     "amt": 0.5
+    },
+    {
+     "pos": "BB",
+     "act": "bb",
+     "amt": 1.0
+    },
+    {
+     "pos": "MP",
+     "act": "open",
+     "amt": 3.0
+    },
+    {
+     "pos": "CO",
+     "act": "fold"
+    },
+    {
+     "pos": "BTN",
+     "act": "fold"
+    },
+    {
+     "pos": "SB",
+     "act": "call",
+     "amt": 2.5
+    },
+    {
+     "pos": "BB",
+     "act": "fold"
+    }
+   ],
+   "flop": [
+    {
+     "pos": "SB",
+     "act": "check"
+    },
+    {
+     "pos": "MP",
+     "act": "bet",
+     "amt": 5.2
+    },
+    {
+     "pos": "SB",
+     "act": "call",
+     "amt": 5.2
+    }
+   ],
+   "turn": [
+    {
+     "pos": "SB",
+     "act": "check"
+    },
+    {
+     "pos": "MP",
+     "act": "bet",
+     "amt": 13.0
+    },
+    {
+     "pos": "SB",
+     "act": "fold"
+    }
+   ],
+   "river": []
+  }
+ },
+ {
+  "t": 1790966644.5,
+  "gc": "12548931392",
+  "kind": "pot",
+  "ocr": 13.4,
+  "truth": 7.8
+ },
+ {
+  "t": 1790966765.0,
+  "gc": "12548933676",
+  "kind": "pot",
+  "ocr": 25.4,
+  "truth": 16.0
+ },
+ {
+  "t": 1790967748.1,
+  "gc": "12548981145",
+  "kind": "pot",
+  "ocr": 25.3,
+  "truth": 15.5
+ },
+ {
+  "t": 1790968079.1,
+  "gc": "12548996966",
+  "kind": "line",
+  "ocr": {
+   "preflop": [
+    {
+     "pos": "SB",
+     "act": "sb",
+     "amt": 0.5
+    },
+    {
+     "pos": "BB",
+     "act": "bb",
+     "amt": 1.0
+    },
+    {
+     "pos": "UTG",
+     "act": "fold"
+    },
+    {
+     "pos": "MP",
+     "act": "fold"
+    },
+    {
+     "pos": "BTN",
+     "act": "fold"
+    },
+    {
+     "pos": "CO",
+     "act": "limp",
+     "amt": 1.0
+    },
+    {
+     "pos": "SB",
+     "act": "open",
+     "amt": 4.5
+    },
+    {
+     "pos": "BB",
+     "act": "3bet",
+     "amt": 11.0
+    },
+    {
+     "pos": "CO",
+     "act": "call",
+     "amt": 11.0
+    },
+    {
+     "pos": "SB",
+     "act": "4bet",
+     "amt": 22.0
+    },
+    {
+     "pos": "BB",
+     "act": "fold"
+    },
+    {
+     "pos": "CO",
+     "act": "5bet",
+     "amt": 18.3
+    },
+    {
+     "pos": "SB",
+     "act": "call",
+     "amt": 3.3
+    }
+   ],
+   "river": [
+    {
+     "pos": "CO",
+     "act": "check"
+    }
+   ]
+  },
+  "truth": {
+   "preflop": [
+    {
+     "pos": "SB",
+     "act": "sb",
+     "amt": 0.5
+    },
+    {
+     "pos": "BB",
+     "act": "bb",
+     "amt": 1.0
+    },
+    {
+     "pos": "UTG",
+     "act": "fold"
+    },
+    {
+     "pos": "MP",
+     "act": "fold"
+    },
+    {
+     "pos": "CO",
+     "act": "call",
+     "amt": 1.0
+    },
+    {
+     "pos": "BTN",
+     "act": "fold"
+    },
+    {
+     "pos": "SB",
+     "act": "open",
+     "amt": 4.5
+    },
+    {
+     "pos": "BB",
+     "act": "3bet",
+     "amt": 11.0
+    },
+    {
+     "pos": "CO",
+     "act": "call",
+     "amt": 11.0
+    },
+    {
+     "pos": "SB",
+     "act": "4bet",
+     "amt": 22.0
+    },
+    {
+     "pos": "BB",
+     "act": "fold"
+    },
+    {
+     "pos": "CO",
+     "act": "5bet",
+     "amt": 18.3
+    },
+    {
+     "pos": "SB",
+     "act": "call",
+     "amt": 3.3
+    }
+   ],
+   "flop": [],
+   "turn": [],
+   "river": []
+  }
+ },
+ {
+  "t": 1790968230.8,
+  "gc": "12549004265",
+  "kind": "line",
+  "ocr": {
+   "preflop": [
+    {
+     "pos": "SB",
+     "act": "sb",
+     "amt": 0.5
+    },
+    {
+     "pos": "BB",
+     "act": "bb",
+     "amt": 1.0
+    },
+    {
+     "pos": "MP",
+     "act": "fold"
+    },
+    {
+     "pos": "CO",
+     "act": "fold"
+    },
+    {
+     "pos": "BTN",
+     "act": "fold"
+    },
+    {
+     "pos": "SB",
+     "act": "call",
+     "amt": 0.5
+    },
+    {
+     "pos": "BB",
+     "act": "check"
+    }
+   ],
+   "flop": [
+    {
+     "pos": "SB",
+     "act": "check"
+    },
+    {
+     "pos": "BB",
+     "act": "check"
+    }
+   ],
+   "turn": [
+    {
+     "pos": "SB",
+     "act": "check"
+    },
+    {
+     "pos": "BB",
+     "act": "check"
+    }
+   ],
+   "river": [
+    {
+     "pos": "SB",
+     "act": "check"
+    },
+    {
+     "pos": "BB",
+     "act": "check"
+    },
+    {
+     "pos": "SB",
+     "act": "bet",
+     "amt": 1.9
+    }
+   ]
+  },
+  "truth": {
+   "preflop": [
+    {
+     "pos": "SB",
+     "act": "sb",
+     "amt": 0.5
+    },
+    {
+     "pos": "BB",
+     "act": "bb",
+     "amt": 1.0
+    },
+    {
+     "pos": "MP",
+     "act": "fold"
+    },
+    {
+     "pos": "CO",
+     "act": "fold"
+    },
+    {
+     "pos": "BTN",
+     "act": "fold"
+    },
+    {
+     "pos": "SB",
+     "act": "call",
+     "amt": 0.5
+    },
+    {
+     "pos": "BB",
+     "act": "check"
+    }
+   ],
+   "flop": [
+    {
+     "pos": "SB",
+     "act": "check"
+    },
+    {
+     "pos": "BB",
+     "act": "check"
+    }
+   ],
+   "turn": [
+    {
+     "pos": "SB",
+     "act": "check"
+    },
+    {
+     "pos": "BB",
+     "act": "check"
+    }
+   ],
+   "river": [
+    {
+     "pos": "SB",
+     "act": "check"
+    },
+    {
+     "pos": "BB",
+     "act": "check"
+    }
+   ]
+  }
+ },
+ {
+  "t": 1790968230.8,
+  "gc": "12549004265",
+  "kind": "pot",
+  "ocr": 3.9,
+  "truth": 2.0
+ },
+ {
+  "t": 1790968375.5,
+  "gc": "12549015838",
+  "kind": "pot",
+  "ocr": 25.4,
+  "truth": 16.0
+ },
+ {
+  "t": 1790968544.3,
+  "gc": "12549020738",
+  "kind": "pot",
+  "ocr": 14.0,
+  "truth": 10.2
+ },
+ {
+  "t": 1790968614.9,
+  "gc": "12549028022",
+  "kind": "pot",
+  "ocr": 14.1,
+  "truth": 8.5
+ },
+ {
+  "t": 1790969267.2,
+  "gc": "12549061116",
+  "kind": "pot",
+  "ocr": 14.6,
+  "truth": 9.0
+ },
+ {
+  "t": 1790969275.0,
+  "gc": "12549058393",
+  "kind": "line",
+  "ocr": {
+   "preflop": [
+    {
+     "pos": "SB",
+     "act": "sb",
+     "amt": 0.5
+    },
+    {
+     "pos": "BB",
+     "act": "bb",
+     "amt": 1.0
+    },
+    {
+     "pos": "UTG",
+     "act": "fold"
+    },
+    {
+     "pos": "MP",
+     "act": "limp",
+     "amt": 1.0
+    },
+    {
+     "pos": "CO",
+     "act": "open",
+     "amt": 4.0
+    },
+    {
+     "pos": "BTN",
+     "act": "fold"
+    },
+    {
+     "pos": "SB",
+     "act": "fold"
+    },
+    {
+     "pos": "BB",
+     "act": "call",
+     "amt": 3.0
+    },
+    {
+     "pos": "MP",
+     "act": "call",
+     "amt": 3.0
+    }
+   ],
+   "flop": [
+    {
+     "pos": "BB",
+     "act": "check"
+    },
+    {
+     "pos": "MP",
+     "act": "check"
+    },
+    {
+     "pos": "CO",
+     "act": "bet",
+     "amt": 5.0
+    },
+    {
+     "pos": "BB",
+     "act": "call",
+     "amt": 5.0
+    },
+    {
+     "pos": "MP",
+     "act": "fold"
+    }
+   ],
+   "turn": [
+    {
+     "pos": "BB",
+     "act": "check"
+    },
+    {
+     "pos": "CO",
+     "act": "check"
+    }
+   ],
+   "river": [
+    {
+     "pos": "BB",
+     "act": "bet",
+     "amt": 17.0
+    },
+    {
+     "pos": "CO",
+     "act": "call",
+     "amt": 17.0
+    },
+    {
+     "pos": "BB",
+     "act": "fold"
+    }
+   ]
+  },
+  "truth": {
+   "preflop": [
+    {
+     "pos": "SB",
+     "act": "sb",
+     "amt": 0.5
+    },
+    {
+     "pos": "BB",
+     "act": "bb",
+     "amt": 1.0
+    },
+    {
+     "pos": "UTG",
+     "act": "fold"
+    },
+    {
+     "pos": "MP",
+     "act": "call",
+     "amt": 1.0
+    },
+    {
+     "pos": "CO",
+     "act": "open",
+     "amt": 4.0
+    },
+    {
+     "pos": "BTN",
+     "act": "fold"
+    },
+    {
+     "pos": "SB",
+     "act": "fold"
+    },
+    {
+     "pos": "BB",
+     "act": "call",
+     "amt": 3.0
+    },
+    {
+     "pos": "MP",
+     "act": "call",
+     "amt": 3.0
+    }
+   ],
+   "flop": [
+    {
+     "pos": "BB",
+     "act": "check"
+    },
+    {
+     "pos": "MP",
+     "act": "check"
+    },
+    {
+     "pos": "CO",
+     "act": "bet",
+     "amt": 5.0
+    },
+    {
+     "pos": "BB",
+     "act": "call",
+     "amt": 5.0
+    },
+    {
+     "pos": "MP",
+     "act": "fold"
+    }
+   ],
+   "turn": [
+    {
+     "pos": "BB",
+     "act": "check"
+    },
+    {
+     "pos": "CO",
+     "act": "check"
+    }
+   ],
+   "river": [
+    {
+     "pos": "BB",
+     "act": "bet",
+     "amt": 17.0
+    },
+    {
+     "pos": "CO",
+     "act": "call",
+     "amt": 17.0
+    }
+   ]
+  }
+ },
+ {
+  "t": 1790969275.0,
+  "gc": "12549058393",
+  "kind": "pot",
+  "ocr": 109.3,
+  "truth": 56.5
+ },
+ {
+  "t": 1790969344.9,
+  "gc": "12549064855",
+  "kind": "pot",
+  "ocr": 3.5,
+  "truth": 14.5
+ }
+]
